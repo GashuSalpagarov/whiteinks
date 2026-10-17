@@ -6,9 +6,14 @@ import styles from "./Scene3.module.css";
 import { Scene3Finale } from "./Scene3Finale";
 import { Scene3R3F } from "./Scene3R3F";
 
+// Pinned-хвост после нарратива (в vh): сетка ещё держится sticky и вливается обратно в точку.
+// Держать в синхроне с height в Scene3.module.css (500vh нарратива + TAIL_VH).
+const TAIL_VH = 60;
+
 export function Scene3() {
   const sectionRef = useRef<HTMLElement>(null);
   const progressRef = useRef(0);
+  const tailRef = useRef(0);
 
   useEffect(() => {
     const update = () => {
@@ -16,11 +21,15 @@ export function Scene3() {
       const rect = sectionRef.current.getBoundingClientRect();
       const h = window.innerHeight;
       // Прогресс мапится на нарратив сцены: 0 — секция только вошла снизу viewport,
-      // 1 — sticky отпустила (конец сцены, дальше пойдёт Scene 4).
-      const total = rect.height;
+      // 1 — нарратив закончен (сетка собрана). Дальше хвост: tail 0→1 за TAIL_VH,
+      // на tail=1 sticky отпускает. Нарратив — те же 500vh из CSS, доля от rect.height.
+      const tailPx = (rect.height * TAIL_VH) / (500 + TAIL_VH);
+      const total = rect.height - tailPx;
       const scrolled = h - rect.top;
       const p = total > 0 ? Math.max(0, Math.min(1, scrolled / total)) : 0;
+      const tail = total > 0 ? Math.max(0, Math.min(1, (scrolled - total) / tailPx)) : 0;
       progressRef.current = p;
+      tailRef.current = tail;
 
       // CSS-точка: фейд-аут к p=0.2 (даём частицам набрать плотность для маскировки)
       // и обратный фейд-ин в M9 (0.95..1.0), когда формируется новое ядро.
@@ -53,7 +62,7 @@ export function Scene3() {
   return (
     <section ref={sectionRef} className={styles.scene3} data-scene="scene3">
       <div className={styles.sticky}>
-        <Scene3Finale progressRef={progressRef} />
+        <Scene3Finale progressRef={progressRef} tailRef={tailRef} />
       </div>
       <r3fTunnel.In>
         <Scene3R3F progressRef={progressRef} />

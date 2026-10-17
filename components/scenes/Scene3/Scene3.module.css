@@ -1,6 +1,7 @@
 .scene3 {
   position: relative;
-  height: 500vh;
+  /* 500vh нарратива + 60vh pinned-хвоста (TAIL_VH в Scene3.tsx). */
+  height: calc(500vh + 60vh);
   z-index: 4;
 }
 
