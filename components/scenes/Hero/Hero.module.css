@@ -2,11 +2,16 @@
   position: relative;
   color: var(--color-bg);
   overflow: hidden;
+  /* Размах S-изгиба линии (тот же, что в buildFallPath) и зазор от линии до текста. */
+  --swing: min(3.5vw, 6vh);
+  --gap: clamp(16px, 2.2vw, 40px);
 }
 
+/* Центр круга — в верхней трети (26vh): оттуда начинается путь точки. На scale(20)
+   круг (3600px) всё равно закрывает весь экран — до 16:9 2560×1440 включительно. */
 .pill {
   position: absolute;
-  top: 50%;
+  top: 26%;
   left: 50%;
   z-index: 0;
   width: 180px;
@@ -21,7 +26,7 @@
   animation:
     pillCompress 1.5s cubic-bezier(0.6, 0, 0.4, 1) 2.4s forwards,
     pillBreath 0.45s ease-in-out 3.9s,
-    pillImpact 1.3s linear 5.25s forwards;
+    pillShrink 0.4s cubic-bezier(0.65, 0, 0.35, 1) 4.35s forwards;
 }
 
 .studioLabel {
@@ -40,20 +45,99 @@
     studioFadeOut 0.6s ease-in 3s forwards;
 }
 
-.ctaLabel {
+/* Линия пути. Живёт в Hero и уезжает вверх вместе со страницей; её конец (50vw, 93vh) —
+   начало трассы Scene 2, штрих такой же. pathLength=1: штрих длиной во весь путь,
+   пробел 2 — чтобы до старта в конце пути не рисовался «нулевой» штрих. */
+.line {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lineStroke {
+  fill: none;
+  stroke: var(--color-fg);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1;
+}
+
+.ready .lineStroke {
+  animation: lineDraw 2.1s cubic-bezier(0.45, 0, 0.25, 1) 4.75s forwards;
+}
+
+/* Падающая точка. Едет по тому же пути (offset-path задаётся в Hero.tsx) с той же
+   длительностью и easing, что и прорисовка линии, — конец линии всегда под ней.
+   top/left: 0 — чтобы координаты path() во всех браузерах отсчитывались от угла Hero.
+   Видна только пока идёт анимация: в начале принимает эстафету от .pill, в конце отдаёт .drop. */
+.fallDot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  background: var(--color-fg);
+  border-radius: 50%;
+  offset-anchor: center;
+  offset-rotate: 0deg;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.ready .fallDot {
+  animation: fallDot 2.1s cubic-bezier(0.45, 0, 0.25, 1) 4.75s;
+}
+
+/* CTA — обычная чёрная «таблетка» справа от линии, на высоте последнего слова. */
+.cta {
+  position: absolute;
+  top: calc(82% - 26px);
+  left: calc(50% - 0.2 * var(--swing) + var(--gap));
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 28px;
+  background: var(--color-fg);
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 500;
   white-space: nowrap;
-  transform: translate(-50%, calc(-50% + 105px));
   opacity: 0;
 }
 
-.ready .ctaLabel {
-  animation: ctaFadeIn 0.45s ease-out 7s forwards;
+.ready .cta {
+  animation: uiFadeIn 0.5s ease-out 6.85s forwards;
+}
+
+/* Подзаголовок справа от линии, на высоте первого слова. На этой высоте линия уходит
+   вправо до +1 · --swing (пик изгиба), отсюда отступ. Стиль — как текст блоков Scene 2. */
+.lead {
+  position: absolute;
+  top: 31%;
+  left: calc(50% + var(--swing) + var(--gap));
+  z-index: 4;
+  width: min(24vw, 380px);
+  margin: 0;
+  font-size: clamp(15px, 1.25vw, 22px);
+  line-height: 1.5;
+  color: rgba(10, 10, 10, 0.72);
+  opacity: 0;
+}
+
+.ready .lead {
+  animation: uiFadeIn 0.5s ease-out 6.85s forwards;
+}
+
+/* На узких экранах справа от линии места нет — подзаголовок вернётся в мобильной версии. */
+@media (max-width: 767px) {
+  .lead {
+    display: none;
+  }
 }
 
 .drop {
@@ -66,24 +150,21 @@
   height: 12px;
   background: var(--color-fg);
   border-radius: 50%;
-  transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + 128px)) scale(0);
+  transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset)));
   opacity: var(--drop-opacity, 1);
+  /* Скрыта, пока .fallDot не приземлится ровно в эту точку. */
+  visibility: hidden;
   pointer-events: none;
 }
 
 .ready .drop {
   animation:
-    dropFlow 1.2s 6.975s forwards,
-    dropSquash 0.27s ease-out 8.175s forwards,
-    dropSettle 1s ease-in-out 8.445s forwards,
-    dropPulse 2.4s ease-in-out 9.445s infinite;
+    dropAppear 0.001s 6.85s forwards,
+    dropPulse 2.4s ease-in-out 7.4s infinite;
 }
 
 .ready .drop.dropPinned {
-  animation:
-    dropFlow 1.2s 6.975s forwards,
-    dropSquash 0.27s ease-out 8.175s forwards,
-    dropSettle 1s ease-in-out 8.445s forwards;
+  animation: dropAppear 0.001s 6.85s forwards;
 }
 
 @keyframes pillCompress {
@@ -102,47 +183,13 @@
   }
 }
 
-@keyframes pillImpact {
-  0% {
-    height: 180px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%) scale(1, 1);
-    animation-timing-function: ease-out;
-  }
-  10% {
-    height: 180px;
-    border-radius: 50%;
-    transform: translate(-50%, calc(-50% + 15px)) scale(1.55, 0.42);
-    animation-timing-function: ease-in-out;
-  }
-  24% {
-    height: 180px;
-    border-radius: 50%;
-    transform: translate(-50%, calc(-50% + 47px)) scale(0.74, 1.32);
-    animation-timing-function: ease-in-out;
-  }
-  42% {
-    height: 145px;
-    border-radius: 60%;
-    transform: translate(-50%, calc(-50% + 85px)) scale(1.22, 0.78);
-    animation-timing-function: ease-in-out;
-  }
-  62% {
-    height: 90px;
-    border-radius: 50px;
-    transform: translate(-50%, calc(-50% + 103px)) scale(0.96, 1.06);
-    animation-timing-function: ease-out;
-  }
-  82% {
-    height: 58px;
-    border-radius: 999px;
-    transform: translate(-50%, calc(-50% + 107px)) scale(1.02, 0.97);
-    animation-timing-function: ease-out;
-  }
-  100% {
-    height: 52px;
-    border-radius: 999px;
-    transform: translate(-50%, calc(-50% + 105px)) scale(1, 1);
+/* Круг сжимается в точку 12px. visibility: hidden срабатывает только в самом конце
+   (дискретная интерполяция) — в этот момент эстафету принимает .fallDot. */
+@keyframes pillShrink {
+  to {
+    width: 12px;
+    height: 12px;
+    visibility: hidden;
   }
 }
 
@@ -159,84 +206,37 @@
   }
 }
 
-@keyframes ctaFadeIn {
+@keyframes uiFadeIn {
+  from {
+    transform: translateY(8px);
+  }
   to {
     opacity: 1;
+    transform: none;
   }
 }
 
-@keyframes dropFlow {
-  0% {
-    transform: translate(-50%, calc(-50% + 128px)) scale(0, 0);
-    animation-timing-function: ease-out;
-  }
-  8% {
-    transform: translate(-50%, calc(-50% + 130px)) scale(0.6, 0.5);
-    animation-timing-function: ease-in-out;
-  }
-  18% {
-    transform: translate(-50%, calc(-50% + 136px)) scale(0.72, 1.1);
-    animation-timing-function: ease-in-out;
-  }
-  28% {
-    transform: translate(-50%, calc(-50% + 150px)) scale(0.85, 1.45);
-    animation-timing-function: ease-out;
-  }
-  35% {
-    transform: translate(-50%, calc(-50% + 168px)) scale(0.95, 1.3);
-    animation-timing-function: cubic-bezier(0.45, 0, 0.85, 0.5);
-  }
-  100% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(0.78, 1.55);
+@keyframes lineDraw {
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-@keyframes dropSquash {
-  0% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(0.78, 1.55);
-    border-radius: 50%;
-    animation-timing-function: cubic-bezier(0.3, 0, 0.7, 1);
+@keyframes fallDot {
+  from {
+    offset-distance: 0%;
+    visibility: visible;
   }
-  100% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(3.5, 0.55);
-    border-radius: 35% 65% 50% 50% / 65% 60% 40% 35%;
+  to {
+    offset-distance: 100%;
+    visibility: visible;
   }
 }
 
-@keyframes dropSettle {
-  0% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(3.5, 0.55);
-    border-radius: 35% 65% 50% 50% / 65% 60% 40% 35%;
-    animation-timing-function: ease-out;
-  }
-  18% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(2.9, 0.7);
-    border-radius: 65% 35% 30% 70% / 50% 70% 30% 50%;
-    animation-timing-function: ease-in-out;
-  }
-  36% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(2.1, 0.85);
-    border-radius: 30% 70% 65% 35% / 60% 40% 65% 40%;
-    animation-timing-function: ease-in-out;
-  }
-  55% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(1.45, 0.98);
-    border-radius: 60% 40% 35% 65% / 45% 60% 40% 55%;
-    animation-timing-function: ease-in-out;
-  }
-  72% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(1.1, 1.04);
-    border-radius: 45% 55% 55% 45% / 55% 50% 45% 50%;
-    animation-timing-function: ease-out;
-  }
-  88% {
-    transform: translate(-50%, calc(-50% + var(--drop-offset))) scale(0.97, 1.02);
-    border-radius: 52% 48% 47% 53% / 50% 50% 53% 47%;
-    animation-timing-function: ease-in-out;
-  }
-  100% {
-    transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset))) scale(1, 1);
-    border-radius: 50%;
+@keyframes dropAppear {
+  from,
+  to {
+    visibility: visible;
   }
 }
 
@@ -260,50 +260,65 @@
   }
 }
 
-.liquidOverlay {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  opacity: 0;
-}
-
-.ready .liquidOverlay {
-  animation: liquidReveal 0.001s linear 4.35s forwards;
-}
-
-@keyframes liquidReveal {
-  to {
-    opacity: 1;
-  }
-}
-
+/* Заголовок — одно h1, три слова на трёх строках слева от линии; каждое проявляется,
+   когда мимо проходит точка (задержки — по времени прохода). top ставит центр строчных
+   букв (x-height) на 37/59.5/82% высоты. Правый край слова стоит у линии с зазором --gap:
+   множитель при --swing — ближайшее к буквам положение линии на их высоте, в долях
+   размаха изгиба (см. buildFallPath). */
 .title {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  inset: 0;
   z-index: 4;
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-size: 64px;
+  font-size: clamp(28px, min(8.5vw, 19vh), 150px);
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.02em;
-  text-align: center;
-  white-space: pre-line;
   color: var(--color-fg);
-  transform: translate(-50%, calc(-50% - 50px));
-  opacity: 0;
   pointer-events: none;
 }
 
-.ready .title {
-  animation: titleReveal 0.6s ease-out 5.75s forwards;
+.word {
+  position: absolute;
+  white-space: nowrap;
+  opacity: 0;
 }
 
-@keyframes titleReveal {
+.word1 {
+  top: calc(37% - 0.77em);
+  right: calc(50% - 0.2 * var(--swing) + var(--gap));
+}
+
+.word2 {
+  top: calc(59.5% - 0.77em);
+  right: calc(50% + 0.38 * var(--swing) + var(--gap));
+}
+
+.word3 {
+  top: calc(82% - 0.77em);
+  right: calc(50% + 0.88 * var(--swing) + var(--gap));
+}
+
+.ready .word1 {
+  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.15s forwards;
+}
+
+.ready .word2 {
+  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.5s forwards;
+}
+
+.ready .word3 {
+  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.85s forwards;
+}
+
+@keyframes wordIn {
+  from {
+    transform: translateX(0.15em);
+  }
   to {
     opacity: 1;
+    transform: none;
   }
 }
 
@@ -337,106 +352,41 @@
 
 .ready .logo,
 .ready .phone {
-  animation: cornerFadeIn 0.4s ease-out 6.18s forwards;
-}
-
-@keyframes cornerFadeIn {
-  to {
-    opacity: 1;
-  }
-}
-
-.dropLabel {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 4;
-  font-size: 0.875rem;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: var(--color-fg);
-  white-space: nowrap;
-  transform: translate(-50%, calc(-50% + 43vh - 32px));
-  opacity: 0;
-  pointer-events: none;
-}
-
-.ready .dropLabel {
-  animation: cornerFadeIn 0.5s ease-out 9.5s forwards;
+  animation: uiFadeIn 0.5s ease-out 6.85s forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pill {
-    width: 180px;
-    height: 52px;
-    border-radius: 999px;
-    transform: translate(-50%, calc(-50% + 105px)) scale(1);
+    visibility: hidden;
   }
 
-  .ready .pill {
-    animation: none;
-  }
-
-  .ready .studioLabel {
-    animation: none;
-  }
-
-  .ctaLabel {
-    opacity: 1;
-  }
-
-  .ready .ctaLabel {
-    animation: none;
-  }
-
-  .liquidOverlay {
-    opacity: 0;
-  }
-
-  .ready .liquidOverlay {
-    animation: none;
-  }
-
-  .title {
-    opacity: 1;
-  }
-
-  .ready .title {
-    animation: none;
-  }
-
-  .drop {
-    transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset))) scale(1, 1);
-  }
-
+  .ready .pill,
+  .ready .studioLabel,
+  .ready .lineStroke,
+  .ready .fallDot,
+  .ready .word,
+  .ready .cta,
+  .ready .lead,
   .ready .drop,
-  .ready .drop.dropPinned {
-    animation: none;
-  }
-
-  .trail {
-    opacity: 1;
-  }
-
-  .ready .trail {
-    animation: none;
-  }
-
-  .logo,
-  .phone {
-    opacity: 1;
-  }
-
+  .ready .drop.dropPinned,
   .ready .logo,
   .ready .phone {
     animation: none;
   }
 
-  .dropLabel {
+  .lineStroke {
+    stroke-dashoffset: 0;
+  }
+
+  .word,
+  .cta,
+  .lead,
+  .logo,
+  .phone {
     opacity: 1;
   }
 
-  .ready .dropLabel {
-    animation: none;
+  .drop {
+    visibility: visible;
   }
 }

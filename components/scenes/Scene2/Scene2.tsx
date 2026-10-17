@@ -130,9 +130,9 @@ function buildPathD(scrollVh: number, w: number, h: number): string {
 
   const points: [number, number][] = [];
 
-  // Начало пути — там, где была подпись «начало пути».
+  // Начало пути — конец линии Hero (точка покоя, 93vh): вместе они читаются как одна линия.
   const labelX = w * 0.5;
-  const labelY = ((91 - scrollVh) * h) / 100;
+  const labelY = ((93 - scrollVh) * h) / 100;
   points.push([labelX, labelY]);
 
   // 20px — тот же сдвиг точки вниз, что выставляется через --drop-offset.

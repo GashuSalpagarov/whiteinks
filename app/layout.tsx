@@ -4,7 +4,7 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Studio",
+  title: "White Inks",
   description: "Развитие на стыке инженерии и продукта",
   robots: {
     index: false,
