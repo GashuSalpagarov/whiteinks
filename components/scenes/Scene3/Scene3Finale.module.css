@@ -8,12 +8,9 @@
   padding: 72px 32px 32px;
   pointer-events: none;
   overflow: hidden; /* карточки прилетают из-за края — не скроллим страницу */
-  /* Конец хвоста: кружки-плитки поверх точки гаснут, остаётся сама точка. */
-  opacity: calc(1 - var(--merge-hide, 0));
 }
 
 .grid {
-  position: relative; /* offsetParent плиток и база дублёра точки — с фильтром и без */
   width: 100%;
   height: 100%;
   display: grid;
@@ -22,65 +19,36 @@
   column-gap: 20px;
   row-gap: 20px;
   pointer-events: var(--finale-pointer-events, none);
-  /* Goo-слияние в хвосте: url фильтра или none — из JS. */
-  filter: var(--merge-filter, none);
 }
 
-/* Определение goo-фильтра: 0×0 и вне потока. */
-.gooDefs {
+/* Пыль распада сетки в хвосте сцены: поверх плиток, рисует Scene3Finale.
+   Скрыт, пока рисовать нечего (JS показывает его только на время распада). */
+.dust {
   position: absolute;
-  width: 0;
-  height: 0;
-}
-
-/* Дублёр точки внутри .grid: goo сливает с ним плитки («глоток»). Лежит ровно
-   над настоящей точкой (Hero .drop), координаты и масштаб — из JS. */
-.dotProxy {
-  position: absolute;
-  left: var(--proxy-x, 50%);
-  top: var(--proxy-y, 50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--color-fg);
-  opacity: var(--proxy-on, 0);
-  transform: translate(-50%, -50%) scale(var(--gulp, 1));
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  visibility: hidden;
 }
 
 .card,
 .invitation {
-  position: relative; /* для заливки ::after */
   display: flex;
   flex-direction: column;
   background: #0a0a0a;
   color: #fafafa;
-  /* Слияние с точкой: углы 4px → 50% (кружок) по --merge-r 0→1. */
-  border-radius: calc(4px * (1 - var(--merge-r, 0)) + 50% * var(--merge-r, 0));
+  border-radius: 4px;
   overflow: hidden;
   font-family: system-ui, -apple-system, sans-serif;
   min-height: 0;
   /* Slide-in: на opacity=0 карточка смещена в --slide-dx/dy, на 1 — в grid-позиции.
-     Easing наследуется через --finale-opacity (easeInOutCubic в JS).
-     Поверх — слияние с точкой: сдвиг центра в точку и сжатие до её диаметра (JS). */
+     Easing наследуется через --finale-opacity (easeInOutCubic в JS). */
   transform: translate(
     calc(var(--slide-dx, 0%) * (1 - var(--finale-opacity, 0))),
     calc(var(--slide-dy, 0%) * (1 - var(--finale-opacity, 0)))
-  )
-  translate(var(--merge-x, 0px), var(--merge-y, 0px))
-  scale(var(--merge-sx, 1), var(--merge-sy, 1));
+  );
   will-change: transform;
-}
-
-/* Заливка цветом точки поверх содержимого: плитка становится сплошной формой. */
-.card::after,
-.invitation::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--color-fg);
-  opacity: var(--merge-fade, 0);
-  pointer-events: none;
 }
 
 .cardImage {

@@ -3,6 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { type RefObject, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useLenis } from "@/app/providers";
 import { type CardContent, CARDS_CONTENT } from "./cardsData";
 
 const PARTICLE_COUNT = 1000;
@@ -36,6 +37,15 @@ const CARD_PATH_FADE_OUT = 3; // начало фейд-аута после пр�
 const CARD_PATH_PAST = 4; // ушла окончательно
 const CARD_START_SCALE = 0.1; // x10 от размера частицы при появлении
 const CARD_TEXTURE_SCALE = 768; // px на world-unit для canvas-текстур карточек
+
+// Реакция на скорость скролла. v — скорость Lenis, приведённая к −1..1 и сглаженная пружиной.
+// В покое v = 0, и сцена выглядит ровно как без этой реакции.
+const VELOCITY_MAX = 60; // px за кадр (при 60 fps), которые считаем резким броском → |v| = 1
+const VELOCITY_STIFFNESS = 80; // жёсткость пружины: выше — быстрее догоняет скорость скролла
+const VELOCITY_DAMPING = 7; // затухание: ниже — заметнее перелёт через 0 при остановке
+const CARD_BEND_AMPLITUDE = 0.05; // прогиб середины карточки при |v| = 1, доля её высоты
+const CARD_BEND_SEGMENTS = 24; // сегменты плоскости по высоте, чтобы изгиб был гладким
+const STREAK_STRETCH = 2; // при |v| = 1 штрих длиннее в (1 + STREAK_STRETCH) раз
 
 type CardConfig = {
   pHold: number; // p, когда карточка ровно в зоне чтения (z = CARD_PATH_READING)
@@ -278,8 +288,12 @@ export function Scene3R3F({ progressRef }: Props) {
   const linesRef = useRef<THREE.LineSegments>(null);
   const cardRefs = useRef<(THREE.Mesh | null)[]>([]);
   const prevPRef = useRef<number>(-1);
+  const prevStreakLengthRef = useRef<number>(STREAK_LENGTH);
   const pointerRef = useRef({ x: 0, y: 0 });
+  const springRef = useRef({ v: 0, dv: 0 }); // v — сглаженная скорость, dv — её скорость
   const { camera } = useThree();
+  // Контекст Lenis доходит сюда через мост контекстов R3F-канваса (GlobalCanvas внутри Providers).
+  const lenis = useLenis();
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -296,6 +310,9 @@ export function Scene3R3F({ progressRef }: Props) {
     () => CARDS.map((card, i) => createCardTexture(CARDS_CONTENT[i], card.width, card.height)),
     [],
   );
+
+  // Uniform изгиба на каждую карточку (см. onBeforeCompile у её материала).
+  const cardBendUniforms = useMemo(() => CARDS.map(() => ({ value: 0 })), []);
 
   const pointsData = useMemo(() => {
     const positions = new Float32Array(PARTICLE_COUNT * 3);
@@ -355,13 +372,30 @@ export function Scene3R3F({ progressRef }: Props) {
     return { positions, directions, pathLengths, phases, geometry };
   }, []);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!pointsRef.current || !linesRef.current) return;
     const p = progressRef.current;
     const inScene = p > 0 && p < 1 ? 1 : 0;
 
-    (pointsRef.current.material as THREE.PointsMaterial).opacity = inScene;
-    (linesRef.current.material as THREE.LineBasicMaterial).opacity = inScene;
+    // Скорость Lenis (px за кадр, со знаком) → −1..1. Делим на delta·60, чтобы на 120 Гц
+    // (вдвое меньше px за кадр) отклик был тем же. Сглаживаем пружиной, а не lerp:
+    // при остановке v чуть перелетает через 0 и успокаивается.
+    const rawV = (lenis?.velocity ?? 0) / (Math.max(delta, 1 / 240) * 60 * VELOCITY_MAX);
+    const targetV = Math.max(-1, Math.min(1, rawV));
+    const dt = Math.min(delta, 1 / 30); // после возврата во вкладку delta огромный
+    const spring = springRef.current;
+    spring.dv += (VELOCITY_STIFFNESS * (targetV - spring.v) - VELOCITY_DAMPING * spring.dv) * dt;
+    spring.v += spring.dv * dt;
+    const v = spring.v;
+
+    // Частицы и штрихи гаснут на p 0.95..1: к посадке финальной сетки центр чист — точка
+    // появится только из пыли сетки (Scene3Finale). alphaTest масштабируем вместе с opacity,
+    // иначе при opacity < 0.5 частицы (жёсткий диск в текстуре) пропадали бы скачком.
+    const particleOpacity = inScene * Math.min(1, (1 - p) / 0.05);
+    const pointsMaterial = pointsRef.current.material as THREE.PointsMaterial;
+    pointsMaterial.opacity = particleOpacity;
+    pointsMaterial.alphaTest = Math.max(0.01, 0.5 * particleOpacity);
+    (linesRef.current.material as THREE.LineBasicMaterial).opacity = particleOpacity;
 
     const cardSceneEntry = cardSceneEntryGate(p);
     for (let i = 0; i < CARDS.length; i++) {
@@ -385,6 +419,8 @@ export function Scene3R3F({ progressRef }: Props) {
         const lateral = cardLateralProgress(p, card.pHold);
         ref.position.set(card.offsetX * lateral, card.offsetY * lateral, z);
         ref.scale.setScalar(cardScaleForP(p, card.pHold));
+        // Лист на ветру: середина отстаёт от движения (летим к камере → прогиб назад).
+        cardBendUniforms[i].value = -v * CARD_BEND_AMPLITUDE * card.height;
       }
     }
 
@@ -406,8 +442,12 @@ export function Scene3R3F({ progressRef }: Props) {
     persp.updateProjectionMatrix();
 
     if (!inScene) return;
-    if (Math.abs(p - prevPRef.current) < 1e-6) return;
+    // Пересчёт, если сдвинулся p или ещё меняется длина штрихов (скорость затухает после остановки).
+    const streakLength = STREAK_LENGTH * (1 + Math.abs(v) * STREAK_STRETCH);
+    const pSame = Math.abs(p - prevPRef.current) < 1e-6;
+    if (pSame && Math.abs(streakLength - prevStreakLengthRef.current) < 1e-4) return;
     prevPRef.current = p;
+    prevStreakLengthRef.current = streakLength;
 
     const acc = p * SCROLL_DRIVE_FACTOR;
     const collectMult = collectionMultiplier(p);
@@ -469,7 +509,7 @@ export function Scene3R3F({ progressRef }: Props) {
 
         const t = linearProgress / pl;
         const front = pl * t * t * collectMult;
-        const back = Math.max(0, front - STREAK_LENGTH * collectMult);
+        const back = Math.max(0, front - streakLength * collectMult);
 
         const dirX = directions[i * 3];
         const dirY = directions[i * 3 + 1];
@@ -509,8 +549,21 @@ export function Scene3R3F({ progressRef }: Props) {
           }}
           rotation={[card.tiltX, card.tiltY, 0]}
         >
-          <planeGeometry args={[card.width, card.height]} />
-          <meshBasicMaterial map={cardTextures[i]} transparent side={THREE.DoubleSide} />
+          <planeGeometry args={[card.width, card.height, 1, CARD_BEND_SEGMENTS]} />
+          <meshBasicMaterial
+            map={cardTextures[i]}
+            transparent
+            side={THREE.DoubleSide}
+            // Изгиб: z += uBend·sin(π·uv.y) — верх и низ на месте, середина прогибается.
+            // При uBend = 0 — та же ровная плоскость, что и без него.
+            onBeforeCompile={(shader) => {
+              shader.uniforms.uBend = cardBendUniforms[i];
+              shader.vertexShader = `uniform float uBend;\n${shader.vertexShader.replace(
+                "#include <begin_vertex>",
+                "#include <begin_vertex>\n  transformed.z += uBend * sin(uv.y * PI);",
+              )}`;
+            }}
+          />
         </mesh>
       ))}
     </>

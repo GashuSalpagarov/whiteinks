@@ -3,12 +3,12 @@
 import { useEffect, useRef } from "react";
 import { r3fTunnel } from "@/r3f/tunnel";
 import styles from "./Scene3.module.css";
-import { Scene3Finale } from "./Scene3Finale";
+import { Scene3Finale, SWAP_END, SWAP_START } from "./Scene3Finale";
 import { Scene3R3F } from "./Scene3R3F";
 
-// Pinned-хвост после нарратива (в vh): сетка ещё держится sticky и вливается обратно в точку.
-// Держать в синхроне с height в Scene3.module.css (500vh нарратива + TAIL_VH).
-const TAIL_VH = 60;
+// Pinned-хвост после нарратива (в vh): сетка ещё держится sticky, рассыпается в пыль,
+// а пыль стягивается в точку. Держать в синхроне с height в Scene3.module.css (500vh + TAIL_VH).
+const TAIL_VH = 100;
 
 export function Scene3() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -31,10 +31,11 @@ export function Scene3() {
       progressRef.current = p;
       tailRef.current = tail;
 
-      // CSS-точка: фейд-аут к p=0.2 (даём частицам набрать плотность для маскировки)
-      // и обратный фейд-ин в M9 (0.95..1.0), когда формируется новое ядро.
+      // CSS-точка: фейд-аут к p=0.2 (даём частицам набрать плотность для маскировки).
+      // Обратно она появляется только как итог распада сетки в пыль: в окне подмены
+      // хвоста — ровно под нарисованным ядром той же формы (см. Scene3Finale).
       const dropFadeOut = Math.max(0, Math.min(1, (0.2 - p) / 0.2));
-      const dropFadeIn = Math.max(0, Math.min(1, (p - 0.95) / 0.05));
+      const dropFadeIn = Math.max(0, Math.min(1, (tail - SWAP_START) / (SWAP_END - SWAP_START)));
       const dropOpacity = Math.max(dropFadeOut, dropFadeIn);
       document.documentElement.style.setProperty("--drop-opacity", `${dropOpacity}`);
 
