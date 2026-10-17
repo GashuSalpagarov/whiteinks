@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
-// Имя репо на GitHub — basePath нужен для project pages (gashusalpagarov.github.io/studio).
-const repoName = "studio";
+// Имя репо на GitHub — basePath нужен для project pages (gashusalpagarov.github.io/whiteinks).
+const repoName = "whiteinks";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   // Без серверной оптимизации картинок (на GH Pages нет Node-сервера).
   images: { unoptimized: true },
-  // В dev — без префикса, чтобы работало на localhost. В prod — /studio.
+  // В dev — без префикса, чтобы работало на localhost. В prod — /whiteinks.
   basePath: isProd ? `/${repoName}` : "",
   assetPrefix: isProd ? `/${repoName}/` : "",
   // NOTE: reactCompiler требует babel-plugin-react-compiler в node_modules.
