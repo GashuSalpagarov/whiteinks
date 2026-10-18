@@ -7,21 +7,29 @@
 .sticky {
   position: sticky;
   top: 0;
-  height: 100vh;
+  /* Высота экрана сцен (lib/scroll/onScroll): та же, что у канваса и в JS. */
+  height: var(--ih, 100vh);
   width: 100%;
   pointer-events: none;
 }
 
-/* Подпись под словом: базовая линия слова — на 58% высоты (IMPACT_Y), выносные элементы
-   («р», «ф», «у») — около 0.22 кегля; кегль своего слова (--word-size) пишет Scene4.tsx. */
+/* Подпись под словом: базовая линия слова (--word-line, px от верха: 58% высоты, на телефоне
+   50%), выносные элементы («р», «ф», «у») — около 0.22 кегля; строку и кегль своего слова
+   (--word-size) пишет Scene4.tsx. */
 .caption {
   position: absolute;
-  top: calc(58% + 0.24 * var(--word-size, 20vw) + 28px);
+  top: calc(var(--word-line, 58%) + 0.24 * var(--word-size, 20vw) + 28px);
   left: 0;
   right: 0;
   padding: 0 32px;
   text-align: center;
   opacity: 0;
+}
+
+@media (max-width: 767px) {
+  .caption {
+    padding: 0 20px;
+  }
 }
 
 .stage {

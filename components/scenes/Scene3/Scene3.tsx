@@ -2,14 +2,15 @@
 
 import { invalidate } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { onScroll, setVar } from "@/lib/scroll/onScroll";
+import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
 import { r3fTunnel } from "@/r3f/tunnel";
 import styles from "./Scene3.module.css";
 import { type FinaleUpdate, Scene3Finale, SWAP_END, SWAP_START } from "./Scene3Finale";
 import { Scene3R3F } from "./Scene3R3F";
 
-// Pinned-хвост после нарратива (в vh): сетка ещё держится sticky, рассыпается в пыль,
-// а пыль стягивается в точку. Держать в синхроне с height в Scene3.module.css (500vh + TAIL_VH).
+// Pinned-хвост после нарратива (в экранах ×100): сетка ещё держится sticky, рассыпается в пыль,
+// а пыль стягивается в точку. Держать в синхроне с height в Scene3.module.css
+// (5 экранов нарратива + TAIL_VH / 100; экран — общая высота --ih / viewportH()).
 const TAIL_VH = 100;
 
 export function Scene3() {
@@ -22,10 +23,10 @@ export function Scene3() {
     const update = () => {
       if (!sectionRef.current) return;
       const rect = sectionRef.current.getBoundingClientRect();
-      const h = window.innerHeight;
+      const h = viewportH();
       // Прогресс мапится на нарратив сцены: 0 — секция только вошла снизу viewport,
       // 1 — нарратив закончен (сетка собрана). Дальше хвост: tail 0→1 за TAIL_VH,
-      // на tail=1 sticky отпускает. Нарратив — те же 500vh из CSS, доля от rect.height.
+      // на tail=1 sticky отпускает. Нарратив — те же 5 экранов из CSS, доля от rect.height.
       const tailPx = (rect.height * TAIL_VH) / (500 + TAIL_VH);
       const total = rect.height - tailPx;
       const scrolled = h - rect.top;

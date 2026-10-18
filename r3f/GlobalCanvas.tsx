@@ -23,7 +23,12 @@ export function GlobalCanvas() {
     <Canvas
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        left: 0,
+        width: "100%",
+        // Высота — общая высота экрана сцен (lib/scroll/onScroll, viewportH): на телефоне
+        // канвас не меняет размер, когда прячется панель браузера.
+        height: "var(--ih, 100%)",
         zIndex: 1,
         pointerEvents: "none",
         // Сцены могут сдвигать центр канваса (а значит world origin) через --canvas-y.

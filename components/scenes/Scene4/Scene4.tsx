@@ -2,7 +2,7 @@
 
 import { invalidate } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { onScroll, setVar } from "@/lib/scroll/onScroll";
+import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
 import { r3fTunnel } from "@/r3f/tunnel";
 import styles from "./Scene4.module.css";
 import { Scene4R3F } from "./Scene4R3F";
@@ -16,6 +16,7 @@ import {
   stageAt,
   TOTAL_VH,
   wordFit,
+  wordLineY,
 } from "./stages";
 
 // Сцена 3 оставляет точку на 20px ниже центра — отсюда она падает в воду.
@@ -39,7 +40,10 @@ export function Scene4() {
     const update = () => {
       if (!sectionRef.current) return;
       const rect = sectionRef.current.getBoundingClientRect();
-      const h = window.innerHeight;
+      // Высота экрана — общая для сцен (на телефоне не прыгает с панелью браузера):
+      // в ней же меряются секция, sticky и канвас.
+      const h = viewportH();
+      const w = window.innerWidth;
       // Как в Сцене 3: q = 0 — секция вошла снизу viewport (ровно когда отпускает sticky
       // Сцены 3), q = 1 — отпускает свой sticky. Этапы делят q по stages.ts.
       // Пока у секции нет высоты (вёрстка не готова), сцены нет: q = 0, а не NaN или 1.
@@ -57,18 +61,21 @@ export function Scene4() {
       releaseRef.current = release;
       const { index, local } = stageAt(q);
 
-      // Подписи: каждая под своим словом (кегль слова — для отступа), видна, пока оно собрано.
+      // Подписи: каждая под своим словом (строка и кегль слова — для отступа), видна,
+      // пока оно собрано.
+      const line = wordLineY(w) * h;
       for (let i = 0; i < STAGES.length; i++) {
         const el = captionRefs.current[i];
         if (!el) continue;
         const o = captionOpacity(i, index, local);
-        const size = wordFit(STAGES[i].word, window.innerWidth, h).size;
-        const css = `${o}|${(1 - o) * 8}|${size}`;
+        const size = wordFit(STAGES[i].word, w, h).size;
+        const css = `${o}|${(1 - o) * 8}|${size}|${line}`;
         if (written[i] === css) continue;
         written[i] = css;
         el.style.opacity = `${o}`;
         el.style.transform = `translateY(${(1 - o) * 8}px)`;
         el.style.setProperty("--word-size", `${size}px`);
+        el.style.setProperty("--word-line", `${line}px`);
       }
 
       // До входа сцены точкой и канвасом управляет Сцена 3 — не трогаем.
@@ -92,7 +99,7 @@ export function Scene4() {
     <section
       ref={sectionRef}
       className={styles.scene4}
-      style={{ height: `${TOTAL_VH}vh` }}
+      style={{ height: `calc(var(--ih, 100vh) * ${TOTAL_VH} / 100)` }}
       data-scene="scene4"
       aria-label="Подход"
     >

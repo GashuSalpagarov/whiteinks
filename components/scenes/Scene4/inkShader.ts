@@ -53,7 +53,9 @@ uniform float uQ;        // прогресс отрезка этапа 0..1
 uniform float uImpactQ;  // q удара капли о воду (этап 0)
 uniform vec2 uView;      // размер канваса, CSS px
 uniform float uDpr;      // пикселей цели на CSS px
-uniform vec2 uImpact;    // точка удара, CSS px от левого верхнего угла; слова стоят на ней
+uniform vec2 uImpact;    // строка слов (их базовая линия, x — центр), CSS px от левого верхнего угла
+uniform vec2 uDrop;      // точка удара капли: рябь и клякса этапа 0. На десктопе = uImpact,
+                         // на телефоне ниже строки — чернила всплывают к словам
 // Слова: A — тает (прошлое), B — собирается. Прямоугольник SDF-текстуры: центр xy
 // и размер zw, CSS px; масштаб — значение SDF → CSS px.
 uniform sampler2D uSdfA;
@@ -537,7 +539,8 @@ float finaleInk(vec2 c, float S, Phase ph) {
 void main() {
   float S = unitS();
   vec2 c = cssCoord();
-  vec2 P = (c - uImpact) / S;
+  // Этап 0 растёт из точки удара капли, переходы — от строки слов.
+  vec2 P = (c - (uStage == 0 ? uDrop : uImpact)) / S;
   Phase ph = phase(S);
   if (isMode(MODE_UPDRAFT) && ph.fin > 0.0) {
     gl_FragColor = vec4(finaleInk(c, S, ph), 0.5, 0.5, 1.0);
@@ -564,9 +567,12 @@ void main() {
   // Поле притяжения слова: облако живёт в раздутом SDF, раздутие уходит в ноль.
   // Граница рваная (шум) и мягкая, чтобы облако не читалось скруглённым прямоугольником.
   // В переходе облако из тающего слова сначала свободно, потом его забирает новое.
+  // На этапе 0 поле сначала стоит у точки удара (на телефоне она ниже строки) и вместе
+  // со стяжкой поднимается к слову — чернила всплывают в буквы.
   float loose = 1.0 - ph.pull;
   float dilate = uStage == 0 ? DILATE : uDilate;
-  float dWord = sdfB(c + disp * S * WORD_WARP) / S - dilate * loose * loose
+  vec2 rise = uStage == 0 ? (uDrop - uImpact) * loose : vec2(0.0);
+  float dWord = sdfB(c + disp * S * WORD_WARP - rise) / S - dilate * loose * loose
     + 0.12 * ph.live * n2;
   float aaW = fwidth(dWord);
   float inside = smoothstep(0.07 * ph.live + aaW, -0.07 * ph.live - aaW, dWord);
@@ -682,7 +688,8 @@ void main() {
   float S = unitS();
   // После отпускания sticky кадр уезжает вверх вместе со страницей.
   vec2 c = cssCoord() + vec2(0.0, uScroll);
-  vec2 P = (c - uImpact) / S;
+  // Рябь и капля этапа 0 — в точке удара, переходы — от строки слов.
+  vec2 P = (c - (uStage == 0 ? uDrop : uImpact)) / S;
   Phase ph = phase(S);
 
   // ---- Рябь. Строка точки удара — масштаб 1:1, ближе к зрителю круги шире.

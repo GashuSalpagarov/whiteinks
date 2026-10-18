@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { onScroll, setVar } from '@/lib/scroll/onScroll';
+import { onScroll, setVar, viewportH } from '@/lib/scroll/onScroll';
 import styles from './Scene2.module.css';
 
 // Колена траектории. Phase отсчитывается от scroll = 43vh (момент фиксации точки в центре).
@@ -11,6 +11,24 @@ const KNEES = [
   { start: 107, end: 207, amplitude: 18 },
   { start: 207, end: 307, amplitude: -26 },
   { start: 307, end: 407, amplitude: 14 },
+];
+
+// Телефон (< 768px, как мобильный блок Scene2.module.css): блоки широкие, колоколу между ними
+// места нет. Точка идёт «серпантином»: держится в 13vw от края, пока напротив неё два блока
+// колена, и в просвете между парами переходит на другую сторону. Опорные точки
+// [phase, сдвиг в vw], между ними — косинусный переход. Из центра и в центр — там же, где
+// на десктопе: стыки с Hero и Scene 3 те же. Позиции блоков в CSS посчитаны от этих точек.
+const PHONE_PATH: [number, number][] = [
+  [0, 0],
+  [30, -37],
+  [89, -37],
+  [125, 37],
+  [186, 37],
+  [222, -37],
+  [282, -37],
+  [318, 37],
+  [377, 37],
+  [407, 0],
 ];
 
 // Каждый блок имеет triggerVh — scroll-позицию, на которой точка проходит «мимо» него.
@@ -87,9 +105,18 @@ const BLOCKS: Block[] = [
   },
 ];
 
-function getDropX(scrollVh: number): number {
+function getDropX(scrollVh: number, phone: boolean): number {
   if (scrollVh < 43) return 0;
   const phase = scrollVh - 43;
+  if (phone) {
+    for (let i = 1; i < PHONE_PATH.length; i++) {
+      const [p1, x1] = PHONE_PATH[i];
+      if (phase >= p1) continue;
+      const [p0, x0] = PHONE_PATH[i - 1];
+      return x0 + (x1 - x0) * 0.5 * (1 - Math.cos((Math.PI * (phase - p0)) / (p1 - p0)));
+    }
+    return 0;
+  }
   for (const knee of KNEES) {
     if (phase >= knee.start && phase < knee.end) {
       const local = (phase - knee.start) / (knee.end - knee.start);
@@ -126,9 +153,19 @@ function getBlockParallaxX(scrollVh: number, triggerVh: number, side: 'left' | '
   return Math.max(-maxOffset, Math.min(maxOffset, raw));
 }
 
+// Телефон и короткий ландшафт: параллакса нет — он сводил блоки друг с другом и с трассой.
+// Блок проявляется по своему месту на экране (top, px): снизу — с подъёмом на 24px, а выше
+// 80px гаснет, не заходя под шапку (её полоса — 72px).
+function getCompactBlock(top: number, h: number): { opacity: number; rise: number } {
+  const appear = Math.max(0, Math.min(1, (0.92 * h - top) / (0.26 * h)));
+  const leave = Math.max(0, Math.min(1, (top - 80) / (0.12 * h)));
+  return { opacity: Math.min(appear, leave), rise: (1 - appear) * 24 };
+}
+
 function buildPathD(scrollVh: number, w: number, h: number): string {
   if (scrollVh <= 41) return '';
 
+  const phone = w < 768;
   const points: [number, number][] = [];
 
   // Начало пути — конец линии Hero (точка покоя, 93vh): вместе они читаются как одна линия.
@@ -143,7 +180,7 @@ function buildPathD(scrollVh: number, w: number, h: number): string {
   const step = 0.6;
   let lastS = startS;
   for (let s = startS; s <= scrollVh; s += step) {
-    const dropX = getDropX(s);
+    const dropX = getDropX(s, phone);
     const x = ((50 + dropX) * w) / 100;
     const y = ((50 + s - scrollVh) * h) / 100 + dropYOffset;
     points.push([x, y]);
@@ -153,7 +190,7 @@ function buildPathD(scrollVh: number, w: number, h: number): string {
   // Если шаг не попал точно в текущий scroll — добавим финальную точку,
   // чтобы трасса заканчивалась ровно у точки.
   if (scrollVh - lastS > 0.01) {
-    const finalDropX = getDropX(scrollVh);
+    const finalDropX = getDropX(scrollVh, phone);
     points.push([((50 + finalDropX) * w) / 100, h * 0.5 + dropYOffset]);
   }
 
@@ -188,13 +225,17 @@ export function Scene2() {
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
+    const blockEls = section.querySelectorAll<HTMLElement>('aside');
     let pathKey = '';
     const update = () => {
       const w = window.innerWidth;
-      const h = window.innerHeight;
+      // Общая высота экрана (как --ih в CSS): на телефоне vh больше innerHeight.
+      const h = viewportH();
       if (!h) return; // иначе scrollVh = NaN
       const scrollVh = (window.scrollY / h) * 100;
-      const dropX = getDropX(scrollVh);
+      const phone = w < 768;
+      const compact = phone || h <= 500; // телефон или короткий ландшафт
+      const dropX = getDropX(scrollVh, phone);
 
       // X-смещение точки — отсюда. Y-смещение и фиксация — Hero.
       setVar('--drop-x', `${dropX}vw`);
@@ -211,16 +252,24 @@ export function Scene2() {
 
       // Секция целиком выше экрана — блоки тоже (параллакс отстаёт от скролла). Их переменные
       // дальше не трогаем: каждая смена пересчитывает стили всей страницы.
-      const blocksGone = section.getBoundingClientRect().bottom < 0;
+      const rect = section.getBoundingClientRect();
+      const blocksGone = rect.bottom < 0;
       for (let i = 0; i < BLOCKS.length && !blocksGone; i++) {
         const block = BLOCKS[i];
+        if (compact) {
+          const { opacity, rise } = getCompactBlock(rect.top + blockEls[i].offsetTop, h);
+          setVar(`--block-${i + 1}-opacity`, `${opacity}`);
+          setVar(`--block-${i + 1}-y`, `${rise}px`);
+          setVar(`--block-${i + 1}-x`, '0vw');
+          continue;
+        }
         setVar(
           `--block-${i + 1}-opacity`,
           `${getBlockOpacity(scrollVh, block.trigger)}`,
         );
         setVar(
           `--block-${i + 1}-y`,
-          `${getBlockParallaxY(scrollVh, block.trigger, block.parallaxY)}vh`,
+          `${(getBlockParallaxY(scrollVh, block.trigger, block.parallaxY) * h) / 100}px`,
         );
         setVar(
           `--block-${i + 1}-x`,

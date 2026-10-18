@@ -170,12 +170,25 @@ export function captionOpacity(i: number, index: number, local: number): number 
 }
 
 // Слово: шрифт сайта, у всех один кегль (WORD_VW ширины, но не больше WORD_VH высоты);
-// длинное ужимается, чтобы влезть в WORD_MAX_W ширины экрана.
+// длинное ужимается, чтобы влезть в WORD_MAX_W ширины экрана. На телефоне (уже PHONE_W,
+// как брейкпоинт CSS) короткие слова крупнее, длинные вписаны почти во всю ширину —
+// ширину меряем тем же шрифтом, что на устройстве, так что широкие SF Pro и Roboto
+// впишутся сами; от краёв остаётся ≥ 20px.
 export const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 export const LETTER_SPACING = -0.02; // em
 const WORD_VW = 0.2;
 const WORD_VH = 0.36;
 const WORD_MAX_W = 0.8;
+const PHONE_W = 768;
+const PHONE_WORD_VW = 0.26;
+const PHONE_WORD_MAX_W = 0.88;
+// Строка слов, доля высоты экрана: на десктопе — на точке удара, на телефоне — по центру
+// (капля падает всё так же на IMPACT_Y и всплывает чернилами к строке).
+const PHONE_LINE_Y = 0.5;
+
+export function wordLineY(w: number): number {
+  return w < PHONE_W ? PHONE_LINE_Y : IMPACT_Y;
+}
 
 // Ширина слова в em — так же, как его рисует generateTextSDF: по буквам, с трекингом.
 const advances = new Map<string, number>();
@@ -195,7 +208,12 @@ function advanceEm(word: string): number {
 // Кегль слова этапа и его ширина, CSS px.
 export function wordFit(word: string, w: number, h: number): { size: number; width: number } {
   const em = advanceEm(word);
-  const size = Math.min(WORD_VW * w, WORD_VH * h, (WORD_MAX_W * w) / em);
+  const phone = w < PHONE_W;
+  const size = Math.min(
+    (phone ? PHONE_WORD_VW : WORD_VW) * w,
+    WORD_VH * h,
+    ((phone ? PHONE_WORD_MAX_W : WORD_MAX_W) * w) / em,
+  );
   return { size, width: size * em };
 }
 

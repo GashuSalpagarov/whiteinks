@@ -73,6 +73,22 @@ const CARDS: CardConfig[] = [
   { pHold: 0.84, offsetX: -0.7, offsetY: -0.5, width: 1.3, height: 0.51, tiltX: -0.05, tiltY: 0.05 },
 ];
 
+// Портретный экран (aspect < 1, телефон): раскладка под 16:9 не влезает по ширине — карточка
+// в момент чтения обрезалась бы с края. Здесь карточки по центру по горизонтали, по очереди
+// выше и ниже центра (знак offsetY — как на десктопе), квадратные (под них и текстура),
+// шириной в долю экрана; верх — ниже шапки (72px), низ — не у самого края.
+const PHONE_CARD_ASPECT = 1; // ширина / высота
+const PHONE_CARD_FILL = 0.86; // доля ширины экрана в момент чтения
+const PHONE_CARD_SHIFT = 0.15; // сдвиг от центра вверх/вниз, доля высоты экрана (если влезает)
+const PHONE_TOP_CLEAR = 84; // px от верха экрана до карточки
+const PHONE_BOTTOM_CLEAR = 16; // px от карточки до низа экрана
+const CANVAS_Y = 20; // --canvas-y Сцены 3: центр канваса на столько ниже центра экрана
+// У зоны чтения карточка на телефоне притормаживает — дольше читается при той же длине сцены:
+// скорость у pHold — (1 − PHONE_DWELL) от обычной; дальше ±2·DWELL_P путь тот же, что без
+// торможения (те же рождение и уход за камеру).
+const PHONE_DWELL = 0.75;
+const DWELL_P = 0.07;
+
 
 interface Props {
   progressRef: RefObject<number>;
@@ -184,6 +200,34 @@ function cardLateralProgress(p: number, pHold: number): number {
   return easeInOutCubic((p - tStart) / (pHold - tStart));
 }
 
+// Путь карточки по z: постоянная скорость, а с dwell > 0 — плавное торможение у зоны чтения
+// (гауссов «карман»: путь монотонный, вдали от pHold совпадает с прямой).
+// При dwell = 0 — ровно прежняя прямая READING + (p − pHold) · SPEED.
+function cardZ(p: number, pHold: number, dwell: number): number {
+  const x = p - pHold;
+  return CARD_PATH_READING + (x - dwell * x * Math.exp(-((x / DWELL_P) ** 2))) * CARD_SPEED;
+}
+
+// Раскладка карточек для портретного экрана (см. PHONE_*). Размеры — в плоскости карточки
+// в момент чтения: видимая полувысота = d·tan(FOV/2), d — от камеры до зоны чтения.
+function portraitCards(aspect: number, viewH: number): CardConfig[] {
+  const tanHalf = Math.tan((DOLLY_END_FOV * Math.PI) / 360);
+  return CARDS.map((card) => {
+    const halfH = (cameraZForProgress(card.pHold) - CARD_PATH_READING) * tanHalf;
+    const perPx = (2 * halfH) / viewH; // world-единиц на px экрана
+    const roomH = (viewH - PHONE_TOP_CLEAR - PHONE_BOTTOM_CLEAR) * perPx;
+    const width = Math.min(PHONE_CARD_FILL * 2 * halfH * aspect, roomH * PHONE_CARD_ASPECT);
+    const height = width / PHONE_CARD_ASPECT;
+    const up = card.offsetY > 0;
+    const room =
+      (up ? viewH / 2 + CANVAS_Y - PHONE_TOP_CLEAR : viewH / 2 - CANVAS_Y - PHONE_BOTTOM_CLEAR) *
+        perPx -
+      height / 2;
+    const shift = Math.max(0, Math.min(PHONE_CARD_SHIFT * viewH * perPx, room));
+    return { ...card, offsetX: 0, offsetY: up ? shift : -shift, width, height };
+  });
+}
+
 function createCircleTexture(): THREE.CanvasTexture | null {
   if (typeof document === "undefined") return null;
   const canvas = document.createElement("canvas");
@@ -265,9 +309,14 @@ function createCardTexture(
   ctx.fillText(content.tag.toUpperCase(), padding, y);
   y += 0.05 * H;
 
-  // Заголовок (крупный, светлый).
+  // Заголовок (крупный, светлый). Не влез в ширину (узкая карточка на телефоне, широкий
+  // системный шрифт) — уменьшаем ровно до ширины.
   ctx.fillStyle = "#fafafa";
   ctx.font = `600 ${0.072 * H}px ${font}`;
+  const titleW = ctx.measureText(content.title).width;
+  if (titleW > W - padding * 2) {
+    ctx.font = `600 ${(0.072 * H * (W - padding * 2)) / titleW}px ${font}`;
+  }
   ctx.fillText(content.title, padding, y);
   y += 0.1 * H;
 
@@ -298,6 +347,15 @@ export function Scene3R3F({ progressRef }: Props) {
   const { camera } = useThree();
   // Контекст Lenis доходит сюда через мост контекстов R3F-канваса (GlobalCanvas внутри Providers).
   const lenis = useLenis();
+  // Раскладка карточек — от пропорций канваса: на портретном экране своя (portraitCards).
+  const size = useThree((s) => s.size);
+  const aspect = size.width / size.height;
+  const portrait = aspect < 1;
+  const cards = useMemo(
+    () => (portrait ? portraitCards(aspect, size.height) : CARDS),
+    [portrait, aspect, size.height],
+  );
+  const dwell = portrait ? PHONE_DWELL : 0;
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -312,9 +370,21 @@ export function Scene3R3F({ progressRef }: Props) {
 
   const particleTexture = useMemo(() => createCircleTexture(), []);
 
+  // Текстура — под пропорции карточки: на портретном экране квадратная.
   const cardTextures = useMemo(
-    () => CARDS.map((card, i) => createCardTexture(CARDS_CONTENT[i], card.width, card.height)),
-    [],
+    () =>
+      CARDS.map((card, i) =>
+        portrait
+          ? createCardTexture(CARDS_CONTENT[i], PHONE_CARD_ASPECT, 1)
+          : createCardTexture(CARDS_CONTENT[i], card.width, card.height),
+      ),
+    [portrait],
+  );
+  useEffect(
+    () => () => {
+      for (const t of cardTextures) t?.dispose();
+    },
+    [cardTextures],
   );
 
   // Uniform изгиба на каждую карточку (см. onBeforeCompile у её материала).
@@ -408,8 +478,8 @@ export function Scene3R3F({ progressRef }: Props) {
     (linesRef.current.material as THREE.LineBasicMaterial).opacity = particleOpacity;
 
     const cardSceneEntry = cardSceneEntryGate(p);
-    for (let i = 0; i < CARDS.length; i++) {
-      const card = CARDS[i];
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
       const ref = cardRefs.current[i];
       if (!ref) continue;
       const material = ref.material as THREE.MeshBasicMaterial;
@@ -418,7 +488,7 @@ export function Scene3R3F({ progressRef }: Props) {
         ref.visible = false;
         continue;
       }
-      const z = CARD_PATH_READING + (p - card.pHold) * CARD_SPEED;
+      const z = cardZ(p, card.pHold, dwell);
       const opacity = cardOpacityForPath(z) * cardSceneEntry;
       material.opacity = opacity;
       // visible=false снимает меш с рендера, когда он невидим. Без этого
@@ -555,7 +625,7 @@ export function Scene3R3F({ progressRef }: Props) {
       <lineSegments ref={linesRef} geometry={streaksData.geometry} frustumCulled={false}>
         <lineBasicMaterial color="#0a0a0a" transparent />
       </lineSegments>
-      {CARDS.map((card, i) => (
+      {cards.map((card, i) => (
         <mesh
           key={`${card.pHold}-${card.offsetX}-${card.offsetY}`}
           ref={(el) => {

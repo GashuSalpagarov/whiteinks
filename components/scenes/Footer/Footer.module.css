@@ -114,6 +114,28 @@
   }
 }
 
+/* Сенсорные экраны (телефон и телефон боком): у ссылок зона нажатия 44px — отступами
+   сверху и снизу, промежуток между строками теперь внутри них. */
+@media (max-width: 767px), (max-height: 560px) {
+  .column {
+    gap: 0;
+  }
+
+  .column a {
+    min-width: 44px;
+    padding-block: 11.5px;
+  }
+
+  .label {
+    margin-bottom: 0;
+  }
+
+  /* Под заголовком колонки сразу строка без зоны — воздух, как у ссылки. */
+  .label + .muted {
+    margin-top: 11px;
+  }
+}
+
 /* Телефон: «Связаться» и «Соцсети» рядом, «Студия» под ними на всю ширину. */
 @media (max-width: 767px) {
   .inner {
@@ -127,12 +149,21 @@
     gap: 24px 16px;
   }
 
-  .column {
-    gap: 6px;
-  }
-
   .column:last-child {
     grid-column: 1 / -1;
+  }
+
+  .hint {
+    padding: 0 20px;
+  }
+}
+
+/* Невысокий телефон (SE с панелями Safari): колонки выше — плотнее сверху, чтобы не
+   подходить к точке. */
+@media (max-width: 767px) and (max-height: 600px) {
+  .inner {
+    gap: 20px;
+    padding-top: 40px;
   }
 }
 

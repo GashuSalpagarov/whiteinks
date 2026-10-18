@@ -15,6 +15,7 @@ import {
   STAGES,
   stageAt,
   wordFit,
+  wordLineY,
 } from "./stages";
 
 const SDF_FONT = 128; // px, кегль растра для SDF (внутри — суперсэмплинг ×2)
@@ -85,6 +86,7 @@ export function Scene4R3F({ progressRef, releaseRef }: Props) {
       uImpactQ: { value: IMPACT_Q },
       uView: { value: new THREE.Vector2(1, 1) },
       uImpact: { value: new THREE.Vector2() },
+      uDrop: { value: new THREE.Vector2() },
       uSdfA: { value: null as THREE.Texture | null },
       uWordA: { value: new THREE.Vector4() },
       uSdfScaleA: { value: 1 },
@@ -130,7 +132,7 @@ export function Scene4R3F({ progressRef, releaseRef }: Props) {
       const { x: w, y: h } = common.uView.value;
       const word = ensureWord(i);
       const k = wordFit(STAGES[i].word, w, h).size / SDF_FONT;
-      rect.set(w / 2, IMPACT_Y * h - baseline * k, word.width * k, word.height * k);
+      rect.set(w / 2, common.uImpact.value.y - baseline * k, word.width * k, word.height * k);
       scale.value = k;
       return word.texture;
     };
@@ -205,12 +207,15 @@ export function Scene4R3F({ progressRef, releaseRef }: Props) {
     };
   }, [gl, camera, scene, ink]);
 
-  // Раскладка — от размера канваса (= viewport: Scene4 держит --canvas-y = 0).
+  // Раскладка — от размера канваса (= viewport: Scene4 держит --canvas-y = 0; высота —
+  // общая высота экрана сцен, --ih). Строка слов и точка удара капли совпадают на десктопе,
+  // на телефоне строка — выше, по центру.
   useEffect(() => {
     const { width: w, height: h } = size;
     const u = ink.common;
     u.uView.value.set(w, h);
-    u.uImpact.value.set(w / 2, IMPACT_Y * h);
+    u.uImpact.value.set(w / 2, wordLineY(w) * h);
+    u.uDrop.value.set(w / 2, IMPACT_Y * h);
     ink.unbind(); // прямоугольники слов пересчитаются в кадре
     ink.screen.uniforms.uDpr.value = dpr;
     ink.target.setSize(Math.round(w * ink.cloudScale), Math.round(h * ink.cloudScale));

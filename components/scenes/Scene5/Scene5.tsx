@@ -61,20 +61,24 @@ const cx = (...names: (string | false)[]) => names.filter(Boolean).join(" ");
 
 // Трасса — в px от левого верхнего угла секции. Входит сверху по центру вертикально (это
 // продолжение линии взлёта Сцены 4, x = 50vw), дугой уходит влево, заворачивает в узел 1
-// и мягкой волной идёт через узлы 2–4 по ширине контента. На узких экранах всё ниже и короче.
+// и мягкой волной идёт через узлы 2–4 по ширине контента.
+// Телефон и телефон боком (short — экран до 500px): сверху полоса шапки 72px, поэтому ввод
+// идёт под ней, а дуга, узлы и метки — сразу ниже; так выглядит и кадр после CTA Hero,
+// который приводит ровно к верху секции. На телефоне трасса короче (Scene5.module.css).
 // Части: вход до узла 1 и три отрезка волны — по ним меряем доли длины до узлов.
-function buildTrack(w: number) {
+function buildTrack(w: number, short: boolean) {
   const mobile = w < 768;
-  const pad = mobile ? 22 : 38;
-  const ys = mobile ? [118, 128, 112, 122] : [136, 156, 128, 148];
+  const pad = mobile ? 26 : 38;
+  const ys = mobile ? [108, 114, 104, 110] : [136, 156, 128, 148];
   const nodes = ys.map((y, i): [number, number] => [pad + (i * (w - 2 * pad)) / 3, y]);
   const c = w / 2;
   const [x1, y1] = nodes[0];
-  const r = mobile ? 14 : 22; // радиус заворота в узел 1
-  // Вертикальный ввод от верхнего края; на телефоне длиннее — дуга идёт под шапкой сайта.
-  const lead = mobile ? 56 : 20;
+  const r = mobile ? 12 : 22; // радиус заворота в узел 1
+  // Вертикальный ввод от верхнего края и изгиб дуги: насколько она идёт вниз от ввода
+  // и насколько поднимается над заворотом.
+  const [lead, bend, rise] = mobile ? [60, 24, 16] : short ? [64, 50, 30] : [20, 100, 70];
   const parts = [
-    `M${c} -4 L${c} ${lead} C${c} ${lead + (mobile ? 40 : 100)} ${x1 - r} ${y1 - r - (mobile ? 30 : 70)} ${x1 - r} ${y1 - r} C${x1 - r} ${y1 - r * 0.45} ${x1 - r * 0.45} ${y1} ${x1} ${y1}`,
+    `M${c} -4 L${c} ${lead} C${c} ${lead + bend} ${x1 - r} ${y1 - r - rise} ${x1 - r} ${y1 - r} C${x1 - r} ${y1 - r * 0.45} ${x1 - r * 0.45} ${y1} ${x1} ${y1}`,
     ...nodes.slice(1).map(([x, y], i) => {
       const [px, py] = nodes[i];
       const dx = (x - px) / 2;
@@ -163,7 +167,7 @@ export function Scene5() {
     const svg = svgRef.current;
     if (!svg) return;
     const update = () => {
-      const { parts, nodes } = buildTrack(svg.clientWidth);
+      const { parts, nodes } = buildTrack(svg.clientWidth, window.innerHeight <= 500);
       const probe = document.createElementNS("http://www.w3.org/2000/svg", "path");
       svg.appendChild(probe);
       const lengths = parts.map((_, i) => {
@@ -204,9 +208,13 @@ export function Scene5() {
     navigated.current = true;
     if (next === LAST && !shownAt.current) shownAt.current = Date.now();
     setStep(next);
-    // Шаг начинается выше экрана (телефон: долистали до кнопок) — возвращаем к трассе.
+    // Шаг начинается выше экрана или под шапкой телефона (её высота — scroll-margin-top
+    // у .stage) — возвращаем к трассе: заголовок и первый ряд сразу на виду.
     const section = sectionRef.current;
-    if (!section || (stageRef.current?.getBoundingClientRect().top ?? 0) >= 0) return;
+    const stage = stageRef.current;
+    if (!section || !stage) return;
+    const header = Number.parseFloat(getComputedStyle(stage).scrollMarginTop) || 0;
+    if (stage.getBoundingClientRect().top >= header) return;
     if (lenis) lenis.scrollTo(section);
     else section.scrollIntoView({ block: "start" });
   };

@@ -875,21 +875,27 @@
   }
 }
 
-/* Телефон: трасса ниже, карточки в две колонки, ориентир — липкая полоса снизу. */
+/* Телефон: трасса короче, карточки плотнее в две колонки, ориентир — липкая полоса снизу.
+   Поля — 20px. Сверху над всем — шапка сайта с белой полосой 72px. */
 @media (max-width: 767px) {
-  /* Секция не ниже экрана: на коротких шагах полоса ориентира — в самом низу. */
+  /* Секция не ниже экрана: на коротких шагах полоса ориентира — в самом низу.
+     --bar — высота полосы ориентира: поля при фокусе встают выше неё, под шапкой — ниже. */
   .scene5 {
     display: flex;
     flex-direction: column;
     padding-bottom: 0;
+    --bar: calc(52px + env(safe-area-inset-bottom));
   }
 
   .track {
-    height: 168px;
+    height: 150px;
   }
 
+  /* Метка видна как раньше, зона нажатия — 44px: вверх на узел, вниз до края трассы. */
   .label {
-    padding: 6px 2px;
+    min-width: 44px;
+    margin-top: -18px;
+    padding: 24px 8px 9px;
     font-size: 0.6875rem;
     letter-spacing: 0.08em;
   }
@@ -899,11 +905,11 @@
   }
 
   .labels li:first-child {
-    translate: -8px 0;
+    translate: -14px 0;
   }
 
   .labels li:last-child {
-    translate: calc(-100% + 8px) 0;
+    translate: calc(-100% + 14px) 0;
   }
 
   .body {
@@ -911,7 +917,12 @@
     flex: 1;
     flex-direction: column;
     align-items: stretch;
-    padding: 4px 16px 0;
+    padding: 16px 20px 0;
+  }
+
+  /* Шаг открылся под шапкой — goTo в Scene5.tsx возвращает к трассе. */
+  .stage {
+    scroll-margin-top: 72px;
   }
 
   .cards {
@@ -921,13 +932,29 @@
   }
 
   .card {
-    min-height: 150px;
-    padding: 14px 14px 12px;
+    gap: 5px;
+    min-height: 112px;
+    padding: 12px 12px 10px;
+  }
+
+  /* «Уникальный» — на всю ширину: без дыры в сетке и ниже ростом. */
+  .card:last-child {
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+
+  .cardTitle {
+    font-size: 1rem;
+  }
+
+  .card .note,
+  .cardPrice {
+    font-size: 0.8125rem;
   }
 
   .mark {
-    right: 14px;
-    bottom: 16px;
+    right: 12px;
+    bottom: 14px;
   }
 
   .chip {
@@ -947,6 +974,32 @@
     grid-template-columns: 8em minmax(0, 1fr);
   }
 
+  .input,
+  .check {
+    scroll-margin: 88px 0 calc(var(--bar) + 16px);
+  }
+
+  /* Согласие: подпись накрывает и галочку — вся строка 44px отмечает её. Ссылки — свои
+     зоны 44px поверх, видимый размер прежний. */
+  .consent label {
+    position: relative;
+    margin: -12px 0 -12px -32px;
+    padding: 12px 0 12px 32px;
+  }
+
+  .consent a {
+    padding-block: 12.5px;
+  }
+
+  .policy {
+    margin-top: 14px;
+  }
+
+  .policy a {
+    position: relative;
+    padding-block: 14px;
+  }
+
   .price {
     position: sticky;
     top: auto;
@@ -956,8 +1009,8 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 12px;
-    margin: auto -16px 0;
-    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    margin: auto -20px 0;
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
     border-radius: 0;
   }
 
@@ -975,5 +1028,95 @@
   .priceTerm {
     margin: 0;
     font-size: 0.875rem;
+  }
+}
+
+/* Невысокий телефон (SE): плотнее по вертикали — «Дальше» на первом экране. Счётчик шага
+   прячем — текущий шаг и так выделен на трассе; подводку первого шага — цена и так видна
+   в полосе ориентира. */
+@media (max-width: 767px) and (max-height: 700px) {
+  .body {
+    padding-top: 14px;
+  }
+
+  .eyebrow,
+  .step:first-child .lead {
+    display: none;
+  }
+
+  .title {
+    margin-top: 0;
+  }
+
+  .lead {
+    margin-top: 8px;
+  }
+
+  .cards {
+    margin-top: 16px;
+  }
+
+  .card {
+    min-height: 104px;
+  }
+
+  .nav {
+    margin-top: 16px;
+  }
+}
+
+/* Телефон боком: раскладка десктопа, но сверху шапка телефона (72px), карточки — в две
+   колонки (в три длинные названия не влезали), ориентир компактнее, зоны нажатия 44px. */
+@media (min-width: 768px) and (max-height: 500px) {
+  .stage {
+    scroll-margin-top: 72px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card:last-child {
+    grid-column: 1 / -1;
+    min-height: 0;
+  }
+
+  .price {
+    top: 84px;
+    padding: 20px 24px 18px;
+  }
+
+  .priceSummary {
+    display: none;
+  }
+
+  .label {
+    margin-top: -18px;
+    padding-top: 24px;
+    padding-bottom: 8px;
+  }
+
+  .input,
+  .check {
+    scroll-margin-top: 88px;
+  }
+
+  .consent label {
+    position: relative;
+    margin: -12px 0 -12px -32px;
+    padding: 12px 0 12px 32px;
+  }
+
+  .consent a {
+    padding-block: 12.5px;
+  }
+
+  .policy {
+    margin-top: 14px;
+  }
+
+  .policy a {
+    position: relative;
+    padding-block: 14px;
   }
 }

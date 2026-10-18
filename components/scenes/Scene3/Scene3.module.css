@@ -1,14 +1,15 @@
 .scene3 {
   position: relative;
-  /* 500vh нарратива + 100vh pinned-хвоста (TAIL_VH в Scene3.tsx). */
-  height: calc(500vh + 100vh);
+  /* 5 экранов нарратива + 1 экран pinned-хвоста (TAIL_VH в Scene3.tsx). Экран — общая
+     высота --ih (lib/scroll/onScroll): на телефоне не дёргается от панели браузера. */
+  height: calc(var(--ih, 100vh) * 6);
   z-index: 4;
 }
 
 .sticky {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: var(--ih, 100vh);
   width: 100%;
   pointer-events: none;
 }

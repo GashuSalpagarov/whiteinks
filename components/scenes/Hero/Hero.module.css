@@ -93,7 +93,8 @@
   animation: fallDot 1.85s cubic-bezier(0.45, 0, 0.25, 1) 4.75s;
 }
 
-/* CTA — обычная чёрная «таблетка» справа от линии, на высоте последнего слова. */
+/* CTA — обычная чёрная «таблетка» справа от линии, на высоте последнего слова. Это кнопка
+   (ведёт к Сцене 5) — системные рамка, цвет и вид сброшены, выглядит как раньше. */
 .cta {
   position: absolute;
   top: calc(78% - 26px);
@@ -103,11 +104,15 @@
   align-items: center;
   height: 52px;
   padding: 0 28px;
+  border: 0;
   background: var(--color-fg);
   border-radius: 999px;
+  color: inherit;
   font-size: 1rem;
   font-weight: 500;
   white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
   opacity: 0;
 }
 
@@ -144,16 +149,11 @@
   animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 4.35s forwards;
 }
 
-/* На узких экранах справа от линии места нет — подзаголовок вернётся в мобильной версии. */
-@media (max-width: 767px) {
-  .lead {
-    display: none;
-  }
-}
-
 .drop {
   position: fixed;
-  top: 50%;
+  /* Центр экрана — от общей высоты сцен (--ih): на телефоне точка не прыгает, когда
+     прячется панель браузера. На десктопе --ih = innerHeight, то есть те же 50%. */
+  top: calc(var(--ih, 100%) / 2);
   left: 50%;
   /* z-index 5, чтобы быть выше Scene 3 (z-index 4) в финале сцены, где точка проявляется обратно. */
   z-index: 5;
@@ -354,6 +354,18 @@
   }
 }
 
+/* Шапка — своим слоем сразу после Hero: z-index 2, как у Hero, но позже в DOM — поверх него
+   и под сценами, как раньше внутри него. На телефоне — поверх сцен (мобильный блок ниже).
+   Ловит клики только телефон. */
+.header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .logo {
   position: fixed;
   top: 32px;
@@ -380,11 +392,148 @@
   color: var(--color-fg);
   text-decoration: none;
   opacity: 0;
+  pointer-events: auto;
 }
 
 .ready .logo,
 .ready .phone {
   animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- Телефон (< 768px; тот же порог — в buildFallPath) ----------
+   Своя композиция, а не сжатый десктоп: слова крупно, по левому краю (20px), линия справа —
+   от круга (74vw, --y1) к пику 79vw на 60% и к точке покоя (50vw, 93%), как на десктопе:
+   стык с трассой Scene 2 тот же. Под словами — подзаголовок, у точки покоя — CTA. Вертикаль —
+   от --ih (общая высота экрана, как у пути), а не от процентов Hero (100svh). */
+@media (max-width: 767px) {
+  .hero {
+    /* 11.2vw: «цифровые» в 24px+ от линии и со шрифтом на 10% шире Segoe (SF Pro, Roboto). */
+    --title-size: min(11.2vw, 9vh);
+    /* Центр строчных «Создаём» и круга: около 30% высоты, на вытянутых экранах ниже, на
+       коротких выше — пустота над текстом и под ним до CTA примерно поровну.
+       Та же формула — в buildFallPath. */
+    --y1: calc(
+      var(--ih, 100svh) * 0.3 + max(var(--ih, 100svh) * -0.03, var(--ih, 100svh) * 0.22 - 35.2vw)
+    );
+    /* Путь бывает длиннее 100svh — низ не обрезаем, по горизонтали — как было. */
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  .pill {
+    top: var(--y1);
+    left: 74%;
+    width: 140px;
+    height: 140px;
+  }
+
+  .line {
+    overflow: visible;
+  }
+
+  /* Строки — плотным блоком: шаг 1.15 кегля от центра строчных «Создаём» на --y1. */
+  .word {
+    right: auto;
+    left: 20px;
+  }
+
+  .word1 {
+    top: calc(var(--y1) - 0.77em);
+    /* Выход из круга: середина левого края — из центра круга. */
+    transform-origin: 0 50%;
+    --emerge-from: translate(calc(74vw - 20px), 0.145em) scale(0.2);
+  }
+
+  .word2 {
+    top: calc(var(--y1) + 0.38em);
+  }
+
+  .word3 {
+    top: calc(var(--y1) + 1.53em);
+  }
+
+  /* Точка проходит мимо строк и подзаголовка быстрее, чем на десктопе. */
+  .ready .word2 {
+    animation-delay: 5.05s;
+  }
+
+  .ready .word3 {
+    animation-delay: 5.2s;
+  }
+
+  /* Ширина — чтобы на низких экранах не задеть линию там, где она уже уходит к центру. */
+  .lead {
+    top: calc(var(--y1) + 3.05 * var(--title-size));
+    left: 20px;
+    width: min(32ch, calc(66vw - 20px));
+    font-size: 16px;
+  }
+
+  .ready .lead {
+    animation: uiFadeIn 0.6s ease-out 5.3s forwards;
+  }
+
+  /* CTA — по левому краю, на высоте точки покоя: путь приводит к кнопке. */
+  .cta {
+    top: calc(var(--ih, 100svh) * 0.93 - 24px);
+    left: 20px;
+    height: 48px;
+    padding: 0 24px;
+  }
+}
+
+/* Короткий ландшафт: вёрстка десктопная, но строк мало по высоте — подзаголовок шире
+   и мельче, в три строки, чтобы не заходить на CTA. */
+@media (min-width: 768px) and (max-height: 500px) {
+  .lead {
+    width: min(40vw, 380px);
+    font-size: 14px;
+  }
+}
+
+/* ---------- Шапка на телефоне и в коротком ландшафте ----------
+   Над сценами (Footer с z-index 5 позже в DOM — по-прежнему накрывает её), под ней —
+   полоса цвета фона, тающая книзу: контент уходит под шапку, а не сквозь неё. На инверсии
+   полосу переворачивает тот же фильтр. Проявляется вместе с логотипом. */
+@media (max-width: 767px), (max-height: 500px) {
+  .header {
+    z-index: 5;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 72px;
+    background: linear-gradient(var(--color-bg) 45%, transparent);
+    opacity: 0;
+  }
+
+  .ready.header::before {
+    animation: fadeIn 0.5s ease-out 6.6s forwards;
+  }
+
+  .logo {
+    top: 20px;
+    left: 20px;
+    font-size: 1rem;
+  }
+
+  /* Мелкий номер, но кнопка звонка — 44px по высоте за счёт отступов. */
+  .phone {
+    top: 7px;
+    right: 20px;
+    padding: 16px 0;
+    font-size: 0.8125rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -420,5 +569,9 @@
 
   .drop {
     visibility: visible;
+  }
+
+  .header::before {
+    opacity: 1;
   }
 }

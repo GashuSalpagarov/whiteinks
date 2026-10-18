@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type RefObject, useEffect, useRef } from "react";
 import { getTier } from "@/lib/perf";
+import { viewportH } from "@/lib/scroll/onScroll";
 import { CARDS_CONTENT } from "./cardsData";
 import styles from "./Scene3Finale.module.css";
 
@@ -110,7 +111,7 @@ export function Scene3Finale({ updateRef }: Props) {
       ctx.canvas.height = Math.round(h * dpr);
       // Центр точки (Hero .drop: fixed, 50%/50% + --drop-offset).
       const cx = document.documentElement.clientWidth / 2;
-      const cy = window.innerHeight / 2 + DOT_OFFSET_Y;
+      const cy = viewportH() / 2 + DOT_OFFSET_Y;
       const tiles = Array.from(grid.children as HTMLCollectionOf<HTMLElement>);
       const rects = tiles.map((el) => [
         el.offsetLeft,
@@ -143,6 +144,18 @@ export function Scene3Finale({ updateRef }: Props) {
         by1 = Math.max(by1, y + rh);
       }
       const rDisc = (DISC_FIT * Math.min(bx1 - bx0, by1 - by0)) / 2;
+      // Зазоры сетки, проходящие через точку (ряд на десктопе; ряд и колонки на телефоне),
+      // при скруглении «схлопываем»: иначе по ним в диске остаётся пустая полоса-шов.
+      // gapX/gapY — полуширина такого зазора (0, если через точку проходит плитка). Колонки
+      // смотрим только у рядов вплотную над и под точкой: строка «Все работы» ниже не в счёт.
+      let gapY = Number.POSITIVE_INFINITY;
+      for (const [, y, , rh] of rects) gapY = Math.min(gapY, Math.max(y - cy, cy - y - rh, 0));
+      let gapX = Number.POSITIVE_INFINITY;
+      for (const [x, y, rw, rh] of rects) {
+        if (y > cy + gapY + 1 || y + rh < cy - gapY - 1) continue;
+        gapX = Math.min(gapX, Math.max(x - cx, cx - x - rw, 0));
+      }
+      if (!Number.isFinite(gapX)) gapX = 0;
       const r0 = new Float32Array(n); // полярные координаты старта вокруг точки
       const th0 = new Float32Array(n);
       const rr = new Float32Array(n); // радиус старта в скруглённом облаке
@@ -165,12 +178,19 @@ export function Scene3Finale({ updateRef }: Props) {
             const oy = y + ((gy + 0.5) * rh) / ny - cy;
             r0[j] = Math.hypot(ox, oy);
             th0[j] = Math.atan2(oy, ox);
+            // Смещение без зазоров через точку — по нему скруглённое место песчинки.
+            const fx = ox - Math.sign(ox) * Math.min(Math.abs(ox), gapX);
+            const fy = oy - Math.sign(oy) * Math.min(Math.abs(oy), gapY);
             // ρ: 0 — в точке, 1 — на краю габарита сетки вдоль луча из точки.
-            const ex = ox >= 0 ? bx1 - cx : cx - bx0;
-            const ey = oy >= 0 ? by1 - cy : cy - by0;
-            const rho = Math.min(1, Math.max(Math.abs(ox) / ex, Math.abs(oy) / ey));
+            const ex = (ox >= 0 ? bx1 - cx : cx - bx0) - gapX;
+            const ey = (oy >= 0 ? by1 - cy : cy - by0) - gapY;
+            const rho = Math.min(1, Math.max(Math.abs(fx) / ex, Math.abs(fy) / ey));
             rr[j] = rho * rDisc;
-            aj[j] = (hash(j, 0, 10) - 0.5) * 2 * ANGLE_JITTER;
+            // Поворот к углу без зазоров (в −π..π) плюс небольшой разброс.
+            const turn = Math.atan2(fy, fx) - th0[j];
+            aj[j] =
+              Math.atan2(Math.sin(turn), Math.cos(turn)) +
+              (hash(j, 0, 10) - 0.5) * 2 * ANGLE_JITTER;
             // Срыв — разом по всей плитке, без фронта: лёгкий разброс, чтобы не механически.
             rel[j] = RELEASE + (hash(j, 0, 1) - 0.5) * 2 * RELEASE_JITTER;
             fl[j] = (ARRIVE - rel[j]) * (1 + (hash(j, 0, 2) - 0.5) * 2 * FLIGHT_JITTER);
@@ -332,7 +352,7 @@ export function Scene3Finale({ updateRef }: Props) {
     let viewport = "";
     updateRef.current = (p, tail) => {
       // Уровень устройства (lib/perf) может определиться уже после первого замера.
-      const vp = `${window.innerWidth}x${window.innerHeight} ${getTier()}`;
+      const vp = `${window.innerWidth}x${viewportH()} ${getTier()}`;
       if (vp !== viewport) {
         viewport = vp;
         dust = reduced ? null : measure();

@@ -1,6 +1,8 @@
+/* Высоты — от --ih (общая высота экрана, px, lib/scroll/onScroll): в тех же единицах, что
+ * scroll и трасса в JS. На десктопе --ih = 100vh, на телефоне vh больше innerHeight. */
 .scene2 {
   position: relative;
-  height: 500vh;
+  height: calc(var(--ih, 100vh) * 5);
   /* Поверх Hero (z-index: 2), чтобы блоки и дорожка, попадающие в зону Hero,
    * были видны. */
   z-index: 3;
@@ -11,7 +13,7 @@
   inset: 0;
   z-index: 3;
   width: 100%;
-  height: 100%;
+  height: var(--ih, 100%);
   color: var(--color-fg);
   opacity: var(--trail-opacity, 1);
   pointer-events: none;
@@ -63,52 +65,158 @@
  *   - 3A trigger ~375  → top 310vh
  *   - 3B trigger ~420  → top 355vh */
 .block1 {
-  top: 10vh;
+  top: calc(var(--ih, 100vh) * 0.1);
   opacity: var(--block-1-opacity, 0);
   transform: translate(var(--block-1-x, 0), var(--block-1-y, 0));
 }
 .block2 {
-  top: 55vh;
+  top: calc(var(--ih, 100vh) * 0.55);
   right: 18vw;
   opacity: var(--block-2-opacity, 0);
   transform: translate(var(--block-2-x, 0), var(--block-2-y, 0));
 }
 .block3 {
-  top: 110vh;
+  top: calc(var(--ih, 100vh) * 1.1);
   opacity: var(--block-3-opacity, 0);
   transform: translate(var(--block-3-x, 0), var(--block-3-y, 0));
 }
 .block4 {
-  top: 155vh;
+  top: calc(var(--ih, 100vh) * 1.55);
   left: 18vw;
   opacity: var(--block-4-opacity, 0);
   transform: translate(var(--block-4-x, 0), var(--block-4-y, 0));
 }
 .block5 {
-  top: 210vh;
+  top: calc(var(--ih, 100vh) * 2.1);
   opacity: var(--block-5-opacity, 0);
   transform: translate(var(--block-5-x, 0), var(--block-5-y, 0));
 }
 .block6 {
-  top: 255vh;
+  top: calc(var(--ih, 100vh) * 2.55);
   right: 18vw;
   opacity: var(--block-6-opacity, 0);
   transform: translate(var(--block-6-x, 0), var(--block-6-y, 0));
 }
 .block7 {
-  top: 310vh;
+  top: calc(var(--ih, 100vh) * 3.1);
   opacity: var(--block-7-opacity, 0);
   transform: translate(var(--block-7-x, 0), var(--block-7-y, 0));
 }
 .block8 {
-  top: 355vh;
+  top: calc(var(--ih, 100vh) * 3.55);
   left: 18vw;
   opacity: var(--block-8-opacity, 0);
   transform: translate(var(--block-8-x, 0), var(--block-8-y, 0));
 }
 
+/* ---------- Телефон (< 768px; тот же порог — в Scene2.tsx) ----------
+ * Блок — от поля 20px до 26vw с другой стороны; там, в 13vw от края, идёт точка
+ * (PHONE_PATH): пара блоков колена — напротив неё, между парами она переходит на другую
+ * сторону. Пара стоит по центру своего колена с просветом 8% экрана: верхний блок привязан
+ * низом (bottom), нижний — верхом, и высота текста их не сводит. Числа — доли --ih от верха
+ * секции (у верхнего блока — где его низ), +20px — сдвиг трассы вниз (--drop-offset). */
+@media (max-width: 767px) {
+  .block {
+    width: calc(74vw - 20px);
+  }
+
+  /* Слово целиком: globals.css рвёт длинные слова посреди (overflow-wrap). */
+  .block h2 {
+    margin-bottom: 10px;
+    font-size: 1.625rem;
+    overflow-wrap: normal;
+  }
+
+  .block p {
+    font-size: 15px;
+    overflow-wrap: normal;
+    text-wrap: pretty;
+  }
+
+  .right,
+  .block2,
+  .block6 {
+    right: 20px;
+  }
+
+  .left,
+  .block4,
+  .block8 {
+    left: 20px;
+  }
+
+  /* Колено 0 — центр пары 0.52 */
+  .block1 {
+    top: auto;
+    bottom: calc(var(--ih, 100vh) * (5 - 0.48) - 20px);
+  }
+  .block2 {
+    top: calc(var(--ih, 100vh) * 0.56 + 20px);
+  }
+  /* Колено 1 — 1.485 */
+  .block3 {
+    top: auto;
+    bottom: calc(var(--ih, 100vh) * (5 - 1.445) - 20px);
+  }
+  .block4 {
+    top: calc(var(--ih, 100vh) * 1.525 + 20px);
+  }
+  /* Колено 2 — 2.45 */
+  .block5 {
+    top: auto;
+    bottom: calc(var(--ih, 100vh) * (5 - 2.41) - 20px);
+  }
+  .block6 {
+    top: calc(var(--ih, 100vh) * 2.49 + 20px);
+  }
+  /* Колено 3 — 3.41 */
+  .block7 {
+    top: auto;
+    bottom: calc(var(--ih, 100vh) * (5 - 3.37) - 20px);
+  }
+  .block8 {
+    top: calc(var(--ih, 100vh) * 3.45 + 20px);
+  }
+}
+
+/* Короткий ландшафт: раскладка десктопа без параллакса (Scene2.tsx), но блок в 4–5 строк
+ * выше 40% экрана — пары колена чуть раздвинуты, чтобы не сходились. */
+@media (min-width: 768px) and (max-height: 500px) {
+  .block1 {
+    top: calc(var(--ih, 100vh) * 0.06);
+  }
+  .block2 {
+    top: calc(var(--ih, 100vh) * 0.58);
+  }
+  .block3 {
+    top: calc(var(--ih, 100vh) * 1.06);
+  }
+  .block4 {
+    top: calc(var(--ih, 100vh) * 1.58);
+  }
+  .block5 {
+    top: calc(var(--ih, 100vh) * 2.06);
+  }
+  .block6 {
+    top: calc(var(--ih, 100vh) * 2.58);
+  }
+  .block7 {
+    top: calc(var(--ih, 100vh) * 3.06);
+  }
+  .block8 {
+    top: calc(var(--ih, 100vh) * 3.58);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .block {
     opacity: 1 !important;
+  }
+}
+
+/* Без движения на телефоне блоки и не поднимаются при появлении. */
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .block {
+    transform: none;
   }
 }

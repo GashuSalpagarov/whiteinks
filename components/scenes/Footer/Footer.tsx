@@ -15,8 +15,6 @@ export const LOOP_EVENT = "whiteinks:loop";
 const RAMP = 0.85;
 const DOT_R = 6; // px, радиус точки (как .drop в Hero)
 const HINT_FADE = 0.15; // за эту долю зоны гаснет подсказка
-// После прыжка наверх колёсико ещё какое-то время шлёт инерцию — глотаем её, пока не стихнет.
-const INERTIA_QUIET_MS = 250;
 
 // ЗАГЛУШКИ — заполнит владелец.
 const SOCIALS = [
@@ -44,18 +42,8 @@ export function Footer() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let last = "";
     let jumped = false;
-    let quiet = 0;
     let lastZ = 0;
     let viewport = "";
-
-    // Колёсико снова слушаем, когда инерция стихла (INERTIA_QUIET_MS без событий).
-    const onWheel = () => {
-      window.clearTimeout(quiet);
-      quiet = window.setTimeout(() => {
-        window.removeEventListener("wheel", onWheel);
-        lenis?.start();
-      }, INERTIA_QUIET_MS);
-    };
 
     const teleport = () => {
       const root = document.documentElement;
@@ -63,12 +51,10 @@ export function Footer() {
       else root.dataset.palette = "inverted";
       window.dispatchEvent(new Event(LOOP_EVENT));
       // immediate: без анимации и со сбросом скорости Lenis — пружина скорости Сцены 3 не
-      // получит рывка от прыжка через всю страницу.
+      // получит рывка от прыжка через всю страницу. force: по LOOP_EVENT HeroScrollLock уже
+      // остановил Lenis — он же держит скролл до конца интро и глотает инерцию колёсика.
       if (lenis) {
         lenis.scrollTo(0, { immediate: true, force: true });
-        lenis.stop();
-        onWheel();
-        window.addEventListener("wheel", onWheel, { passive: true });
       } else {
         window.scrollTo(0, 0);
       }
@@ -118,8 +104,6 @@ export function Footer() {
     const unsubscribe = onScroll(section, update);
     return () => {
       unsubscribe();
-      window.clearTimeout(quiet);
-      window.removeEventListener("wheel", onWheel);
     };
   }, [lenis]);
 
