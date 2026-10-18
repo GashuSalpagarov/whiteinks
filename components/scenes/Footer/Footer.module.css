@@ -1,0 +1,148 @@
+/* Футер — последний экран, и под ним зона раскрытия точки: секция на 100vh длиннее экрана,
+   столько футер стоит sticky (длина зоны считается в Footer.tsx от высоты секции).
+   z-index выше всех сцен и Hero: залитый экран накрывает и фиксированные логотип, телефон
+   и точку Hero — кадр совпадает с первым кадром интро. */
+.footer {
+  position: relative;
+  z-index: 5;
+  /* dvh — видимая часть экрана: на телефоне при любой панели браузера экран залит целиком. */
+  height: calc(100dvh + 100vh);
+  background: var(--color-fg);
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  /* Центр точки — над подсказкой, по центру внизу. */
+  --dot-y: calc(100% - 104px);
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(32px, 7vh, 88px);
+  height: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 96px 32px 160px;
+}
+
+.closing {
+  font-size: clamp(36px, min(7vw, 12vh), 120px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: clamp(15px, 1.15vw, 18px);
+  line-height: 1.4;
+}
+
+.column a {
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.column a:hover,
+.column a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.label {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.muted {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 56px;
+  padding: 0 32px;
+  text-align: center;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+/* Точка и её раскрытие. Цвет — --color-fg через invert(1): ровно так же Hero-круг
+   выглядит в инвертированной палитре, поэтому залитый экран и первый кадр интро после
+   прыжка совпадают пиксель в пиксель (и во втором круге — двойная инверсия). */
+.bloom {
+  position: absolute;
+  inset: 0;
+  background: var(--color-fg);
+  filter: invert(1);
+  clip-path: circle(var(--r, 6px) at 50% var(--dot-y));
+  pointer-events: none;
+}
+
+/* Невысокий экран (телефон боком): плотнее, чтобы колонки не заходили на точку. */
+@media (max-height: 560px) {
+  .inner {
+    gap: 24px;
+    padding-top: 40px;
+    padding-bottom: 128px;
+  }
+}
+
+/* Телефон: «Связаться» и «Соцсети» рядом, «Студия» под ними на всю ширину. */
+@media (max-width: 767px) {
+  .inner {
+    justify-content: flex-start;
+    gap: 28px;
+    padding: 64px 20px 140px;
+  }
+
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+
+  .column {
+    gap: 6px;
+  }
+
+  .column:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Без анимаций петли нет: футер — конец страницы, без зоны и подсказки. */
+@media (prefers-reduced-motion: reduce) {
+  .footer {
+    height: 100dvh;
+  }
+
+  .hint {
+    display: none;
+  }
+}

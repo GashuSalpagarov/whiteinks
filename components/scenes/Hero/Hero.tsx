@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { LOOP_EVENT } from '@/components/scenes/Footer';
+import { BRIEF_CONFIG } from '@/lib/brief';
 import { onScroll, setVar } from '@/lib/scroll/onScroll';
 import styles from './Hero.module.css';
 import { HeroScrollLock } from './HeroScrollLock';
@@ -30,6 +32,20 @@ export function Hero() {
 
   useEffect(() => {
     requestAnimationFrame(() => setReady(true));
+  }, []);
+
+  // Новый круг пути (Footer): интро заново с t = 0. Снимаем .ready, пересчитываем стили
+  // и возвращаем — CSS-анимации стартуют с начала в этом же кадре. Скролл не блокируем.
+  useEffect(() => {
+    const restart = () => {
+      const hero = heroRef.current;
+      if (!hero) return;
+      hero.classList.remove(styles.ready);
+      hero.getBoundingClientRect();
+      hero.classList.add(styles.ready);
+    };
+    window.addEventListener(LOOP_EVENT, restart);
+    return () => window.removeEventListener(LOOP_EVENT, restart);
   }, []);
 
   // Путь считается от текущего вьюпорта. Линия и точка анимируются в долях пути,
@@ -109,8 +125,8 @@ export function Hero() {
       <div ref={dropRef} className={styles.drop} aria-hidden="true" />
 
       <span className={styles.logo}>White Inks</span>
-      <a className={styles.phone} href="tel:+79990000000">
-        +7 (999) 000-00-00
+      <a className={styles.phone} href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, '')}`}>
+        {BRIEF_CONFIG.phone}
       </a>
     </section>
   );
