@@ -115,14 +115,15 @@
   animation: uiFadeIn 0.5s ease-out 6.6s forwards;
 }
 
-/* Подзаголовок — зеркально к «Создаём»: левый край в --gap от оси экрана, верх заглавных
-   букв — вровень с «С» (0.44 кегля над центром строчных «Создаём»; 0.455em — от верха
-   блока до заглавных самого подзаголовка). Выходит из круга вместе с ним (см. emerge).
+/* Подзаголовок — справа от линии на уровне «цифровые»: верх заглавных подзаголовка вровень
+   с верхом строчных «цифровые» (0.26 кегля над их центром на 58%; 0.455em — от верха блока
+   до заглавных самого подзаголовка). На этой высоте линия в правом пике (+0.6 · --swing),
+   ниже уходит влево — отсюда левый край. Выходит из круга вместе с «Создаём» (см. emerge).
    Стиль — как текст блоков Scene 2. */
 .lead {
   position: absolute;
-  top: calc(38% - 0.44 * var(--title-size) - 0.455em);
-  left: calc(50% + var(--gap));
+  top: calc(58% - 0.26 * var(--title-size) - 0.455em);
+  left: calc(50% + 0.6 * var(--swing) + var(--gap));
   z-index: 4;
   width: min(24vw, 380px);
   margin: 0;
@@ -133,8 +134,8 @@
   /* Старт выхода: левый верхний угол — в центре круга (50%, 50%). */
   transform-origin: 0 0;
   --emerge-from: translate(
-      calc(-1 * var(--gap)),
-      calc(12vh + 0.44 * var(--title-size) + 0.455em)
+      calc(-0.6 * var(--swing) - var(--gap)),
+      calc(-8vh + 0.26 * var(--title-size) + 0.455em)
     )
     scale(0.2);
 }
@@ -160,7 +161,10 @@
   height: 12px;
   background: var(--color-fg);
   border-radius: 50%;
-  transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset)));
+  /* Положение — отдельным свойством translate, пульс — свойством scale (dropPulse). Так var()
+     не попадает в keyframes: Firefox/Safari запоминают его значение на старте анимации,
+     и после возврата наверх пульс уводил точку туда, где она была в момент старта. */
+  translate: calc(-50% + var(--drop-x, 0px)) calc(-50% + var(--drop-offset));
   opacity: var(--drop-opacity, 1);
   /* Скрыта, пока .fallDot не приземлится ровно в эту точку. */
   visibility: hidden;
@@ -173,8 +177,10 @@
     dropPulse 2.4s ease-in-out 7.2s infinite;
 }
 
+/* Пока точка зафиксирована (Scene 2+), пульс гасим поверх анимации, а не снимаем её:
+   смена списка анимаций перезапускала бы пульс с задержкой при каждом возврате в Hero. */
 .ready .drop.dropPinned {
-  animation: dropAppear 0.001s 6.6s forwards;
+  scale: 1 !important;
 }
 
 @keyframes pillCompress {
@@ -253,19 +259,19 @@
 @keyframes dropPulse {
   0%,
   100% {
-    transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset))) scale(1, 1);
+    scale: 1;
     animation-timing-function: ease-in-out;
   }
   18% {
-    transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset))) scale(0.85, 0.85);
+    scale: 0.85;
     animation-timing-function: ease-out;
   }
   50% {
-    transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset))) scale(1.55, 1.55);
+    scale: 1.55;
     animation-timing-function: ease-in;
   }
   78% {
-    transform: translate(calc(-50% + var(--drop-x, 0px)), calc(-50% + var(--drop-offset))) scale(1.05, 1.05);
+    scale: 1.05;
     animation-timing-function: ease-in-out;
   }
 }
