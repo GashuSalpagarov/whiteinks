@@ -8,7 +8,7 @@
 
 ## Стек
 
-Next.js App Router, React, TypeScript, React Three Fiber, GSAP, Lenis, Biome, pnpm. Деплой — GitHub Pages.
+Next.js App Router, React, TypeScript, React Three Fiber, Lenis, Biome, pnpm. Деплой — GitHub Pages.
 
 ## Команды
 

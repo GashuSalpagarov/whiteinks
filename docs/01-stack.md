@@ -1,7 +1,9 @@
 # 01. Технический стек
 
+> 2026-10-18: из зависимостей удалены `gsap`, `@gsap/react`, `@react-three/drei`, `@react-three/postprocessing`, `@14islands/r3f-scroll-rig`, `web-vitals`, `stats-gl`, `clsx` — в коде они не использовались.
+
 ## TL;DR
-Next.js 16 (App Router) + React 19 + TypeScript 6 strict; Lenis 1.3 для скролла; GSAP 3.15 + ScrollTrigger + SplitText через `@gsap/react`; React Three Fiber 9.6 + drei 10.7 + three.js r184 для 3D; `@14islands/r3f-scroll-rig` 8.15 как мост DOM↔WebGL; постпроцессинг через `@react-three/postprocessing` 3.0. Менеджер пакетов — pnpm 10.x. Стили — CSS Modules + design tokens (без Tailwind). Линт/формат — Biome 2.4. Хостинг — Cloudflare Pages + R2 + Stream/Images.
+Next.js 16 (App Router) + React 19 + TypeScript 6 strict; Lenis 1.3 для скролла; React Three Fiber 9.6 + three.js r184 для 3D. Менеджер пакетов — pnpm 10.x. Стили — CSS Modules + design tokens (без Tailwind). Линт/формат — Biome 2.4. Хостинг — Cloudflare Pages + R2 + Stream/Images.
 
 ## Выбор фреймворка: Next.js 16 vs Astro 5
 
@@ -33,17 +35,17 @@ Astro 5 — fallback, если в течение проекта концепт �
 | Язык | TypeScript strict | 6.0.3 | Шейдеры, uniforms, geometry — всё типизировано |
 | Менеджер пакетов | pnpm | 10.33.x | Быстрый install, строгий lockfile, hoist-discipline |
 | Smooth scroll | Lenis | 1.3.23 | Один источник скролла, дружит с GSAP RAF и `useFrame` |
-| Animation | GSAP + ScrollTrigger + SplitText | 3.15.x | Бесплатно после покупки Webflow в 2024; де-факто стандарт |
-| GSAP в React | `@gsap/react` (`useGSAP`) | 2.1.x | Корректная очистка контекста в R3F-окружении |
+| Animation | GSAP + ScrollTrigger + SplitText | удалён 2026-10-18 | Бесплатно после покупки Webflow в 2024; де-факто стандарт |
+| GSAP в React | `@gsap/react` (`useGSAP`) | удалён 2026-10-18 | Корректная очистка контекста в R3F-окружении |
 | 3D | three.js | 0.184.x | База |
 | 3D в React | React Three Fiber | 9.6.1 | Декларативный граф, useFrame, suspense |
-| 3D утилиты | drei | 10.7.7 | `<View>`, `useTexture`, `Html`, `Text` |
-| Постпроцессинг | `@react-three/postprocessing` | 3.0.4 | Bloom, ChromaticAberration, Vignette, EffectComposer |
-| DOM↔WebGL bridge | `@14islands/r3f-scroll-rig` | 8.15.x | GlobalCanvas, `<UseCanvas>`, scroll-tracker |
-| Текст в 3D | troika-three-text (через drei `<Text>`) | latest | SDF-шрифты, anti-alias на любом z |
+| 3D утилиты | drei | удалён 2026-10-18 | `<View>`, `useTexture`, `Html`, `Text` |
+| Постпроцессинг | `@react-three/postprocessing` | удалён 2026-10-18 | Bloom, ChromaticAberration, Vignette, EffectComposer |
+| DOM↔WebGL bridge | `@14islands/r3f-scroll-rig` | удалён 2026-10-18 | GlobalCanvas, `<UseCanvas>`, scroll-tracker |
+| Текст в 3D | troika-three-text (через drei `<Text>`) | удалён вместе с drei | SDF-шрифты, anti-alias на любом z |
 | GPU detect | `detect-gpu` | 5.0.x | Tier-разбивка |
-| Метрики | `web-vitals` | 5.2.x | INP/LCP/CLS в prod |
-| Dev FPS overlay | `stats-gl` | 4.1.x | FPS, memory, draw calls |
+| Метрики | `web-vitals` | удалён 2026-10-18 | INP/LCP/CLS в prod |
+| Dev FPS overlay | `stats-gl` | удалён 2026-10-18 | FPS, memory, draw calls |
 | Стили | CSS Modules + design tokens | — | Без Tailwind, см. ниже |
 | Линт/формат | Biome | 2.4.x | Один тул вместо ESLint+Prettier |
 | Тесты | Playwright | latest | Visual regression на ключевых scroll-кадрах |

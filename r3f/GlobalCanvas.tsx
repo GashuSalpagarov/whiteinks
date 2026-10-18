@@ -8,14 +8,14 @@ import { r3fTunnel } from "./tunnel";
 // TODO: переключение mobile/desktop, GPU detect — см. docs/02-architecture.md и docs/05-performance.md.
 // Содержимое сцен подаётся через r3fTunnel из соответствующих DOM-компонентов.
 // Канвас монтируется, когда известен уровень устройства (lib/perf): сцены внутри читают его
-// при монтировании. На слабых — DPR 1.
+// при монтировании. На слабых — DPR не выше 1.5: слово и штрихи на телефонах остаются чёткими.
 // Кадры — только по запросу (frameloop="demand"): сцены зовут invalidate(), когда сдвинулся
 // их прогресс, а Scene3R3F — пока доводит параллакс и пружину скорости. Пока 3D не видно
 // (Hero, Сцена 2) или всё стоит, канвас не рисует.
 export function GlobalCanvas() {
   const [dpr, setDpr] = useState<number | [number, number] | null>(null);
   useEffect(() => {
-    tierReady.then((tier) => setDpr(tier === "low" ? 1 : [1, 2]));
+    tierReady.then((tier) => setDpr(tier === "low" ? [1, 1.5] : [1, 2]));
   }, []);
 
   if (!dpr) return null;
