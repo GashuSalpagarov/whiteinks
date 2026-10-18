@@ -585,12 +585,15 @@ void main() {
 
 export const INK_FRAGMENT = /* glsl */ `${COMMON}
 uniform sampler2D uCloud; // проход облака
+uniform float uScroll;    // на сколько CSS px кадр уехал вверх после отпускания sticky
 
 // Кристалл: шаг решётки (единицы S), просвет между блоками (CSS px).
 const float CELL = 0.026;
 const float GROUT = 1.5;
-// Финал: ширина линии пути (CSS px, как линия Hero).
+// Финал: ширина линии пути (CSS px, как линия Hero) и окно (доли финала), за которое её
+// низ стекает за нижний край экрана — в Сцену 5.
 const float LINE_W = 4.0;
+const vec2 DRIP = vec2(0.8, 1.0);
 
 float hash12(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -659,10 +662,13 @@ float finale(vec2 c, float S, Phase ph, float cloudInk) {
   float pxs = 0.75 * fwidth(c.x);
   vec2 dd = (c - dp) / vec2(1.0, stretchY);
   float drop = smoothstep(pxs, -pxs, length(dd) - DOT_R * grow);
-  // Линия пути — от точки старта до капли, со скруглённым низом.
+  // Линия пути — от капли до скруглённого низа. Низ стоит в точке старта, а под конец
+  // стекает с ускорением за нижний край: путь продолжается вниз, в Сцену 5.
+  float run = window01(ph.fin, DRIP);
+  float tip = cd.y + run * run * (uView.y - cd.y + LINE_W);
   float body = smoothstep(0.5 * LINE_W + pxs, 0.5 * LINE_W - pxs, abs(c.x - cd.x))
-    * step(dp.y, c.y) * step(c.y, cd.y);
-  float cap = smoothstep(pxs, -pxs, length(c - cd) - 0.5 * LINE_W);
+    * step(dp.y, c.y) * step(c.y, tip);
+  float cap = smoothstep(pxs, -pxs, length(c - vec2(cd.x, tip)) - 0.5 * LINE_W);
   float line = step(0.0001, launch) * max(body, cap);
   return max(max(max(word, cloudInk), drop), line);
 }
@@ -674,7 +680,8 @@ const float RIPPLE_SPEED = 3.0; // S на единицу q
 
 void main() {
   float S = unitS();
-  vec2 c = cssCoord();
+  // После отпускания sticky кадр уезжает вверх вместе со страницей.
+  vec2 c = cssCoord() + vec2(0.0, uScroll);
   vec2 P = (c - uImpact) / S;
   Phase ph = phase(S);
 
@@ -747,5 +754,14 @@ void main() {
   col = mix(col, vec3(0.45), clamp(rippleDark, 0.0, 1.0) * 0.4);
   col = mix(col, vec3(1.0), clamp(rippleLight, 0.0, 1.0) * 0.07);
   gl_FragColor = vec4(col, 1.0);
+  // Ниже уехавшего кадра — прозрачно, только стёкшая линия пути: она уходит под Сцену 5,
+  // а та продолжает её своей линией на том же x. Без return — производные выше считаются
+  // во всех фрагментах квада.
+  float pxs = 0.75 * fwidth(c.x);
+  if (c.y > uView.y) {
+    float run = isMode(MODE_UPDRAFT) ? step(1.0, ph.fin) : 0.0;
+    float line = smoothstep(0.5 * LINE_W + pxs, 0.5 * LINE_W - pxs, abs(c.x - finaleCentre().x));
+    gl_FragColor = vec4(vec3(0.039), run * line);
+  }
 }
 `;

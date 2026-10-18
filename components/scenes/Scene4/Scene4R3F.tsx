@@ -26,6 +26,7 @@ const CLOUD_SCALE_LOW = 0.35;
 
 type Props = {
   progressRef: RefObject<number>;
+  releaseRef: RefObject<number>; // на сколько CSS px кадр уехал вверх после отпускания sticky
 };
 
 type Word = { texture: THREE.DataTexture; width: number; height: number };
@@ -64,7 +65,7 @@ function measureBaseline(): number {
 // последней и непрозрачно — только пока есть чернила. Оба квада пишут clip space
 // напрямую, поэтому камера, которой каждый кадр управляет Scene3R3F, не влияет.
 // В шейдер одновременно привязаны два слова: тающее (A, прошлое) и собирающееся (B).
-export function Scene4R3F({ progressRef }: Props) {
+export function Scene4R3F({ progressRef, releaseRef }: Props) {
   const meshRef = useRef<THREE.Mesh>(null);
   const cloudQ = useRef(-1); // q, для которого облако уже лежит в текстуре
   const size = useThree((s) => s.size);
@@ -107,6 +108,7 @@ export function Scene4R3F({ progressRef }: Props) {
     const screen = material(INK_FRAGMENT, {
       uDpr: { value: 1 },
       uCloud: { value: target.texture },
+      uScroll: { value: 0 },
     });
     screen.transparent = true; // в общий проход прозрачных — после всего остального
     const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), cloud);
@@ -219,9 +221,12 @@ export function Scene4R3F({ progressRef }: Props) {
   useFrame(({ gl }) => {
     const q = progressRef.current;
     const { index, local } = stageAt(q);
-    const visible = index > 0 || local >= IMPACT_Q;
+    // Кадр целиком уехал за верх экрана — дальше уже Сцена 5, рисовать нечего.
+    const release = releaseRef.current;
+    const visible = (index > 0 || local >= IMPACT_Q) && release < ink.common.uView.value.y;
     if (meshRef.current) meshRef.current.visible = visible;
     if (!visible) return;
+    ink.screen.uniforms.uScroll.value = release;
     // Слова этапа ещё нет (прогрев не успел) — строится в этом же кадре: кадра без слова нет.
     ink.bind(index);
     ink.common.uQ.value = local;

@@ -25,8 +25,10 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 export function Scene4() {
   const sectionRef = useRef<HTMLElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
   const captionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const progressRef = useRef(0);
+  const releaseRef = useRef(0);
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -47,8 +49,12 @@ export function Scene4() {
       // sticky встал; слова сменяются на границах этапов.
       if (reduced) q = rect.top <= 0 ? formedQ(stageAt(q).index) : 0;
       // Канвас рисует по запросу (frameloop="demand"): сдвинулся q — нужен кадр.
-      if (q !== progressRef.current) invalidate();
+      // После отпускания sticky кадр канваса уезжает вверх вместе со страницей: на столько
+      // px, на сколько sticky ушёл за верх экрана (шейдер, uScroll).
+      const release = Math.max(0, -(stickyRef.current?.getBoundingClientRect().top ?? 0));
+      if (q !== progressRef.current || release !== releaseRef.current) invalidate();
       progressRef.current = q;
+      releaseRef.current = release;
       const { index, local } = stageAt(q);
 
       // Подписи: каждая под своим словом (кегль слова — для отступа), видна, пока оно собрано.
@@ -90,7 +96,7 @@ export function Scene4() {
       data-scene="scene4"
       aria-label="Подход"
     >
-      <div className={styles.sticky}>
+      <div ref={stickyRef} className={styles.sticky}>
         {STAGES.map((stage, i) => (
           <div
             key={stage.word}
@@ -107,7 +113,7 @@ export function Scene4() {
         ))}
       </div>
       <r3fTunnel.In>
-        <Scene4R3F progressRef={progressRef} />
+        <Scene4R3F progressRef={progressRef} releaseRef={releaseRef} />
       </r3fTunnel.In>
     </section>
   );

@@ -1,0 +1,979 @@
+/* Сцена 5 — «Тропа проекта»: обычная секция в конце страницы, без sticky. Непрозрачная и
+   поверх канваса (z-index как у него, но позже в DOM): кадр Сцены 4 уезжает вверх, а под
+   ним — уже эта секция. Ниже Hero (z-index 2) — его логотип и телефон остаются сверху. */
+.scene5 {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  padding-bottom: 40px;
+  /* Скрытые шаги (сбоку и ниже, если шаг длиннее) не раздвигают страницу. clip, а не
+     hidden: секция не становится контейнером прокрутки, sticky ориентира держится за экран. */
+  overflow: clip;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  /* Штрих пути и точка едут одним движением. */
+  --path-time: 0.9s;
+  --path-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --muted: rgba(10, 10, 10, 0.72);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Трасса ---------- */
+
+.track {
+  position: relative;
+  height: 200px;
+}
+
+/* overflow по умолчанию hidden: вход начинается чуть выше секции и срезан ровно по её
+   верхнему краю — стык с линией Сцены 4 без скруглённого торца. */
+.trackSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Впереди — пунктир из точек: путь, который ещё предстоит. */
+.ghost {
+  fill: none;
+  stroke: rgba(10, 10, 10, 0.32);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 0 8;
+}
+
+/* Пройденное — чернила 4px, как линия Hero. pathLength=1: штрих — доля пути. */
+.ink {
+  fill: none;
+  stroke: var(--color-fg);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 2;
+  transition: stroke-dashoffset var(--path-time) var(--path-ease);
+}
+
+.node {
+  fill: var(--color-bg);
+  stroke: var(--color-fg);
+  stroke-width: 1.5;
+  transition: fill 0.25s ease;
+}
+
+/* Узел заливается, когда до него дотекли чернила. */
+.nodeOn {
+  fill: var(--color-fg);
+  transition-delay: calc(var(--path-time) * 0.75);
+}
+
+/* Точка-герой: едет по тому же пути (offset-path — из Scene5.tsx), что и штрих.
+   top/left: 0 — координаты path() от угла трассы, как у .fallDot в Hero. */
+.dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-fg);
+  offset-anchor: center;
+  offset-rotate: 0deg;
+  transition: offset-distance var(--path-time) var(--path-ease);
+  pointer-events: none;
+}
+
+.labels {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.labels li {
+  position: absolute;
+  translate: -50% 0;
+}
+
+.labels li:first-child {
+  translate: -10px 0;
+}
+
+.labels li:last-child {
+  translate: calc(-100% + 10px) 0;
+}
+
+.label {
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.label:hover,
+.label[aria-current="step"] {
+  color: var(--color-fg);
+}
+
+.labelNum {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+/* ---------- Раскладка ---------- */
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 0 72px;
+  align-items: start;
+  padding: 16px 32px 0;
+}
+
+/* Шаги — стопкой: в потоке только текущий, остальные поверх и скрыты. Пройденные
+   уходят влево, будущие ждут справа — направление перехода выходит само. */
+.stage {
+  position: relative;
+}
+
+.step {
+  position: absolute;
+  inset: 0 0 auto;
+  opacity: 0;
+  visibility: hidden;
+  translate: 32px 0;
+  transition:
+    opacity 0.3s ease,
+    translate 0.5s var(--ease-out),
+    visibility 0s linear 0.5s;
+}
+
+.stepPast {
+  translate: -32px 0;
+}
+
+.stepOn {
+  position: relative;
+  opacity: 1;
+  visibility: visible;
+  translate: 0 0;
+  transition:
+    opacity 0.5s ease 0.12s,
+    translate 0.7s var(--ease-out) 0.12s,
+    visibility 0s;
+}
+
+.eyebrow,
+.group,
+.priceLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.title {
+  margin-top: 14px;
+  font-size: clamp(32px, 3.2vw, 48px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  outline: none;
+}
+
+.lead {
+  margin-top: 12px;
+  max-width: 34em;
+  font-size: clamp(15px, 1.1vw, 18px);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.hint {
+  margin-top: 16px;
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.group {
+  margin-top: 32px;
+}
+
+.note {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+/* ---------- Карточки и чипы: контур в покое, чернила при выборе ---------- */
+
+/* Группы выбора — fieldset без рамки и отступов браузера. */
+.cards,
+.chips {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.card,
+.chip {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--color-fg);
+  background: none;
+  color: var(--color-fg);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.35s ease 0.05s;
+}
+
+/* Заливка — слой под текстом: в покое за краем, на hover у карточки — полоска 4px снизу
+   (толщина линии пути), при выборе — целиком. */
+.card::before,
+.chip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-fg);
+  transition: translate 0.55s var(--path-ease);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 176px;
+  padding: 18px 18px 16px;
+  border-radius: 4px;
+}
+
+.card::before {
+  translate: 0 100%;
+}
+
+.card:hover::before {
+  translate: 0 calc(100% - 4px);
+}
+
+.card[aria-pressed="true"]::before,
+.chip[aria-pressed="true"]::before {
+  translate: 0 0;
+}
+
+.card[aria-pressed="true"],
+.chip[aria-pressed="true"] {
+  color: var(--color-bg);
+}
+
+.card:focus-visible,
+.chip:focus-visible,
+.label:focus-visible,
+.primary:focus-visible,
+.secondary:focus-visible,
+.back:focus-visible,
+.check:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+/* Метка выбора — точка героя: контур в покое, залита у выбранной. */
+.mark {
+  position: absolute;
+  right: 18px;
+  bottom: 20px;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.card[aria-pressed="true"] .mark {
+  background: currentColor;
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.card .note {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.cardPrice {
+  margin-top: auto;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.group + .chips {
+  margin-top: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.chip::before {
+  translate: -101% 0;
+}
+
+.chip:hover {
+  box-shadow: inset 0 0 0 1px var(--color-fg);
+}
+
+.chip .note {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Кнопки ---------- */
+
+.nav,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav {
+  margin-top: 32px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 26px;
+  border: 1px solid var(--color-fg);
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.primary {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+
+.secondary {
+  background: none;
+  color: var(--color-fg);
+}
+
+.secondary:hover {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 16px;
+  border: none;
+  background: none;
+  color: var(--color-fg);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Назад без «Дальше» (шаг 4) — вровень с левым краем контента. */
+.back:first-child {
+  padding-left: 0;
+}
+
+.arrow {
+  display: inline-block;
+  transition: translate 0.35s var(--ease-out);
+}
+
+.primary:hover .arrow {
+  translate: 4px 0;
+}
+
+.back:hover .arrow {
+  translate: -4px 0;
+}
+
+/* ---------- Ориентир по цене ---------- */
+
+.price {
+  position: sticky;
+  top: 96px;
+  grid-column: 2;
+  grid-row: 1;
+  padding: 28px 28px 24px;
+  border-radius: 4px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+
+.priceValue {
+  margin-top: 16px;
+  font-size: clamp(26px, 2.2vw, 32px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.priceTerm {
+  margin-top: 8px;
+  font-size: 1.0625rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.priceSummary {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.priceNote {
+  margin-top: 10px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #888;
+}
+
+/* Сменился знак — проступает из размытия, как чернила в воде. Остальные стоят. */
+.char {
+  display: inline-block;
+  white-space: pre;
+  animation: inkIn 0.6s var(--ease-out) both;
+  animation-delay: calc(var(--i) * 14ms);
+}
+
+@keyframes inkIn {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    translate: 0 0.12em;
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+/* ---------- Шаг 4: лист брифа и форма ---------- */
+
+.brief {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 36px;
+  align-items: start;
+  margin-top: 28px;
+}
+
+/* Лист на столе: тёплая белизна, мягкая тень, чуть повёрнут. */
+.sheet {
+  position: relative;
+  padding: 20px 24px 16px;
+  border-radius: 4px;
+  background: #fdfdfb;
+  box-shadow:
+    0 1px 1px rgba(10, 10, 10, 0.05),
+    0 12px 32px -12px rgba(10, 10, 10, 0.22),
+    0 36px 64px -36px rgba(10, 10, 10, 0.16);
+  rotate: -0.6deg;
+}
+
+.sheetHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-fg);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sheetHead span:last-child {
+  color: #888;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.rows div {
+  display: grid;
+  grid-template-columns: 8.5em minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.rows dt {
+  color: #888;
+}
+
+.rows dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.sheetTotal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-top: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheetTotal span:first-child {
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.sheetTotal span:last-child {
+  color: var(--muted);
+}
+
+.sheetNote {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+/* Подпись: при отправке под листом росчерк чернилами и штамп «Подписан». */
+.sign {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: 10px;
+  height: 46px;
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.sign > span:first-child {
+  padding-bottom: 6px;
+}
+
+.flourish {
+  flex: 1;
+  height: 46px;
+  border-bottom: 1px solid rgba(10, 10, 10, 0.24);
+  overflow: visible;
+}
+
+.flourish path {
+  fill: none;
+  stroke: var(--color-fg);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1;
+}
+
+.signed .flourish path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.4s var(--path-ease) 0.2s;
+}
+
+.stamp {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  padding: 5px 9px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 4px;
+  color: var(--color-fg);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0;
+  rotate: -8deg;
+  scale: 1.3;
+}
+
+.signed .stamp {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 0.25s ease 1.3s,
+    scale 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) 1.3s;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+.input {
+  height: 46px;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--color-fg);
+  border-radius: 0;
+  background: none;
+  color: var(--color-fg);
+  font-size: 1.0625rem;
+  outline: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.input::placeholder {
+  color: rgba(10, 10, 10, 0.3);
+}
+
+.input:focus-visible,
+.input[aria-invalid="true"] {
+  box-shadow: 0 1px 0 0 var(--color-fg);
+}
+
+/* Ошибка — в тон сайта: точка героя и короткая фраза. */
+.error {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: errorIn 0.35s var(--ease-out);
+}
+
+.error::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  translate: 0 -1px;
+}
+
+@keyframes errorIn {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+.trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.consent label {
+  cursor: pointer;
+}
+
+.check {
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--color-fg);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+  transition: background-color 0.2s ease;
+}
+
+.check::after {
+  content: "";
+  width: 10px;
+  height: 5px;
+  border: solid var(--color-bg);
+  border-width: 0 0 2px 2px;
+  translate: 0 -1px;
+  rotate: -45deg;
+  scale: 0;
+  transition: scale 0.2s var(--ease-out);
+}
+
+.check:checked {
+  background: var(--color-fg);
+}
+
+.check:checked::after {
+  scale: 1;
+}
+
+.check[aria-invalid="true"] {
+  box-shadow: 0 0 0 1px var(--color-fg);
+}
+
+.consent a,
+.policy a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.policy {
+  margin: 8px 0 0 32px;
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+.reply {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d6d6d6, #7a7a7a);
+}
+
+.promise {
+  margin-top: -6px;
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+.done {
+  padding-top: 8px;
+}
+
+.doneTitle {
+  font-size: clamp(24px, 2.2vw, 32px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.doneText {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.done .actions {
+  margin-top: 28px;
+}
+
+/* ---------- Узкие экраны ---------- */
+
+@media (max-width: 1100px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 0 40px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .brief {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Телефон: трасса ниже, карточки в две колонки, ориентир — липкая полоса снизу. */
+@media (max-width: 767px) {
+  /* Секция не ниже экрана: на коротких шагах полоса ориентира — в самом низу. */
+  .scene5 {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  .track {
+    height: 168px;
+  }
+
+  .label {
+    padding: 6px 2px;
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+  }
+
+  .labelNum {
+    display: none;
+  }
+
+  .labels li:first-child {
+    translate: -8px 0;
+  }
+
+  .labels li:last-child {
+    translate: calc(-100% + 8px) 0;
+  }
+
+  .body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 4px 16px 0;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 24px;
+  }
+
+  .card {
+    min-height: 150px;
+    padding: 14px 14px 12px;
+  }
+
+  .mark {
+    right: 14px;
+    bottom: 16px;
+  }
+
+  .chip {
+    height: 44px;
+    padding: 0 18px;
+  }
+
+  .nav {
+    margin: 32px 0;
+  }
+
+  .brief {
+    gap: 32px;
+  }
+
+  .rows div {
+    grid-template-columns: 8em minmax(0, 1fr);
+  }
+
+  .price {
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: auto -16px 0;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 0;
+  }
+
+  .priceLabel,
+  .priceSummary,
+  .priceNote {
+    display: none;
+  }
+
+  .priceValue {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .priceTerm {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+}
