@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useLenis } from '@/app/providers';
 
-const INTRO_DURATION_MS = 7400;
+const INTRO_DURATION_MS = 7200;
 
 const SCROLL_KEYS = new Set([
   'ArrowUp',

@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { type RefObject, useEffect, useRef } from "react";
+import { getTier } from "@/lib/perf";
 import { CARDS_CONTENT } from "./cardsData";
 import styles from "./Scene3Finale.module.css";
 
+// Сюда Scene3Finale кладёт свой update(p, tail): его зовёт обработчик скролла Scene3.
+export type FinaleUpdate = (p: number, tail: number) => void;
+
 type Props = {
-  progressRef: RefObject<number>;
-  tailRef: RefObject<number>;
+  updateRef: RefObject<FinaleUpdate | null>;
 };
 
 // Хвост сцены (tail 0→1): плитки разом рассыпаются в песок, песок стягивается в точку.
@@ -27,6 +30,7 @@ export const SWAP_END = 0.94; // дальше ядро не рисуем — о�
 // Пыль.
 const MAX_GRAINS = 4500; // песчинок на всю сетку
 const MAX_GRAINS_NARROW = 2000; // при innerWidth < 768
+// На слабых устройствах (lib/perf) песчинок вдвое меньше.
 const DUST_DPR_MAX = 1.5; // песчинки мелкие — полный DPR канвасу пыли не нужен
 const HALFTONE = 1.3; // диаметр кружка растра в момент распада, в долях ячейки (с нахлёстом)
 const BIG_SHARE = 0.12; // доля крупных песчинок 4–6px («ближе к камере»), остальные 2–3px
@@ -61,7 +65,7 @@ const hash = (a: number, b: number, seed: number) => {
 // Финальная сетка Сцены 3: 4 кейса (3 сверху + 1 широкий снизу) + блок-приглашение.
 // Видимость привязана к прогрессу сцены: карточки прилетают на 0.93..0.99, когда
 // частицы уже почти собрались. До этого момента — за пределами экрана, без кликов.
-export function Scene3Finale({ progressRef, tailRef }: Props) {
+export function Scene3Finale({ updateRef }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -90,7 +94,7 @@ export function Scene3Finale({ progressRef, tailRef }: Props) {
       ax += b + 2;
     }
 
-    // Замер — при монтировании и resize; всё остальное — чистая функция tail, так что
+    // Замер — при первом вызове и смене вьюпорта; всё остальное — чистая функция tail, так что
     // прокрутка назад проигрывает распад в обратную сторону. offset* — layout-бокс плиток
     // без transform относительно .container; в хвосте контейнер прибит sticky к (0,0)
     // viewport, так что это сразу координаты экрана и канваса.
@@ -119,7 +123,8 @@ export function Scene3Finale({ progressRef, tailRef }: Props) {
       // MAX_GRAINS. В момент распада песчинка — кружок чуть больше ячейки: соседи
       // перекрываются, и растр читается почти сплошной плиткой без текста; дальше кружки
       // сжимаются до песчинок — как печатный растр, рассыпающийся в пыль.
-      const maxGrains = window.innerWidth < 768 ? MAX_GRAINS_NARROW : MAX_GRAINS;
+      const maxGrains =
+        (window.innerWidth < 768 ? MAX_GRAINS_NARROW : MAX_GRAINS) / (getTier() === "low" ? 2 : 1);
       const area = rects.reduce((sum, r) => sum + r[2] * r[3], 0);
       const cell = Math.sqrt(area / maxGrains) || 1;
       let n = 0;
@@ -208,7 +213,7 @@ export function Scene3Finale({ progressRef, tailRef }: Props) {
         streaky,
       };
     };
-    let dust = reduced ? null : measure();
+    let dust: ReturnType<typeof measure> = null;
 
     // Позиция песчинки j на доле полёта s: толчок от плитки, затем спираль с ускорением.
     // Радиус — ease-in s^1.5 (почти сразу уходит, потом всё быстрее), закрутка — u²:
@@ -321,17 +326,21 @@ export function Scene3Finale({ progressRef, tailRef }: Props) {
       ctx.fill();
     };
 
-    // resize копим до ближайшего кадра: замер — один раз на кадр, а не на каждое событие.
+    // Работа — только когда сменились p, tail или вьюпорт: отдельного цикла кадров нет.
+    let lastP = -1;
     let lastTail = -1;
-    let resized = false;
-    const onResize = () => {
-      resized = true;
-    };
-
-    let raf = 0;
-    const tick = () => {
-      const p = progressRef.current ?? 0;
-      const tail = tailRef.current ?? 0;
+    let viewport = "";
+    updateRef.current = (p, tail) => {
+      // Уровень устройства (lib/perf) может определиться уже после первого замера.
+      const vp = `${window.innerWidth}x${window.innerHeight} ${getTier()}`;
+      if (vp !== viewport) {
+        viewport = vp;
+        dust = reduced ? null : measure();
+        lastP = -1;
+        lastTail = -1;
+      }
+      if (p === lastP && tail === lastTail) return;
+      lastP = p;
       const t = Math.max(0, Math.min(1, (p - 0.93) / 0.06));
       const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
       const interactive = eased > 0.5 && tail < HOLD_END;
@@ -345,25 +354,16 @@ export function Scene3Finale({ progressRef, tailRef }: Props) {
           node.style.opacity = `${1 - fadeOut}`;
         }
       }
-      if (resized) {
-        resized = false;
-        dust = reduced ? null : measure();
-        lastTail = -1;
-      }
-      // Перерисовываем только при смене tail (или после resize).
+      // Перерисовываем только при смене tail (или после замера).
       if (tail !== lastTail) {
         lastTail = tail;
         draw(tail);
       }
-      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    window.addEventListener("resize", onResize);
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
+      updateRef.current = null;
     };
-  }, [progressRef, tailRef]);
+  }, [updateRef]);
 
   const cards = CARDS_CONTENT;
   const positions = [styles.card1, styles.card2, styles.card3, styles.card4];

@@ -1,13 +1,17 @@
 "use client";
 
-import { useFrame, useThree } from "@react-three/fiber";
+import { invalidate, useFrame, useThree } from "@react-three/fiber";
 import { type RefObject, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useLenis } from "@/app/providers";
+import { getTier } from "@/lib/perf";
 import { type CardContent, CARDS_CONTENT } from "./cardsData";
 
 const PARTICLE_COUNT = 1000;
 const STREAK_COUNT = 200;
+// На слабых устройствах (lib/perf) — меньше. Уровень известен до монтирования канваса.
+const PARTICLE_COUNT_LOW = 400;
+const STREAK_COUNT_LOW = 80;
 const STREAK_LENGTH = 0.3;
 const SCROLL_DRIVE_FACTOR = 10;
 const CONE_HALF_ANGLE = Math.PI / 3;
@@ -299,10 +303,12 @@ export function Scene3R3F({ progressRef }: Props) {
     const onMove = (e: MouseEvent) => {
       pointerRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       pointerRef.current.y = -((e.clientY / window.innerHeight) * 2 - 1);
+      // Канвас рисует по запросу: в сцене курсор двигает камеру (параллакс).
+      if (progressRef.current > 0 && progressRef.current < 1) invalidate();
     };
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => window.removeEventListener("mousemove", onMove);
-  }, []);
+  }, [progressRef]);
 
   const particleTexture = useMemo(() => createCircleTexture(), []);
 
@@ -315,14 +321,15 @@ export function Scene3R3F({ progressRef }: Props) {
   const cardBendUniforms = useMemo(() => CARDS.map(() => ({ value: 0 })), []);
 
   const pointsData = useMemo(() => {
-    const positions = new Float32Array(PARTICLE_COUNT * 3);
-    const directions = new Float32Array(PARTICLE_COUNT * 3);
-    const pathLengths = new Float32Array(PARTICLE_COUNT);
-    const phases = new Float32Array(PARTICLE_COUNT);
+    const count = getTier() === "low" ? PARTICLE_COUNT_LOW : PARTICLE_COUNT;
+    const positions = new Float32Array(count * 3);
+    const directions = new Float32Array(count * 3);
+    const pathLengths = new Float32Array(count);
+    const phases = new Float32Array(count);
     const dir = { x: 0, y: 0, z: 0 };
     const respawnZ = INITIAL_CAMERA_Z + RESPAWN_PAST_CAMERA;
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
       forwardConeRandom(dir);
       directions[i * 3] = dir.x;
       directions[i * 3 + 1] = dir.y;
@@ -342,14 +349,15 @@ export function Scene3R3F({ progressRef }: Props) {
   }, []);
 
   const streaksData = useMemo(() => {
-    const positions = new Float32Array(STREAK_COUNT * 2 * 3);
-    const directions = new Float32Array(STREAK_COUNT * 3);
-    const pathLengths = new Float32Array(STREAK_COUNT);
-    const phases = new Float32Array(STREAK_COUNT);
+    const count = getTier() === "low" ? STREAK_COUNT_LOW : STREAK_COUNT;
+    const positions = new Float32Array(count * 2 * 3);
+    const directions = new Float32Array(count * 3);
+    const pathLengths = new Float32Array(count);
+    const phases = new Float32Array(count);
     const dir = { x: 0, y: 0, z: 0 };
     const respawnZ = INITIAL_CAMERA_Z + RESPAWN_PAST_CAMERA;
 
-    for (let i = 0; i < STREAK_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
       forwardConeRandom(dir);
       directions[i * 3] = dir.x;
       directions[i * 3 + 1] = dir.y;
@@ -387,6 +395,8 @@ export function Scene3R3F({ progressRef }: Props) {
     spring.dv += (VELOCITY_STIFFNESS * (targetV - spring.v) - VELOCITY_DAMPING * spring.dv) * dt;
     spring.v += spring.dv * dt;
     const v = spring.v;
+    // Канвас рисует по запросу (frameloop="demand"): пока пружина не успокоилась — ещё кадр.
+    if (targetV !== 0 || Math.abs(v) + Math.abs(spring.dv) > 1e-4) invalidate();
 
     // Частицы и штрихи гаснут на p 0.95..1: к посадке финальной сетки центр чист — точка
     // появится только из пыли сетки (Scene3Finale). alphaTest масштабируем вместе с opacity,
@@ -434,6 +444,10 @@ export function Scene3R3F({ progressRef }: Props) {
       const targetY = pointerRef.current.y * PARALLAX_AMPLITUDE * gate;
       persp.position.x = lerp(persp.position.x, targetX, PARALLAX_LERP);
       persp.position.y = lerp(persp.position.y, targetY, PARALLAX_LERP);
+      // Камера ещё догоняет курсор — ещё кадр.
+      if (Math.abs(targetX - persp.position.x) + Math.abs(targetY - persp.position.y) > 1e-5) {
+        invalidate();
+      }
     } else {
       persp.position.x = 0;
       persp.position.y = 0;
@@ -458,7 +472,7 @@ export function Scene3R3F({ progressRef }: Props) {
       const pathLengths = pointsData.pathLengths;
       const phases = pointsData.phases;
 
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
+      for (let i = 0; i < phases.length; i++) {
         const ix = i * 3;
         const local = acc - phases[i];
 
@@ -489,7 +503,7 @@ export function Scene3R3F({ progressRef }: Props) {
       const pathLengths = streaksData.pathLengths;
       const phases = streaksData.phases;
 
-      for (let i = 0; i < STREAK_COUNT; i++) {
+      for (let i = 0; i < phases.length; i++) {
         const ix = i * 6;
         const local = acc - phases[i];
 

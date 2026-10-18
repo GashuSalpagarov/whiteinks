@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { onScroll, setVar } from '@/lib/scroll/onScroll';
 import styles from './Scene2.module.css';
 
 // Колена траектории. Phase отсчитывается от scroll = 43vh (момент фиксации точки в центре).
@@ -181,62 +182,65 @@ function buildPathD(scrollVh: number, w: number, h: number): string {
 }
 
 export function Scene2() {
+  const sectionRef = useRef<HTMLElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
-    const root = document.documentElement;
+    const section = sectionRef.current;
+    if (!section) return;
+    let pathKey = '';
     const update = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      if (!h) return; // иначе scrollVh = NaN
       const scrollVh = (window.scrollY / h) * 100;
       const dropX = getDropX(scrollVh);
 
       // X-смещение точки — отсюда. Y-смещение и фиксация — Hero.
-      root.style.setProperty('--drop-x', `${dropX}vw`);
+      setVar('--drop-x', `${dropX}vw`);
 
       // После Hero-фазы (scrollVh > 43) сдвигаем точку на 20px вниз — единый
       // уровень с Scene 3, где точка попадает в gap финальной сетки.
       if (scrollVh > 43) {
-        root.style.setProperty('--drop-offset', '20px');
+        setVar('--drop-offset', '20px');
       }
 
       // Трасса плавно гаснет в конце Scene 2: к scrollVh 500 — полностью прозрачна.
       const trailOpacity = Math.max(0, Math.min(1, (500 - scrollVh) / 70));
-      root.style.setProperty('--trail-opacity', `${trailOpacity}`);
+      setVar('--trail-opacity', `${trailOpacity}`);
 
-      for (let i = 0; i < BLOCKS.length; i++) {
+      // Секция целиком выше экрана — блоки тоже (параллакс отстаёт от скролла). Их переменные
+      // дальше не трогаем: каждая смена пересчитывает стили всей страницы.
+      const blocksGone = section.getBoundingClientRect().bottom < 0;
+      for (let i = 0; i < BLOCKS.length && !blocksGone; i++) {
         const block = BLOCKS[i];
-        root.style.setProperty(
+        setVar(
           `--block-${i + 1}-opacity`,
           `${getBlockOpacity(scrollVh, block.trigger)}`,
         );
-        root.style.setProperty(
+        setVar(
           `--block-${i + 1}-y`,
           `${getBlockParallaxY(scrollVh, block.trigger, block.parallaxY)}vh`,
         );
-        root.style.setProperty(
+        setVar(
           `--block-${i + 1}-x`,
           `${getBlockParallaxX(scrollVh, block.trigger, block.side)}vw`,
         );
       }
 
-      if (pathRef.current) {
-        pathRef.current.setAttribute('d', buildPathD(scrollVh, w, h));
+      // Путь (до ~1800 точек) строим, только если трасса видна и что-то сдвинулось.
+      const key = trailOpacity > 0 ? `${scrollVh} ${w} ${h}` : '';
+      if (pathRef.current && key !== pathKey) {
+        pathKey = key;
+        pathRef.current.setAttribute('d', key && buildPathD(scrollVh, w, h));
       }
     };
 
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    update();
-
-    return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
+    return onScroll(section, update);
   }, []);
 
   return (
-    <section className={styles.scene2} data-scene="scene2">
+    <section ref={sectionRef} className={styles.scene2} data-scene="scene2">
       <svg className={styles.trail} aria-hidden="true">
         <path
           ref={pathRef}

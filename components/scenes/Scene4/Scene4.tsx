@@ -1,6 +1,8 @@
 "use client";
 
+import { invalidate } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
+import { onScroll, setVar } from "@/lib/scroll/onScroll";
 import { r3fTunnel } from "@/r3f/tunnel";
 import styles from "./Scene4.module.css";
 import { DROP_FADE, IMPACT_Q, IMPACT_Y, Scene4R3F } from "./Scene4R3F";
@@ -19,8 +21,8 @@ export function Scene4() {
   const progressRef = useRef(0);
 
   useEffect(() => {
+    if (!sectionRef.current) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const root = document.documentElement;
 
     const update = () => {
       if (!sectionRef.current) return;
@@ -29,7 +31,11 @@ export function Scene4() {
       // Как в Сцене 3: q = 0 — секция вошла снизу viewport (ровно когда отпускает sticky
       // Сцены 3), q = 1 — отпускает свой sticky. Высота секции задаёт только темп.
       // Reduced motion: без анимации — итоговое слово с подписью, как только sticky встал.
-      const q = reduced ? Number(rect.top <= 0) : clamp01((h - rect.top) / rect.height);
+      // Пока у секции нет высоты (вёрстка не готова), сцены нет: q = 0, а не NaN или 1.
+      let q = reduced ? Number(rect.top <= 0) : clamp01((h - rect.top) / rect.height);
+      if (!(rect.height > 0) || Number.isNaN(q)) q = 0;
+      // Канвас рисует по запросу (frameloop="demand"): сдвинулся q — нужен кадр.
+      if (q !== progressRef.current) invalidate();
       progressRef.current = q;
 
       if (captionRef.current) {
@@ -44,21 +50,14 @@ export function Scene4() {
       const t = Math.min(1, q / IMPACT_Q);
       const impact = (IMPACT_Y - 0.5) * h;
       const offset = DROP_START_OFFSET + (impact - DROP_START_OFFSET) * t * t;
-      root.style.setProperty("--drop-offset", `${offset}px`);
+      setVar("--drop-offset", `${offset}px`);
       // В момент удара точка гаснет поверх ядра чернил той же формы — без скачка.
-      root.style.setProperty("--drop-opacity", `${1 - clamp01((q - IMPACT_Q) / DROP_FADE)}`);
+      setVar("--drop-opacity", `${1 - clamp01((q - IMPACT_Q) / DROP_FADE)}`);
       // Канвас без сдвига Сцены 3: шейдер считает координаты прямо от viewport.
-      root.style.setProperty("--canvas-y", "0px");
+      setVar("--canvas-y", "0px");
     };
 
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    update();
-
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
+    return onScroll(sectionRef.current, update);
   }, []);
 
   return (

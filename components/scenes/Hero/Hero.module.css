@@ -2,16 +2,17 @@
   position: relative;
   color: var(--color-bg);
   overflow: hidden;
-  /* Размах S-изгиба линии (тот же, что в buildFallPath) и зазор от линии до текста. */
-  --swing: min(3.5vw, 6vh);
+  /* Размах S-изгиба линии (тот же, что в buildFallPath) и зазор от линии (или от оси
+     экрана — над центром линии нет) до текста. */
+  --swing: min(3.5vw, 4vh);
   --gap: clamp(16px, 2.2vw, 40px);
+  /* Кегль заголовка — здесь, чтобы по нему выровнять и подзаголовок. */
+  --title-size: clamp(28px, min(9vw, 16vh), 165px);
 }
 
-/* Центр круга — в верхней трети (26vh): оттуда начинается путь точки. На scale(20)
-   круг (3600px) всё равно закрывает весь экран — до 16:9 2560×1440 включительно. */
 .pill {
   position: absolute;
-  top: 26%;
+  top: 50%;
   left: 50%;
   z-index: 0;
   width: 180px;
@@ -67,7 +68,7 @@
 }
 
 .ready .lineStroke {
-  animation: lineDraw 2.1s cubic-bezier(0.45, 0, 0.25, 1) 4.75s forwards;
+  animation: lineDraw 1.85s cubic-bezier(0.45, 0, 0.25, 1) 4.75s forwards;
 }
 
 /* Падающая точка. Едет по тому же пути (offset-path задаётся в Hero.tsx) с той же
@@ -89,14 +90,14 @@
 }
 
 .ready .fallDot {
-  animation: fallDot 2.1s cubic-bezier(0.45, 0, 0.25, 1) 4.75s;
+  animation: fallDot 1.85s cubic-bezier(0.45, 0, 0.25, 1) 4.75s;
 }
 
 /* CTA — обычная чёрная «таблетка» справа от линии, на высоте последнего слова. */
 .cta {
   position: absolute;
-  top: calc(82% - 26px);
-  left: calc(50% - 0.2 * var(--swing) + var(--gap));
+  top: calc(78% - 26px);
+  left: calc(50% - 0.85 * var(--swing) + var(--gap));
   z-index: 4;
   display: flex;
   align-items: center;
@@ -111,15 +112,17 @@
 }
 
 .ready .cta {
-  animation: uiFadeIn 0.5s ease-out 6.85s forwards;
+  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
 }
 
-/* Подзаголовок справа от линии, на высоте первого слова. На этой высоте линия уходит
-   вправо до +1 · --swing (пик изгиба), отсюда отступ. Стиль — как текст блоков Scene 2. */
+/* Подзаголовок — зеркально к «Создаём»: левый край в --gap от оси экрана, верх заглавных
+   букв — вровень с «С» (0.44 кегля над центром строчных «Создаём»; 0.455em — от верха
+   блока до заглавных самого подзаголовка). Выходит из круга вместе с ним (см. emerge).
+   Стиль — как текст блоков Scene 2. */
 .lead {
   position: absolute;
-  top: 31%;
-  left: calc(50% + var(--swing) + var(--gap));
+  top: calc(38% - 0.44 * var(--title-size) - 0.455em);
+  left: calc(50% + var(--gap));
   z-index: 4;
   width: min(24vw, 380px);
   margin: 0;
@@ -127,10 +130,17 @@
   line-height: 1.5;
   color: rgba(10, 10, 10, 0.72);
   opacity: 0;
+  /* Старт выхода: левый верхний угол — в центре круга (50%, 50%). */
+  transform-origin: 0 0;
+  --emerge-from: translate(
+      calc(-1 * var(--gap)),
+      calc(12vh + 0.44 * var(--title-size) + 0.455em)
+    )
+    scale(0.2);
 }
 
 .ready .lead {
-  animation: uiFadeIn 0.5s ease-out 6.85s forwards;
+  animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 4.35s forwards;
 }
 
 /* На узких экранах справа от линии места нет — подзаголовок вернётся в мобильной версии. */
@@ -159,12 +169,12 @@
 
 .ready .drop {
   animation:
-    dropAppear 0.001s 6.85s forwards,
-    dropPulse 2.4s ease-in-out 7.4s infinite;
+    dropAppear 0.001s 6.6s forwards,
+    dropPulse 2.4s ease-in-out 7.2s infinite;
 }
 
 .ready .drop.dropPinned {
-  animation: dropAppear 0.001s 6.85s forwards;
+  animation: dropAppear 0.001s 6.6s forwards;
 }
 
 @keyframes pillCompress {
@@ -260,18 +270,19 @@
   }
 }
 
-/* Заголовок — одно h1, три слова на трёх строках слева от линии; каждое проявляется,
-   когда мимо проходит точка (задержки — по времени прохода). top ставит центр строчных
-   букв (x-height) на 37/59.5/82% высоты. Правый край слова стоит у линии с зазором --gap:
-   множитель при --swing — ближайшее к буквам положение линии на их высоте, в долях
-   размаха изгиба (см. buildFallPath). */
+/* Заголовок — одно h1, три слова на трёх строках. «Создаём» над центром выходит из круга,
+   пока тот сжимается в точку; «цифровые» и «продукты» проявляются слева от линии, когда
+   мимо проходит точка (задержки — по времени прохода). top ставит центр строчных букв
+   (x-height) на 38/58/78% высоты — ровный шаг; 58 и 78% — пики изгиба, там линия вертикальна.
+   Правый край слова стоит у линии с зазором --gap: множитель при --swing — ближайшее
+   к буквам положение линии на их высоте, в долях размаха изгиба (см. buildFallPath). */
 .title {
   position: absolute;
   inset: 0;
   z-index: 4;
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-size: clamp(28px, min(8.5vw, 19vh), 150px);
+  font-size: var(--title-size);
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.02em;
@@ -286,30 +297,45 @@
 }
 
 .word1 {
-  top: calc(37% - 0.77em);
-  right: calc(50% - 0.2 * var(--swing) + var(--gap));
+  top: calc(38% - 0.77em);
+  right: calc(50% + var(--gap));
+  /* Старт выхода: середина правого края — в центре круга (50%, 50%). */
+  transform-origin: 100% 50%;
+  --emerge-from: translate(var(--gap), calc(12vh + 0.145em)) scale(0.2);
 }
 
 .word2 {
-  top: calc(59.5% - 0.77em);
-  right: calc(50% + 0.38 * var(--swing) + var(--gap));
+  top: calc(58% - 0.77em);
+  right: calc(50% - 0.3 * var(--swing) + var(--gap));
 }
 
 .word3 {
-  top: calc(82% - 0.77em);
-  right: calc(50% + 0.88 * var(--swing) + var(--gap));
+  top: calc(78% - 0.77em);
+  right: calc(50% + var(--swing) + var(--gap));
 }
 
 .ready .word1 {
-  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.15s forwards;
+  animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 4.35s forwards;
 }
 
 .ready .word2 {
-  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.5s forwards;
+  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.1s forwards;
 }
 
 .ready .word3 {
-  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.85s forwards;
+  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.5s forwards;
+}
+
+/* Выход из круга: из центра круга, уменьшенным, — на своё место, как растекающиеся чернила. */
+@keyframes emerge {
+  from {
+    opacity: 0;
+    transform: var(--emerge-from);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes wordIn {
@@ -352,7 +378,7 @@
 
 .ready .logo,
 .ready .phone {
-  animation: uiFadeIn 0.5s ease-out 6.85s forwards;
+  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
