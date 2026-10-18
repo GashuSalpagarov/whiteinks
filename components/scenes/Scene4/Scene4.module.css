@@ -1,0 +1,43 @@
+.scene4 {
+  position: relative;
+  /* Первый этап. Прогресс q считается от высоты секции — следующие этапы просто её удлинят. */
+  height: 250vh;
+  z-index: 4;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* Подпись под словом: базовая линия слова — на 58% высоты (IMPACT_Y), выносные элементы
+   «р» и «ф» — около 0.22 кегля, кегль = min(20vw, 36vh) (WORD_VW / WORD_VH в Scene4R3F). */
+.caption {
+  position: absolute;
+  top: calc(58% + 0.24 * min(20vw, 36vh) + 28px);
+  left: 0;
+  right: 0;
+  padding: 0 32px;
+  text-align: center;
+  opacity: 0;
+}
+
+.stage {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.line {
+  margin: 0;
+  font-size: clamp(15px, 1.25vw, 22px);
+  line-height: 1.5;
+  color: rgba(10, 10, 10, 0.72);
+}
