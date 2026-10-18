@@ -6,7 +6,16 @@ import * as THREE from "three";
 import { getTier } from "@/lib/perf";
 import { generateTextSDF } from "@/lib/sdfText";
 import { INK_CLOUD_FRAGMENT, INK_FRAGMENT, INK_VERTEX } from "./inkShader";
-import { FONT, IMPACT_Q, IMPACT_Y, LETTER_SPACING, STAGES, stageAt, wordFit } from "./stages";
+import {
+  cloudFrame,
+  FONT,
+  IMPACT_Q,
+  IMPACT_Y,
+  LETTER_SPACING,
+  STAGES,
+  stageAt,
+  wordFit,
+} from "./stages";
 
 const SDF_FONT = 128; // px, кегль растра для SDF (внутри — суперсэмплинг ×2)
 const SDF_PAD = 60; // px поля вокруг букв: облако берёт расстояния и за ними
@@ -82,6 +91,7 @@ export function Scene4R3F({ progressRef }: Props) {
       uWordB: { value: new THREE.Vector4() },
       uSdfScaleB: { value: 1 },
       uStretch: { value: new THREE.Vector2(1, 1) },
+      uDilate: { value: 0.16 },
       uTr: { value: STAGES[1].into }, // этап 0 перехода не читает
     };
     const material = (fragmentShader: string, own: Record<string, THREE.IUniform>) =>
@@ -131,9 +141,9 @@ export function Scene4R3F({ progressRef }: Props) {
       common.uSdfA.value = place(a, common.uWordA.value, common.uSdfScaleA);
       common.uSdfB.value = place(stage, common.uWordB.value, common.uSdfScaleB);
       const { x: w, y: h } = common.uView.value;
-      const fa = wordFit(STAGES[a].word, w, h);
-      const fb = wordFit(STAGES[stage].word, w, h);
-      common.uStretch.value.set(fb.width / fa.width, fb.size / fa.size);
+      const frame = cloudFrame(a, stage, w, h);
+      common.uStretch.value.set(frame.stretch[0], frame.stretch[1]);
+      common.uDilate.value = frame.dilate;
       const into = STAGES[stage].into;
       if (into) common.uTr.value = into;
       common.uStage.value = stage;
