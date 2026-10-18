@@ -6,18 +6,8 @@ import * as THREE from "three";
 import { getTier } from "@/lib/perf";
 import { generateTextSDF } from "@/lib/sdfText";
 import { INK_CLOUD_FRAGMENT, INK_FRAGMENT, INK_VERTEX } from "./inkShader";
+import { FONT, IMPACT_Q, IMPACT_Y, LETTER_SPACING, STAGES, stageAt, wordFit } from "./stages";
 
-// Тайминг (доли q), общий с Scene4.tsx: там по нему падает и гаснет CSS-точка.
-export const IMPACT_Q = 0.12; // капля касается воды — дальше эстафету берут чернила
-export const IMPACT_Y = 0.58; // точка удара по вертикали, доля высоты экрана (x — центр)
-export const DROP_FADE = 0.012; // за столько q CSS-точка гаснет поверх ядра чернил
-
-// Слово этапа: шрифт сайта, кегль от ширины экрана, но не больше доли высоты.
-// Базовая линия слова — на точке удара: капля «встаёт на строку».
-const WORD = "Бриф";
-const WORD_VW = 0.2;
-const WORD_VH = 0.36;
-const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 const SDF_FONT = 128; // px, кегль растра для SDF (внутри — суперсэмплинг ×2)
 const SDF_PAD = 60; // px поля вокруг букв: облако берёт расстояния и за ними
 // Облако мягкое и дорогое — считаем его в половине CSS-пикселя, независимо от DPR
@@ -29,9 +19,12 @@ type Props = {
   progressRef: RefObject<number>;
 };
 
-// Слово этапа — SDF-текстура и метрики. Дорого: 50–95 мс главного потока на десктопе.
-function buildWord() {
-  const sdf = generateTextSDF(WORD, SDF_FONT, FONT, 500, -0.02, 1.25, SDF_PAD, 2);
+type Word = { texture: THREE.DataTexture; width: number; height: number };
+
+// Слово этапа — SDF-текстура и её размер в px растра. Дорого: 50–80 мс главного потока
+// на слово, поэтому строим по одному в простое (прогрев ниже) или когда слово нужно в кадре.
+function buildWord(word: string): Word {
+  const sdf = generateTextSDF(word, SDF_FONT, FONT, 500, LETTER_SPACING, 1.25, SDF_PAD, 2);
   // Half float фильтруется линейно в любом WebGL2 (float32 — только с расширением).
   const half = new Uint16Array(sdf.sdf.length);
   for (let i = 0; i < half.length; i++) half[i] = THREE.DataUtils.toHalfFloat(sdf.sdf[i]);
@@ -45,21 +38,23 @@ function buildWord() {
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
-  // Слово стоит в растре по textBaseline = middle; низ «и» — базовая линия строки.
+  return { texture, width: sdf.worldWidth, height: sdf.worldHeight };
+}
+
+// Слова стоят в растре по textBaseline = middle; низ «и» — базовая линия строки.
+function measureBaseline(): number {
   const ctx = document.createElement("canvas").getContext("2d");
-  let baseline = 0;
-  if (ctx) {
-    ctx.font = `500 ${SDF_FONT}px ${FONT}`;
-    ctx.textBaseline = "middle";
-    baseline = ctx.measureText("и").actualBoundingBoxDescent;
-  }
-  return { texture, baseline, width: sdf.worldWidth, height: sdf.worldHeight };
+  if (!ctx) return 0;
+  ctx.font = `500 ${SDF_FONT}px ${FONT}`;
+  ctx.textBaseline = "middle";
+  return ctx.measureText("и").actualBoundingBoxDescent;
 }
 
 // Чернила — два полноэкранных квада. Облако рендерится в текстуру пониженного разрешения
 // и только когда сменился q (картинка — чистая функция q). Сборка рисуется на экран
-// последней и непрозрачно — только пока есть чернила (q ≥ IMPACT_Q). Оба квада пишут
-// clip space напрямую, поэтому камера, которой каждый кадр управляет Scene3R3F, не влияет.
+// последней и непрозрачно — только пока есть чернила. Оба квада пишут clip space
+// напрямую, поэтому камера, которой каждый кадр управляет Scene3R3F, не влияет.
+// В шейдер одновременно привязаны два слова: тающее (A, прошлое) и собирающееся (B).
 export function Scene4R3F({ progressRef }: Props) {
   const meshRef = useRef<THREE.Mesh>(null);
   const cloudQ = useRef(-1); // q, для которого облако уже лежит в текстуре
@@ -75,13 +70,19 @@ export function Scene4R3F({ progressRef }: Props) {
   const ink = useMemo(() => {
     const target = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
     const common = {
+      uStage: { value: 0 },
       uQ: { value: 0 },
       uImpactQ: { value: IMPACT_Q },
       uView: { value: new THREE.Vector2(1, 1) },
       uImpact: { value: new THREE.Vector2() },
-      uWord: { value: new THREE.Vector4() },
-      uSdfScale: { value: 1 },
-      uSdf: { value: null as THREE.Texture | null },
+      uSdfA: { value: null as THREE.Texture | null },
+      uWordA: { value: new THREE.Vector4() },
+      uSdfScaleA: { value: 1 },
+      uSdfB: { value: null as THREE.Texture | null },
+      uWordB: { value: new THREE.Vector4() },
+      uSdfScaleB: { value: 1 },
+      uStretch: { value: new THREE.Vector2(1, 1) },
+      uTr: { value: STAGES[1].into }, // этап 0 перехода не читает
     };
     const material = (fragmentShader: string, own: Record<string, THREE.IUniform>) =>
       new THREE.ShaderMaterial({
@@ -102,22 +103,43 @@ export function Scene4R3F({ progressRef }: Props) {
     quad.frustumCulled = false;
     const cloudScene = new THREE.Scene().add(quad);
 
-    // Слово — по первому требованию: в простое (прогрев ниже) или прямо в кадре удара.
-    // Его прямоугольник — от размера канваса, он уже лежит в uView.
-    let word: ReturnType<typeof buildWord> | null = null;
-    const placeWord = () => {
-      if (!word) return;
-      const { x: w, y: h } = common.uView.value;
-      const k = Math.min(WORD_VW * w, WORD_VH * h) / SDF_FONT;
-      const y = IMPACT_Y * h - word.baseline * k;
-      common.uWord.value.set(w / 2, y, word.width * k, word.height * k);
-      common.uSdfScale.value = k;
+    // Слова — по первому требованию: в простое (прогрев ниже) или прямо в кадре этапа.
+    const words: (Word | null)[] = STAGES.map(() => null);
+    let baseline = 0;
+    const ensureWord = (i: number): Word => {
+      if (!words[i]) {
+        if (!baseline) baseline = measureBaseline();
+        words[i] = buildWord(STAGES[i].word);
+      }
+      return words[i] as Word;
     };
-    const ensureWord = () => {
-      if (word) return;
-      word = buildWord();
-      common.uSdf.value = word.texture;
-      placeWord();
+    // Прямоугольник слова — от размера канваса (он уже лежит в uView) и кегля этапа.
+    const place = (i: number, rect: THREE.Vector4, scale: { value: number }) => {
+      const { x: w, y: h } = common.uView.value;
+      const word = ensureWord(i);
+      const k = wordFit(STAGES[i].word, w, h).size / SDF_FONT;
+      rect.set(w / 2, IMPACT_Y * h - baseline * k, word.width * k, word.height * k);
+      scale.value = k;
+      return word.texture;
+    };
+    // Этап → A = прошлое слово (на этапе 0 — то же), B = слово этапа, параметры перехода.
+    let bound = -1;
+    const bind = (stage: number) => {
+      if (stage === bound) return;
+      bound = stage;
+      const a = Math.max(0, stage - 1);
+      common.uSdfA.value = place(a, common.uWordA.value, common.uSdfScaleA);
+      common.uSdfB.value = place(stage, common.uWordB.value, common.uSdfScaleB);
+      const { x: w, y: h } = common.uView.value;
+      const fa = wordFit(STAGES[a].word, w, h);
+      const fb = wordFit(STAGES[stage].word, w, h);
+      common.uStretch.value.set(fb.width / fa.width, fb.size / fa.size);
+      const into = STAGES[stage].into;
+      if (into) common.uTr.value = into;
+      common.uStage.value = stage;
+    };
+    const unbind = () => {
+      bound = -1;
     };
     return {
       target,
@@ -128,8 +150,10 @@ export function Scene4R3F({ progressRef }: Props) {
       cloudScene,
       camera: new THREE.Camera(),
       cloudScale,
-      placeWord,
+      words,
       ensureWord,
+      bind,
+      unbind,
     };
   }, []);
 
@@ -139,25 +163,31 @@ export function Scene4R3F({ progressRef }: Props) {
       ink.cloud.dispose();
       ink.screen.dispose();
       ink.quad.geometry.dispose();
-      ink.common.uSdf.value?.dispose();
+      for (const word of ink.words) word?.texture.dispose();
     },
     [ink],
   );
 
   // Прогрев — в простое: на обычной загрузке это интро Hero, пока скролл заблокирован.
-  // Слово строится здесь, а шейдеры чернил компилируются параллельно
-  // (KHR_parallel_shader_compile) — иначе первый кадр удара ждал бы компиляцию.
+  // Слова строятся по одному на простой — без длинной задачи на все пять. Шейдеры чернил
+  // компилируются параллельно (KHR_parallel_shader_compile) после первого слова —
+  // иначе первый кадр удара ждал бы компиляцию.
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 200));
     let alive = true;
-    idle(() => {
+    let next = 0;
+    const step = () => {
       if (!alive) return;
-      ink.ensureWord();
-      gl.setRenderTarget(ink.target); // облако рисуется в текстуру — и компилируем под неё
-      gl.compileAsync(ink.cloudScene, ink.camera);
-      gl.setRenderTarget(null);
-      if (meshRef.current) gl.compileAsync(meshRef.current, camera, scene);
-    });
+      ink.ensureWord(next);
+      if (next === 0) {
+        gl.setRenderTarget(ink.target); // облако рисуется в текстуру — и компилируем под неё
+        gl.compileAsync(ink.cloudScene, ink.camera);
+        gl.setRenderTarget(null);
+        if (meshRef.current) gl.compileAsync(meshRef.current, camera, scene);
+      }
+      if (++next < STAGES.length) idle(step);
+    };
+    idle(step);
     return () => {
       alive = false;
     };
@@ -169,7 +199,7 @@ export function Scene4R3F({ progressRef }: Props) {
     const u = ink.common;
     u.uView.value.set(w, h);
     u.uImpact.value.set(w / 2, IMPACT_Y * h);
-    ink.placeWord();
+    ink.unbind(); // прямоугольники слов пересчитаются в кадре
     ink.screen.uniforms.uDpr.value = dpr;
     ink.target.setSize(Math.round(w * ink.cloudScale), Math.round(h * ink.cloudScale));
     cloudQ.current = -1;
@@ -178,11 +208,13 @@ export function Scene4R3F({ progressRef }: Props) {
 
   useFrame(({ gl }) => {
     const q = progressRef.current;
-    const visible = q >= IMPACT_Q;
+    const { index, local } = stageAt(q);
+    const visible = index > 0 || local >= IMPACT_Q;
     if (meshRef.current) meshRef.current.visible = visible;
     if (!visible) return;
-    ink.ensureWord(); // прогрев не успел — строим в этом же кадре: кадра без слова нет
-    ink.common.uQ.value = q;
+    // Слова этапа ещё нет (прогрев не успел) — строится в этом же кадре: кадра без слова нет.
+    ink.bind(index);
+    ink.common.uQ.value = local;
     // Облако — чистая функция q: пока скролл стоит, текстура уже верная.
     if (q !== cloudQ.current) {
       cloudQ.current = q;

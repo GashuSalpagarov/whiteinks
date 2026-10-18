@@ -1,7 +1,6 @@
 .scene4 {
   position: relative;
-  /* Первый этап. Прогресс q считается от высоты секции — следующие этапы просто её удлинят. */
-  height: 250vh;
+  /* Высота — сумма отрезков этапов (TOTAL_VH в stages.ts), задаётся из Scene4.tsx. */
   z-index: 4;
 }
 
@@ -14,10 +13,10 @@
 }
 
 /* Подпись под словом: базовая линия слова — на 58% высоты (IMPACT_Y), выносные элементы
-   «р» и «ф» — около 0.22 кегля, кегль = min(20vw, 36vh) (WORD_VW / WORD_VH в Scene4R3F). */
+   («р», «ф», «у») — около 0.22 кегля; кегль своего слова (--word-size) пишет Scene4.tsx. */
 .caption {
   position: absolute;
-  top: calc(58% + 0.24 * min(20vw, 36vh) + 28px);
+  top: calc(58% + 0.24 * var(--word-size, 20vw) + 28px);
   left: 0;
   right: 0;
   padding: 0 32px;
