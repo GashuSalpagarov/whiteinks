@@ -144,7 +144,8 @@ export function HeroSlides({
       em.forEach((words, i) => {
         const fit = Math.min(1, ...room.map((r, k) => (r - 1) / (words[k] * size)));
         for (const row of rows) {
-          (row.children[i] as HTMLElement).style.setProperty("--fit", `${fit}`);
+          // NaN в --fit делает кегль невалидным — слово схлопывается в ноль.
+          (row.children[i] as HTMLElement).style.setProperty("--fit", `${Number.isFinite(fit) ? fit : 1}`);
         }
       });
 
@@ -168,12 +169,17 @@ export function HeroSlides({
       });
     };
 
+    // Замер — после load: в проде гидратация бывает раньше, чем применились стили, и замер
+    // по голому h1 давал NaN (заголовок пропадал при первом заходе, без кэша).
     let alive = true;
-    document.fonts.ready.then(() => {
-      if (!alive) return;
-      widths = measure(h1);
-      layout();
-    });
+    const init = () =>
+      document.fonts.ready.then(() => {
+        if (!alive) return;
+        widths = measure(h1);
+        layout();
+      });
+    if (document.readyState === "complete") init();
+    else window.addEventListener("load", init, { once: true });
     const onResize = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(layout);
@@ -182,6 +188,7 @@ export function HeroSlides({
     return () => {
       alive = false;
       cancelAnimationFrame(frame);
+      window.removeEventListener("load", init);
       window.removeEventListener("resize", onResize);
     };
   }, [hero]);
