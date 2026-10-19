@@ -5,6 +5,8 @@ import { useLenis } from '@/app/providers';
 import { LOOP_EVENT } from '@/components/scenes/Footer';
 import { BRIEF_CONFIG } from '@/lib/brief';
 import { onScroll, setVar, viewportH } from '@/lib/scroll/onScroll';
+import { HeaderLogo } from './HeaderLogo';
+import { HeaderMenu, HeaderNav } from './HeaderMenu';
 import styles from './Hero.module.css';
 import { HeroScrollLock } from './HeroScrollLock';
 
@@ -163,11 +165,13 @@ export function Hero() {
 
       {/* Шапка — вне слоя Hero (у него z-index 2): на телефоне она встаёт над сценами. */}
       <header ref={headerRef} className={`${styles.header} ${ready ? styles.ready : ''}`}>
-        <span className={styles.logo}>White Inks</span>
+        <HeaderLogo />
+        <HeaderNav />
         <a className={styles.phone} href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, '')}`}>
           {BRIEF_CONFIG.phone}
         </a>
       </header>
+      <HeaderMenu header={headerRef} />
     </>
   );
 }

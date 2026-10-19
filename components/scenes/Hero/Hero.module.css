@@ -356,7 +356,7 @@
 
 /* Шапка — своим слоем сразу после Hero: z-index 2, как у Hero, но позже в DOM — поверх него
    и под сценами, как раньше внутри него. На телефоне — поверх сцен (мобильный блок ниже).
-   Ловит клики только телефон. */
+   Ловят клики только пункты меню и телефон. */
 .header {
   position: fixed;
   top: 0;
@@ -377,6 +377,57 @@
   line-height: 1;
   color: var(--color-fg);
   opacity: 0;
+  /* Два названия (HeaderLogo.tsx) — в одной ячейке: ширина по длинному, растёт вправо от
+     левого края. Маска для букв — с запасом 0.25em сверху и снизу под выносные элементы,
+     текст стоит там же. Наведение ловит сам логотип. */
+  display: grid;
+  overflow: hidden;
+  padding: 0.25em 0;
+  margin-top: -0.25em;
+  pointer-events: auto;
+}
+
+.logoName {
+  grid-area: 1 / 1;
+  white-space: pre;
+}
+
+.logoName > span {
+  display: inline-block;
+}
+
+/* Второе название ждёт под маской. Смена: буквы уходящего по очереди уезжают вверх, нового —
+   выезжают снизу; направление всегда вверх — вход каждый раз начинается снизу. */
+.logoName + .logoName > span {
+  translate: 0 1.4em;
+}
+
+.logoAlt .logoName > span,
+.logoBack .logoName > span {
+  animation: letterOut 0.55s cubic-bezier(0.7, 0, 0.2, 1) calc(var(--i) * 28ms) both;
+}
+
+.logoAlt .logoName + .logoName > span,
+.logoBack .logoName:first-child > span {
+  animation-name: letterIn;
+}
+
+@keyframes letterOut {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 -1.4em;
+  }
+}
+
+@keyframes letterIn {
+  from {
+    translate: 0 1.4em;
+  }
+  to {
+    translate: 0 0;
+  }
 }
 
 /* Top сдвинут на 3px, чтобы baseline телефона (font-size 1rem) совпал
@@ -393,11 +444,223 @@
   text-decoration: none;
   opacity: 0;
   pointer-events: auto;
+  /* Сдвиг влево — место для бургера справа. */
+  translate: var(--phone-shift, 0px) 0;
+  transition: translate 0.6s cubic-bezier(0.65, 0, 0.35, 1) 0.1s;
 }
 
 .ready .logo,
-.ready .phone {
+.ready .phone,
+.ready .nav {
   animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+}
+
+/* ---------- Меню ----------
+   Пункты — по центру шапки, кегль, насыщенность и базовая линия как у телефона (текст с той же
+   высоты 35px, зона нажатия — отступами). Страница ушла от верха (.scrolled на шапке,
+   HeaderMenu.tsx) — пункты по очереди уходят вверх, начиная с ближнего к телефону, телефон
+   сдвигается влево, справа появляется бургер. Наверху — всё обратно, в обратном порядке. */
+.scrolled {
+  --phone-shift: -44px;
+}
+
+.nav {
+  position: fixed;
+  top: 25px;
+  left: 50%;
+  display: flex;
+  gap: 40px;
+  translate: -50% 0;
+  opacity: 0;
+}
+
+.navItem {
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  color: var(--color-fg);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    opacity 0.35s ease-out calc(0.3s + var(--i) * 0.05s),
+    translate 0.35s cubic-bezier(0.16, 1, 0.3, 1) calc(0.3s + var(--i) * 0.05s);
+}
+
+.navItem:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.scrolled .navItem {
+  opacity: 0;
+  translate: 0 -12px;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.35s ease-in calc((3 - var(--i)) * 0.05s),
+    translate 0.35s ease-in calc((3 - var(--i)) * 0.05s),
+    visibility 0s linear calc(0.35s + (3 - var(--i)) * 0.05s);
+}
+
+/* Бургер и панель — свой слой над всеми сценами и футером (z-index 6). Проявляется вместе
+   с логотипом и так же перезапускается на новом круге пути (.ready на шапке). */
+.menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.header.ready + .menu {
+  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+}
+
+/* Две тонкие линии, правый край — там, где кончается телефон вверху страницы. Появляются,
+   прорисовываясь справа налево; открытая панель — крестик. Над футером (.onDark) — белые. */
+.burger {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-fg);
+  cursor: pointer;
+  visibility: hidden;
+  transition: visibility 0s linear 0.4s;
+}
+
+.onDark .burger {
+  color: var(--color-bg);
+}
+
+.burger::before,
+.burger::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 0.75px);
+  left: 10px;
+  width: 24px;
+  height: 1.5px;
+  background: currentColor;
+  clip-path: inset(0 0 0 100%);
+  transition:
+    clip-path 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+    translate 0.3s cubic-bezier(0.65, 0, 0.35, 1),
+    rotate 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.burger::before {
+  translate: 0 -3.5px;
+}
+
+.burger::after {
+  translate: 0 3.5px;
+}
+
+.scrolled + .menu .burger {
+  visibility: visible;
+  pointer-events: auto;
+  transition: none;
+}
+
+.scrolled + .menu .burger::before,
+.scrolled + .menu .burger::after {
+  clip-path: inset(0);
+  transition-delay: 0.3s, 0s, 0s;
+}
+
+.burger[aria-expanded='true']::before,
+.burger[aria-expanded='true']::after {
+  translate: 0 0;
+  rotate: 45deg;
+}
+
+.burger[aria-expanded='true']::after {
+  rotate: -45deg;
+}
+
+/* Панель — под бургером у правого края. */
+.panel {
+  position: absolute;
+  top: 70px;
+  right: 32px;
+  width: 200px;
+  padding: 4px;
+  border: 1px solid var(--color-fg);
+  border-radius: 6px;
+  background: var(--color-bg);
+  opacity: 0;
+  translate: 0 -6px;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease-out,
+    translate 0.25s ease-out,
+    visibility 0s linear 0.25s;
+}
+
+.burger[aria-expanded='true'] + .panel {
+  opacity: 1;
+  translate: none;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.25s ease-out,
+    translate 0.25s ease-out;
+}
+
+.panelItem {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-fg);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Только с мышью: на сенсорном экране :hover залипает на нажатом пункте. */
+@media (hover: hover) {
+  .panelItem:hover {
+    background: rgba(10, 10, 10, 0.06);
+  }
+}
+
+/* Узкий экран и телефон: пунктов в шапке нет, бургер виден сразу. Порог — по замеру: пункты
+   с промежутками — 385px, телефон — 141px (Segoe UI); со шрифтом на 10% шире (SF Pro, Roboto)
+   запас 32px до телефона остаётся с 862px, берём 880. */
+@media (max-width: 879px), (max-height: 500px) {
+  .header {
+    --phone-shift: -44px;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .burger {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .burger::before,
+  .burger::after {
+    clip-path: inset(0);
+  }
 }
 
 @keyframes fadeIn {
@@ -504,6 +767,7 @@
 @media (max-width: 767px), (max-height: 500px) {
   .header {
     z-index: 5;
+    --phone-shift: -36px;
   }
 
   .header::before {
@@ -534,6 +798,25 @@
     padding: 16px 0;
     font-size: 0.8125rem;
   }
+
+  /* Бургер — справа от номера, линии короче, под мелкий номер; панель — во всю ширину. */
+  .burger {
+    top: 8px;
+    right: 8px;
+  }
+
+  .burger::before,
+  .burger::after {
+    left: 12px;
+    width: 20px;
+  }
+
+  .panel {
+    top: 56px;
+    left: 20px;
+    right: 20px;
+    width: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -551,7 +834,9 @@
   .ready .drop,
   .ready .drop.dropPinned,
   .ready .logo,
-  .ready .phone {
+  .ready .phone,
+  .ready .nav,
+  .header.ready + .menu {
     animation: none;
   }
 
@@ -563,7 +848,9 @@
   .cta,
   .lead,
   .logo,
-  .phone {
+  .phone,
+  .nav,
+  .menu {
     opacity: 1;
   }
 
