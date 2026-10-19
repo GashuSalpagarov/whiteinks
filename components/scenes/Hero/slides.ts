@@ -30,7 +30,7 @@ export const SLIDES: readonly HeroSlide[] = [
     images: [img("browser", PEACH), img("app", MINT), img("shapes", LAVENDER)],
   },
   {
-    title: ["Разрабатываем", "быстрые", "сайты"],
+    title: ["Разрабатываем", "уникальные", "сайты"],
     lead: "Лендинги, магазины и порталы, которые работают на любом экране, быстро грузятся и приводят клиентов.",
     images: [img("shop", LAVENDER), img("type", PEACH), img("tiles", MINT)],
   },

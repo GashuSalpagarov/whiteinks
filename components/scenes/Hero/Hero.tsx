@@ -1,17 +1,14 @@
 'use client';
 
-import { type CSSProperties, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLenis } from '@/app/providers';
 import { LOOP_EVENT } from '@/components/scenes/Footer';
 import { BRIEF_CONFIG } from '@/lib/brief';
 import { onScroll, setVar, viewportH } from '@/lib/scroll/onScroll';
-import { HeaderLogo } from './HeaderLogo';
 import { HeaderMenu, HeaderNav } from './HeaderMenu';
 import styles from './Hero.module.css';
 import { HeroScrollLock } from './HeroScrollLock';
 import { HeroSlides } from './HeroSlides';
-
-const STUDIO_NAMES = ['Белые чернила', 'White Inks'];
 
 // Путь падения точки в px от левого верхнего угла Hero: из центра круга (центр экрана)
 // в точку покоя (50vw, 93vh) мягкой S-кривой — сначала вправо, потом влево. В конец приходит
@@ -34,12 +31,14 @@ function buildFallPath(w: number, h: number): string {
     ].join(' ');
   }
   // Пики изгиба (касательная там вертикальна) — на высоте «цифровые» (58%, 0.6 размаха
-  // вправо: ближе к старту, мягче) и «продукты» (78%, полный размах влево).
+  // вправо: ближе к старту, мягче) и «продукты» (74%, полный размах влево; в коротком
+  // ландшафте строки реже — 78%, как в Hero.module.css).
   const a = Math.min(w * 0.035, h * 0.04);
+  const p = h <= 500 ? 0.78 : 0.74;
   return [
     `M${x} ${h * 0.5}`,
     `C${x} ${h * 0.535} ${x + a * 0.6} ${h * 0.545} ${x + a * 0.6} ${h * 0.58}`,
-    `S${x - a} ${h * 0.72} ${x - a} ${h * 0.78}`,
+    `S${x - a} ${h * (p - 0.06)} ${x - a} ${h * p}`,
     `S${x} ${h * 0.88} ${x} ${h * 0.93}`,
   ].join(' ');
 }
@@ -139,19 +138,7 @@ export function Hero() {
         <HeroScrollLock />
 
         <div className={styles.pill} aria-hidden="true" />
-        {/* «Белые чернила», затем по буквам — «White Inks» (как смена в логотипе). */}
-        <span className={styles.studioLabel} role="img" aria-label="White Inks">
-          {STUDIO_NAMES.map((name) => (
-            <span key={name} className={styles.studioName} aria-hidden="true">
-              {[...name].map((ch, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: буквы повторяются, порядок постоянный
-                <span key={i} style={{ '--i': i } as CSSProperties}>
-                  {ch}
-                </span>
-              ))}
-            </span>
-          ))}
-        </span>
+        <span className={styles.studioLabel}>White Inks</span>
 
         <svg className={styles.line} aria-hidden="true">
           <path className={styles.lineStroke} d={fallPath || undefined} pathLength={1} />
@@ -174,7 +161,7 @@ export function Hero() {
 
       {/* Шапка — вне слоя Hero (у него z-index 2): на телефоне она встаёт над сценами. */}
       <header ref={headerRef} className={`${styles.header} ${ready ? styles.ready : ''}`}>
-        <HeaderLogo />
+        <span className={styles.logo}>White Inks</span>
         <HeaderNav />
         <a className={styles.phone} href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, '')}`}>
           {BRIEF_CONFIG.phone}

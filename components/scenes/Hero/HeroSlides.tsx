@@ -62,47 +62,50 @@ function measure(h1: HTMLElement): number[][] {
   return widths;
 }
 
-// Раскладка картинок каждого слайда — по утверждённому макету (экран 1600×853): left, top
-// и width — доли экрана, четвёртое — пропорция (ширина / высота), её держим точно. Телефон:
-// большая (первая) слева или справа над заголовком, band — какая из двух других под индикатором.
-type Spec = readonly [left: number, top: number, width: number, aspect: number];
-type Layout = { desk: readonly Spec[]; left: boolean; band: 1 | 2 };
+// Раскладка картинок каждого слайда. desk — россыпь на десктопе, у каждого слайда своя, как
+// фото на столе: [центр по x, центр по y — доли экрана; ширина — доля min(ширина, 1.6 × высота)
+// экрана; пропорция (ширина / высота), её держим точно; поворот в градусах], порядок — как
+// в slides.ts. Задано по экрану 1440×900. phone — своя композиция телефона: [номер картинки,
+// пропорция] для большой и меньшей над заголовком (большая у левого поля или у правого) и для
+// нижней, между индикатором и кнопкой.
+type Spec = readonly [cx: number, cy: number, width: number, aspect: number, turn: number];
+type Pick = readonly [image: number, aspect: number];
+type Layout = {
+  desk: readonly Spec[];
+  phone: { left: boolean; big: Pick; small: Pick; low: Pick };
+};
 const LAYOUTS: readonly Layout[] = [
   {
     desk: [
-      [0.641, 0.072, 0.3, 3 / 2],
-      [0.847, 0.49, 0.132, 3 / 5],
-      [0.591, 0.65, 0.171, 1],
+      [0.6847, 0.2607, 0.2639, 3 / 2, -1.5],
+      [0.9069, 0.3659, 0.1194, 3 / 5, 2],
+      [0.8785, 0.6889, 0.1597, 1, -1],
     ],
-    left: false,
-    band: 2,
+    phone: { left: false, big: [0, 4 / 3], small: [1, 3 / 4], low: [2, 1] },
   },
   {
     desk: [
-      [0.691, 0.061, 0.25, 1],
-      [0.588, 0.617, 0.141, 3 / 4],
-      [0.765, 0.584, 0.221, 3 / 2],
+      [0.8806, 0.42, 0.1778, 1, 1.5],
+      [0.6944, 0.2704, 0.1389, 3 / 4, -2],
+      [0.8208, 0.7356, 0.1583, 3 / 2, 1],
     ],
-    left: true,
-    band: 1,
+    phone: { left: true, big: [0, 1], small: [2, 4 / 3], low: [1, 3 / 4] },
   },
   {
     desk: [
-      [0.765, 0.055, 0.218, 3 / 4],
-      [0.547, 0.099, 0.176, 1],
-      [0.632, 0.661, 0.288, 16 / 9],
+      [0.8924, 0.6148, 0.1597, 3 / 4, 1.5],
+      [0.8924, 0.2278, 0.1319, 1, -2],
+      [0.6701, 0.2698, 0.2292, 16 / 9, 1],
     ],
-    left: false,
-    band: 2,
+    phone: { left: false, big: [0, 3 / 2], small: [1, 3 / 5], low: [2, 4 / 3] },
   },
   {
     desk: [
-      [0.579, 0.066, 0.347, 3 / 2],
-      [0.871, 0.485, 0.118, 2 / 3],
-      [0.685, 0.678, 0.153, 1],
+      [0.8882, 0.7256, 0.1792, 3 / 2, -1],
+      [0.891, 0.4361, 0.1319, 2 / 3, 1.5],
+      [0.6875, 0.2733, 0.1806, 1, -2],
     ],
-    left: true,
-    band: 1,
+    phone: { left: true, big: [0, 5 / 4], small: [2, 1], low: [1, 3 / 4] },
   },
 ];
 
@@ -177,63 +180,62 @@ function spots(r0: Box, a: number, blocks: Box[], k: Box): { r: Box; sc: number 
 
 // Картинки по порядку; для каждой пробуем 6 лучших мест вместе с лучшей раскладкой остальных.
 type Plan = { sc: number; list: (Box | null)[] };
-function arrange(rs: Box[], as: number[], blocks: Box[], k: Box): Plan {
+function arrange(rs: Box[], as: number[], blocks: Box[], k: Box, gap: number): Plan {
   if (!rs.length) return { sc: 0, list: [] };
   let best: Plan | null = null;
   for (const { r, sc } of spots(rs[0], as[0], blocks, k).slice(0, 6)) {
-    const rest = arrange(rs.slice(1), as.slice(1), [...blocks, grow(r, 16)], k);
+    const rest = arrange(rs.slice(1), as.slice(1), [...blocks, grow(r, gap)], k, gap);
     if (!best || sc + rest.sc > best.sc) best = { sc: sc + rest.sc, list: [r, ...rest.list] };
   }
   if (best) return best;
-  const rest = arrange(rs.slice(1), as.slice(1), blocks, k);
+  const rest = arrange(rs.slice(1), as.slice(1), blocks, k, gap);
   return { sc: rest.sc, list: [null, ...rest.list] };
 }
 
-// Десктоп: места из макета (центр — в долях экрана, размер — от меньшего из масштабов по
+// Десктоп: россыпь слайда (центр — в долях экрана, ширина — от меньшего из масштабов по
 // ширине и высоте), затем без наложений: не ближе 16px к кнопке, номерам индикатора, подводке
-// и друг к другу, ниже шапки (88px), не за край и не левее подводки (там линия и заголовок).
+// и друг к другу, ниже шапки (88px), не ниже линии индикатора, не за край и не левее подводки
+// (там линия и заголовок) — мешающая картинка чуть сдвигается или уменьшается. Запас 8px — на
+// углы при повороте.
 // Подводке можно уступить, только если иначе картинки не помещаются.
 function desktop(W: number, H: number, lead: Box, cta: Box, dots: Box, { desk }: Layout): Rect[] {
-  const s = Math.min(W / 1600, H / 853);
-  const rs = desk.map(([l, t, w, a]) => {
-    const cx = (l + w / 2) * W;
-    const cy = (t + (w * 1600) / a / 853 / 2) * H;
-    const hw = (w * 1600 * s) / 2;
-    return { l: cx - hw, r: cx + hw, t: cy - hw / a, b: cy + hw / a };
+  const S = Math.min(W, 1.6 * H);
+  const rs = desk.map(([cx, cy, w, a]) => {
+    const hw = (w * S) / 2;
+    return { l: cx * W - hw, r: cx * W + hw, t: cy * H - hw / a, b: cy * H + hw / a };
   });
   const as = desk.map((d) => d[3]);
-  const k = { l: lead.l - 8, t: 88, r: W - 16, b: H - 16 };
-  const ui = [grow(cta, 16), grow({ ...dots, t: dots.t + 13, b: dots.b - 13 }, 16)];
-  let { list } = arrange(rs, as, [...ui, grow(lead, 16)], k);
-  if (list.includes(null)) list = arrange(rs, as, ui, k).list;
+  const k = { l: lead.l, t: 96, r: W - 24, b: dots.b - 21 };
+  const ui = [grow(cta, 24), grow({ ...dots, t: dots.t + 13, b: dots.b - 13 }, 24)];
+  let { list } = arrange(rs, as, [...ui, grow(lead, 24)], k, 32);
+  if (list.includes(null)) list = arrange(rs, as, ui, k, 32).list;
   return list.map((r) => r && [r.l, r.t, r.r - r.l, r.b - r.t]);
 }
 
-// Телефон: над заголовком (ниже полосы шапки 72px) — большая и меньшая рядом, большая слева
-// или справа; под индикатором (12px от номеров) — третья у левого поля, над кнопкой (12px)
-// и левее середины экрана (линия туда не заходит). Мало места — меньше, совсем мелких нет.
-function phone(
-  W: number,
-  title: number,
-  dots: Box,
-  cta: Box,
-  { desk, left, band }: Layout,
-): Rect[] {
-  const a = desk.map((d) => d[3]);
-  const small = 3 - band;
-  const top = 88;
-  const free = title - 12 - top;
-  const h = Math.min(free, (W - 56) / (a[0] + 0.8 * a[small]));
-  const hs = 0.8 * h;
-  const bandTop = dots.b - 2;
-  const bh = cta.t - 12 - bandTop;
-  const hb = Math.min(bh, (W / 2 - 36) / a[band]);
+// Телефон. Над заголовком — пара: верх на 12px ниже полосы шапки (72px), низ не ближе 12px
+// к заголовку; большая у своего поля (20px), меньшая рядом через 12px, её высота — 0.6–0.9
+// от большой, чтобы пара заняла ширину; на низком экране пара просто уже. Нижняя — у левого
+// поля, как кнопка, посередине полосы между номерами индикатора и кнопкой (по 16px), левее
+// середины экрана (линия туда не заходит). Мало места — картинки меньше, совсем мелких нет.
+function phone(W: number, title: number, dots: Box, cta: Box, { phone: p }: Layout): Rect[] {
   const out: Rect[] = [null, null, null];
-  if (h >= 64) out[0] = [left ? 20 : W - 20 - h * a[0], top + (free - h) / 2, h * a[0], h];
-  if (Math.min(hs, hs * a[small]) >= 48) {
-    out[small] = [left ? W - 20 - hs * a[small] : 20, title - 12 - hs, hs * a[small], hs];
+  const [bi, ab] = p.big;
+  const [si, as] = p.small;
+  const top = 84;
+  const room = W - 52;
+  const h = Math.min(title - 12 - top, room / (ab + 0.6 * as));
+  const hs = Math.min(0.9, (room - ab * h) / (as * h)) * h;
+  if (h >= 64 && Math.min(hs, hs * as) >= 44) {
+    const wb = ab * h;
+    const ws = as * hs;
+    out[bi] = [p.left ? 20 : W - 20 - wb, top, wb, h];
+    out[si] = [p.left ? 32 + wb : W - 32 - wb - ws, top, ws, hs];
   }
-  if (Math.min(hb, hb * a[band]) >= 48) out[band] = [20, bandTop + (bh - hb) / 2, hb * a[band], hb];
+  const [li, al] = p.low;
+  const y0 = dots.b + 3;
+  const band = cta.t - 16 - y0;
+  const hl = Math.min(band, (W / 2 - 36) / al);
+  if (Math.min(hl, hl * al) >= 56) out[li] = [20, y0 + (band - hl) / 2, hl * al, hl];
   return out;
 }
 
@@ -298,16 +300,17 @@ export function HeroSlides({
       // Места картинок всех слайдов подряд: по три на слайд, в порядке slides.ts.
       const rects = matchMedia("(max-height: 500px)").matches
         ? []
-        : SLIDES.flatMap((_, i) => {
-            const at = LAYOUTS[i % LAYOUTS.length];
-            return mobile
-              ? phone(W, rows[0].offsetTop, dots, cta, at)
-              : desktop(W, H, lead, cta, dots, at);
-          });
+        : mobile
+          ? SLIDES.flatMap((_, i) =>
+              phone(W, rows[0].offsetTop, dots, cta, LAYOUTS[i % LAYOUTS.length]),
+            )
+          : SLIDES.flatMap((_, i) => desktop(W, H, lead, cta, dots, LAYOUTS[i % LAYOUTS.length]));
       root.querySelectorAll<HTMLElement>(`.${styles.slot}`).forEach((el, k) => {
         const r = rects[k];
         el.style.display = r ? "block" : "";
         if (!r) return;
+        const turn = LAYOUTS[Math.floor(k / 3) % LAYOUTS.length].desk[k % 3][4];
+        el.style.rotate = mobile ? "" : `${turn}deg`;
         el.style.left = `${r[0]}px`;
         el.style.top = `${r[1]}px`;
         el.style.width = `${r[2]}px`;

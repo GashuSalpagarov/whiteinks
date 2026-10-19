@@ -38,42 +38,12 @@
   letter-spacing: -0.03em;
   opacity: 0;
   transform: translateY(8px);
-  /* Два названия в одной ячейке, по центру. Маска для букв — как у логотипа: строка 1em и запас
-     0.25em сверху и снизу; базовая линия там же, где при прежней строке 1.5. */
-  display: grid;
-  justify-items: center;
-  overflow: hidden;
-  padding: 0.25em 0;
-  line-height: 1;
 }
 
 .ready .studioLabel {
   animation:
     studioFadeIn 0.75s ease-out 0.6s forwards,
     studioFadeOut 0.6s ease-in 3s forwards;
-}
-
-/* «Белые чернила» видно ~0.9 с с начала проявления, на 1.5 с — смена по буквам, как в логотипе
-   (~0.9 с), «White Inks» держится до угасания на 3 с. */
-.studioName {
-  grid-area: 1 / 1;
-  white-space: pre;
-}
-
-.studioName > span {
-  display: inline-block;
-}
-
-.studioName + .studioName > span {
-  translate: 0 1.4em;
-}
-
-.ready .studioName > span {
-  animation: letterOut 0.55s cubic-bezier(0.7, 0, 0.2, 1) calc(1.5s + var(--i) * 28ms) both;
-}
-
-.ready .studioName + .studioName > span {
-  animation-name: letterIn;
 }
 
 /* Линия пути. Живёт в Hero и уезжает вверх вместе со страницей; её конец (50vw, 93vh) —
@@ -127,7 +97,7 @@
    (ведёт к Сцене 5) — системные рамка, цвет и вид сброшены, выглядит как раньше. */
 .cta {
   position: absolute;
-  top: calc(78% - 26px);
+  top: calc(74% - 26px);
   left: calc(50% - 0.85 * var(--swing) + var(--gap));
   z-index: 4;
   display: flex;
@@ -309,7 +279,7 @@
 /* Заголовок — одно h1, три слова на трёх строках. «Создаём» над центром выходит из круга,
    пока тот сжимается в точку; «цифровые» и «продукты» проявляются слева от линии, когда
    мимо проходит точка (задержки — по времени прохода). top ставит центр строчных букв
-   (x-height) на 38/58/78% высоты — ровный шаг; 58 и 78% — пики изгиба, там линия вертикальна.
+   (x-height) на 42/58/74% высоты — ровный шаг; 58 и 74% — пики изгиба, там линия вертикальна.
    Правый край слова стоит у линии с зазором --gap: множитель при --swing — ближайшее
    к буквам положение линии на их высоте, в долях размаха изгиба (см. buildFallPath). */
 .title {
@@ -333,11 +303,11 @@
 }
 
 .word1 {
-  top: calc(38% - 0.77em);
+  top: calc(42% - 0.77em);
   right: calc(50% + var(--gap));
   /* Старт выхода: середина правого края — в центре круга (50%, 50%). */
   transform-origin: 100% 50%;
-  --emerge-from: translate(var(--gap), calc(12vh + 0.145em)) scale(0.2);
+  --emerge-from: translate(var(--gap), calc(8vh + 0.145em)) scale(0.2);
 }
 
 .word2 {
@@ -346,7 +316,7 @@
 }
 
 .word3 {
-  top: calc(78% - 0.77em);
+  top: calc(74% - 0.77em);
   right: calc(50% + var(--swing) + var(--gap));
 }
 
@@ -564,7 +534,7 @@
    .paused — Hero ушёл с экрана или вкладка скрыта). Зона нажатия — 44px. */
 .dots {
   position: absolute;
-  top: calc(86% - 22px);
+  top: calc(82% - 22px);
   left: calc(50% + 0.6 * var(--swing) + var(--gap));
   z-index: 4;
   display: flex;
@@ -668,57 +638,6 @@
   line-height: 1;
   color: var(--color-fg);
   opacity: 0;
-  /* Два названия (HeaderLogo.tsx) — в одной ячейке: ширина по длинному, растёт вправо от
-     левого края. Маска для букв — с запасом 0.25em сверху и снизу под выносные элементы,
-     текст стоит там же. Наведение ловит сам логотип. */
-  display: grid;
-  overflow: hidden;
-  padding: 0.25em 0;
-  margin-top: -0.25em;
-  pointer-events: auto;
-}
-
-.logoName {
-  grid-area: 1 / 1;
-  white-space: pre;
-}
-
-.logoName > span {
-  display: inline-block;
-}
-
-/* Второе название ждёт под маской. Смена: буквы уходящего по очереди уезжают вверх, нового —
-   выезжают снизу; направление всегда вверх — вход каждый раз начинается снизу. */
-.logoName + .logoName > span {
-  translate: 0 1.4em;
-}
-
-.logoAlt .logoName > span,
-.logoBack .logoName > span {
-  animation: letterOut 0.55s cubic-bezier(0.7, 0, 0.2, 1) calc(var(--i) * 28ms) both;
-}
-
-.logoAlt .logoName + .logoName > span,
-.logoBack .logoName:first-child > span {
-  animation-name: letterIn;
-}
-
-@keyframes letterOut {
-  from {
-    translate: 0 0;
-  }
-  to {
-    translate: 0 -1.4em;
-  }
-}
-
-@keyframes letterIn {
-  from {
-    translate: 0 1.4em;
-  }
-  to {
-    translate: 0 0;
-  }
 }
 
 /* Top сдвинут на 3px, чтобы baseline телефона (font-size 1rem) совпал
@@ -1070,6 +989,21 @@
   .lead {
     width: min(40vw, 380px);
     font-size: 14px;
+  }
+
+  /* Строки здесь — с прежним шагом 20% (38 / 58 / 78%), кнопка — у третьей; линия в Hero.tsx —
+     так же. Плотнее не помещается по высоте. */
+  .word1 {
+    top: calc(38% - 0.77em);
+    --emerge-from: translate(var(--gap), calc(12vh + 0.145em)) scale(0.2);
+  }
+
+  .word3 {
+    top: calc(78% - 0.77em);
+  }
+
+  .cta {
+    top: calc(78% - 26px);
   }
 
   .dots {
