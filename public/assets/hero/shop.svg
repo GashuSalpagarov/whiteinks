@@ -1,25 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-  <rect width="400" height="300" fill="#efefef"/>
+  <rect width="400" height="300" fill="#dddaf5"/>
   <rect x="32" y="34" width="336" height="266" rx="3" fill="#fff"/>
   <rect x="52" y="52" width="56" height="10" fill="#0a0a0a"/>
-  <rect x="236" y="54" width="28" height="6" rx="3" fill="#c8c8c8"/>
-  <rect x="274" y="54" width="28" height="6" rx="3" fill="#c8c8c8"/>
+  <rect x="236" y="54" width="28" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="274" y="54" width="28" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
   <circle cx="340" cy="57" r="8" fill="#0a0a0a"/>
-  <rect x="32" y="78" width="336" height="1.5" fill="#e4e4e4"/>
-  <rect x="52" y="98" width="92" height="92" fill="#efefef"/>
+  <rect x="32" y="78" width="336" height="1.5" fill="#0a0a0a" fill-opacity=".1"/>
+  <rect x="52" y="98" width="92" height="92" fill="#dddaf5"/>
   <circle cx="98" cy="144" r="28" fill="#0a0a0a"/>
   <rect x="154" y="98" width="92" height="92" fill="#0a0a0a"/>
   <rect x="180" y="124" width="40" height="40" fill="#fff"/>
-  <rect x="256" y="98" width="92" height="92" fill="#efefef"/>
-  <path d="M302 120 L328 166 L276 166 Z" fill="#9a9a9a"/>
+  <rect x="256" y="98" width="92" height="92" fill="#dddaf5"/>
+  <path d="M302 120 L328 166 L276 166 Z" fill="#fff"/>
   <rect x="52" y="200" width="60" height="6" rx="3" fill="#0a0a0a"/>
-  <rect x="52" y="212" width="36" height="6" rx="3" fill="#c8c8c8"/>
+  <rect x="52" y="212" width="36" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
   <rect x="154" y="200" width="60" height="6" rx="3" fill="#0a0a0a"/>
-  <rect x="154" y="212" width="36" height="6" rx="3" fill="#c8c8c8"/>
+  <rect x="154" y="212" width="36" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
   <rect x="256" y="200" width="60" height="6" rx="3" fill="#0a0a0a"/>
-  <rect x="256" y="212" width="36" height="6" rx="3" fill="#c8c8c8"/>
+  <rect x="256" y="212" width="36" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
   <rect x="52" y="236" width="92" height="64" fill="#0a0a0a"/>
-  <rect x="154" y="236" width="92" height="64" fill="#efefef"/>
-  <rect x="256" y="236" width="92" height="64" fill="#efefef"/>
-  <circle cx="302" cy="276" r="18" fill="#c8c8c8"/>
+  <rect x="154" y="236" width="92" height="64" fill="#dddaf5"/>
+  <rect x="256" y="236" width="92" height="64" fill="#dddaf5"/>
+  <circle cx="302" cy="276" r="18" fill="#0a0a0a" fill-opacity=".16"/>
 </svg>

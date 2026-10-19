@@ -1,7 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 250">
-  <rect width="350" height="250" fill="#efefef"/>
-  <circle cx="112" cy="125" r="72" fill="#0a0a0a"/>
-  <rect x="150" y="62" width="126" height="126" fill="#c8c8c8" fill-opacity="0.85"/>
-  <path d="M276 188 L276 62 A63 63 0 0 1 276 188 Z" fill="#fff"/>
-  <circle cx="213" cy="125" r="10" fill="#0a0a0a"/>
+  <rect width="350" height="250" fill="#dddaf5"/>
+  <rect x="42" y="44" width="76" height="104" fill="#fff"/>
+  <rect x="54" y="58" width="32" height="6" rx="3" fill="#0a0a0a"/>
+  <rect x="54" y="80" width="10" height="10" rx="2" fill="#0a0a0a"/>
+  <rect x="70" y="82" width="34" height="6" rx="3" fill="#0a0a0a"/>
+  <g fill="#0a0a0a" fill-opacity=".16">
+    <circle cx="59" cy="107" r="5"/>
+    <rect x="70" y="104" width="28" height="6" rx="3"/>
+    <rect x="54" y="124" width="10" height="10" rx="2"/>
+    <rect x="70" y="126" width="36" height="6" rx="3"/>
+  </g>
+  <rect x="156" y="50" width="86" height="86" rx="14" fill="#fff"/>
+  <circle cx="240" cy="124" r="40" fill="#0a0a0a"/>
+  <g fill="#fff" stroke="#0a0a0a" stroke-width="2.5">
+    <rect x="156" y="50" width="124" height="114" fill="none"/>
+    <rect x="150.5" y="44.5" width="11" height="11"/>
+    <rect x="274.5" y="44.5" width="11" height="11"/>
+    <rect x="150.5" y="158.5" width="11" height="11"/>
+    <rect x="274.5" y="158.5" width="11" height="11"/>
+  </g>
+  <path d="M282 166 V191 L288.5 185 L293 195 L297.5 193 L293 183.5 H301 Z" fill="#0a0a0a" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="127" y="200" width="96" height="30" rx="15" fill="#0a0a0a"/>
+  <rect x="132" y="205" width="20" height="20" rx="6" fill="#fff"/>
+  <path d="M138 209 V220 L141 217.5 L143.5 222 L145.5 221 L143.3 216.5 H147 Z" fill="#0a0a0a"/>
+  <rect x="159" y="210" width="10" height="10" fill="none" stroke="#fff" stroke-width="2"/>
+  <circle cx="186" cy="215" r="5.5" fill="none" stroke="#fff" stroke-width="2"/>
+  <rect x="203" y="210" width="10" height="2.5" fill="#fff"/>
+  <rect x="206.75" y="210" width="2.5" height="10" fill="#fff"/>
 </svg>

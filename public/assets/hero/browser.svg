@@ -1,19 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-  <rect width="400" height="300" fill="#efefef"/>
+  <rect width="400" height="300" fill="#f7dccb"/>
   <rect x="32" y="34" width="336" height="266" rx="3" fill="#fff"/>
   <circle cx="50" cy="51" r="4" fill="#0a0a0a"/>
-  <circle cx="64" cy="51" r="4" fill="#c8c8c8"/>
-  <circle cx="78" cy="51" r="4" fill="#c8c8c8"/>
-  <rect x="146" y="45" width="108" height="12" rx="6" fill="#efefef"/>
-  <rect x="32" y="68" width="336" height="1.5" fill="#e4e4e4"/>
+  <circle cx="64" cy="51" r="4" fill="#0a0a0a" fill-opacity=".16"/>
+  <circle cx="78" cy="51" r="4" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="146" y="45" width="108" height="12" rx="6" fill="#f7dccb"/>
+  <rect x="32" y="68" width="336" height="1.5" fill="#0a0a0a" fill-opacity=".1"/>
   <rect x="56" y="98" width="148" height="20" fill="#0a0a0a"/>
   <rect x="56" y="126" width="104" height="20" fill="#0a0a0a"/>
-  <rect x="56" y="162" width="132" height="6" rx="3" fill="#c8c8c8"/>
-  <rect x="56" y="176" width="96" height="6" rx="3" fill="#c8c8c8"/>
+  <rect x="56" y="162" width="132" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="56" y="176" width="96" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
   <rect x="56" y="198" width="72" height="24" rx="12" fill="#0a0a0a"/>
-  <rect x="222" y="92" width="122" height="130" fill="#e6e6e6"/>
+  <rect x="222" y="92" width="122" height="130" fill="#f7dccb"/>
   <circle cx="283" cy="157" r="40" fill="#0a0a0a"/>
-  <rect x="56" y="246" width="88" height="54" fill="#efefef"/>
-  <rect x="156" y="246" width="88" height="54" fill="#efefef"/>
+  <rect x="56" y="246" width="88" height="54" fill="#f7dccb"/>
+  <rect x="156" y="246" width="88" height="54" fill="#f7dccb"/>
   <rect x="256" y="246" width="88" height="54" fill="#0a0a0a"/>
 </svg>
