@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { useLenis } from '@/app/providers';
 import { LOOP_EVENT } from '@/components/scenes/Footer';
 import { BRIEF_CONFIG } from '@/lib/brief';
@@ -9,6 +9,9 @@ import { HeaderLogo } from './HeaderLogo';
 import { HeaderMenu, HeaderNav } from './HeaderMenu';
 import styles from './Hero.module.css';
 import { HeroScrollLock } from './HeroScrollLock';
+import { HeroSlides } from './HeroSlides';
+
+const STUDIO_NAMES = ['Белые чернила', 'White Inks'];
 
 // Путь падения точки в px от левого верхнего угла Hero: из центра круга (центр экрана)
 // в точку покоя (50vw, 93vh) мягкой S-кривой — сначала вправо, потом влево. В конец приходит
@@ -136,7 +139,19 @@ export function Hero() {
         <HeroScrollLock />
 
         <div className={styles.pill} aria-hidden="true" />
-        <span className={styles.studioLabel}>White Inks</span>
+        {/* «Белые чернила», затем по буквам — «White Inks» (как смена в логотипе). */}
+        <span className={styles.studioLabel} role="img" aria-label="White Inks">
+          {STUDIO_NAMES.map((name) => (
+            <span key={name} className={styles.studioName} aria-hidden="true">
+              {[...name].map((ch, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: буквы повторяются, порядок постоянный
+                <span key={i} style={{ '--i': i } as CSSProperties}>
+                  {ch}
+                </span>
+              ))}
+            </span>
+          ))}
+        </span>
 
         <svg className={styles.line} aria-hidden="true">
           <path className={styles.lineStroke} d={fallPath || undefined} pathLength={1} />
@@ -147,18 +162,12 @@ export function Hero() {
           aria-hidden="true"
         />
 
-        <h1 className={styles.title}>
-          <span className={`${styles.word} ${styles.word1}`}>Создаём</span>{' '}
-          <span className={`${styles.word} ${styles.word2}`}>цифровые</span>{' '}
-          <span className={`${styles.word} ${styles.word3}`}>продукты</span>
-        </h1>
-        <p className={styles.lead}>
-          Сайты, приложения и бренды — от идеи до запуска. Проектируем, рисуем и разрабатываем
-          под ключ.
-        </p>
-        <button type="button" className={styles.cta} onClick={goToBrief}>
-          Связаться
-        </button>
+        {/* Заголовок, подводка, картинки и индикатор слайдов — HeroSlides.tsx, тексты — slides.ts. */}
+        <HeroSlides hero={heroRef}>
+          <button type="button" className={styles.cta} onClick={goToBrief}>
+            Связаться
+          </button>
+        </HeroSlides>
 
         <div ref={dropRef} className={styles.drop} aria-hidden="true" />
       </section>

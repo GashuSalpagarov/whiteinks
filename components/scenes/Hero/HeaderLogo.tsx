@@ -4,9 +4,10 @@ import { type CSSProperties, useEffect, useRef } from "react";
 import { LOOP_EVENT } from "@/components/scenes/Footer";
 import styles from "./Hero.module.css";
 
-// Логотип по очереди показывает два названия. Смена — по буквам (.logoAlt / .logoBack в
-// Hero.module.css): буквы уходящего уезжают вверх, нового — выезжают снизу.
-const NAMES = ["White Inks", "Белые чернила"];
+// Логотип по очереди показывает два названия, первым — «Белые чернила». Смена — по буквам
+// (.logoAlt / .logoBack в Hero.module.css): буквы уходящего уезжают вверх, нового — выезжают снизу.
+// Для читалок — всегда название бренда, «White Inks».
+const NAMES = ["Белые чернила", "White Inks"];
 const INTRO_MS = 6600; // логотип проявляется после интро — как uiFadeIn у .logo
 const EVERY_MS = 4000;
 const SWAP_MS = 12 * 28 + 550; // вся смена: задержка последней буквы и её ход
@@ -35,7 +36,7 @@ export function HeaderLogo() {
         wait(EVERY_MS);
       }, ms);
     };
-    // Интро и каждый новый круг пути: снова «White Inks», отсчёт — от появления логотипа.
+    // Интро и каждый новый круг пути: снова «Белые чернила», отсчёт — от появления логотипа.
     const start = () => {
       alt = false;
       el.classList.remove(styles.logoAlt, styles.logoBack);
@@ -69,7 +70,7 @@ export function HeaderLogo() {
   }, []);
 
   return (
-    <span ref={ref} className={styles.logo} role="img" aria-label={NAMES[0]}>
+    <span ref={ref} className={styles.logo} role="img" aria-label="White Inks">
       {NAMES.map((name) => (
         <span key={name} className={styles.logoName} aria-hidden="true">
           {[...name].map((ch, i) => (

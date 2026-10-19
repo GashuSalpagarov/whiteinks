@@ -38,12 +38,42 @@
   letter-spacing: -0.03em;
   opacity: 0;
   transform: translateY(8px);
+  /* Два названия в одной ячейке, по центру. Маска для букв — как у логотипа: строка 1em и запас
+     0.25em сверху и снизу; базовая линия там же, где при прежней строке 1.5. */
+  display: grid;
+  justify-items: center;
+  overflow: hidden;
+  padding: 0.25em 0;
+  line-height: 1;
 }
 
 .ready .studioLabel {
   animation:
     studioFadeIn 0.75s ease-out 0.6s forwards,
     studioFadeOut 0.6s ease-in 3s forwards;
+}
+
+/* «Белые чернила» видно ~0.9 с с начала проявления, на 1.5 с — смена по буквам, как в логотипе
+   (~0.9 с), «White Inks» держится до угасания на 3 с. */
+.studioName {
+  grid-area: 1 / 1;
+  white-space: pre;
+}
+
+.studioName > span {
+  display: inline-block;
+}
+
+.studioName + .studioName > span {
+  translate: 0 1.4em;
+}
+
+.ready .studioName > span {
+  animation: letterOut 0.55s cubic-bezier(0.7, 0, 0.2, 1) calc(1.5s + var(--i) * 28ms) both;
+}
+
+.ready .studioName + .studioName > span {
+  animation-name: letterIn;
 }
 
 /* Линия пути. Живёт в Hero и уезжает вверх вместе со страницей; её конец (50vw, 93vh) —
@@ -350,6 +380,266 @@
   }
   to {
     opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Слайды (HeroSlides.tsx) ----------
+   В каждой строке — слова всех слайдов стопкой: первое в потоке (по нему ширина строки, как
+   раньше), остальные поверх, правым краем к линии (на телефоне — левым к полю). Видно слово
+   активного слайда (.on). В покое это цельный текст с кернингом, на смене — буквы (.letters,
+   кернинг возвращён отступами): уходящие уезжают вверх под маску, новые выезжают снизу —
+   0.6 с, шаг 18 мс на букву и 70 мс на строку. Маска — clip-path букв по их строке: от её верха
+   (точки «ё» и «й» — на 0.05–0.12em ниже) до 0.1em под ней (выносные д, у, р, ф кончаются
+   на 1.2–1.28em), так строки не заходят друг на друга; цельный текст в покое не обрезается.
+   Ход буквы — 1.4em основного кегля. Длинное слово уменьшает кегль своего слайда (--fit), центр
+   строчных остаётся на той же высоте (0.77em от верха строки). */
+.word1 {
+  --row: 0;
+}
+
+.word2 {
+  --row: 1;
+}
+
+.word3 {
+  --row: 2;
+}
+
+.sw {
+  position: relative;
+  display: block;
+  top: calc(0.77em * (1 / var(--fit, 1) - 1));
+  font-size: calc(1em * var(--fit, 1));
+  letter-spacing: -0.02em;
+  --end: calc(var(--row) * 70ms + (var(--n) - 1) * 18ms + 0.6s);
+}
+
+.sw + .sw {
+  position: absolute;
+  right: 0;
+}
+
+.whole {
+  visibility: hidden;
+}
+
+.letters {
+  position: absolute;
+  top: 0;
+  left: 0;
+  clip-path: inset(0 -100vw -0.1em);
+}
+
+/* Буквы ждут под маской снизу; активный слайд (.on) — на месте, только что ушедший (.out) —
+   над маской. Из .out в ожидание — без перехода: к следующей смене он уже за маской. Всё —
+   переходами, не анимациями: снятая анимация в Chrome не даёт начаться переходу, и уходящий
+   слайд исчезал бы сразу. */
+.letters > span {
+  display: inline-block;
+  translate: 0 calc(1.4em / var(--fit, 1));
+}
+
+.sw.on .letters > span,
+.sw.out .letters > span {
+  transition: translate 0.6s cubic-bezier(0.7, 0, 0.2, 1)
+    calc(var(--row) * 70ms + var(--i) * 18ms);
+}
+
+.sw.on .letters > span {
+  translate: none;
+}
+
+.sw.out .letters > span {
+  translate: 0 calc(-1.4em / var(--fit, 1));
+}
+
+.sw.on .whole {
+  visibility: visible;
+  animation: stayHidden 0s var(--end) backwards;
+}
+
+.sw.on .letters {
+  visibility: hidden;
+  animation: stayVisible 0s var(--end) backwards;
+}
+
+@keyframes stayHidden {
+  from,
+  to {
+    visibility: hidden;
+  }
+}
+
+@keyframes stayVisible {
+  from,
+  to {
+    visibility: visible;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Подводки всех слайдов — в одной ячейке (высота блока — по самой длинной): старая гаснет,
+   потом проявляется новая, не накладываясь. */
+.lead {
+  display: grid;
+}
+
+.leadText {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease-in,
+    visibility 0s linear 0.3s;
+}
+
+.leadText.on {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s ease-out 0.3s;
+}
+
+/* Картинки: три места (их размеры и положение считает HeroSlides.tsx; не помещаются —
+   display: none), в каждом — картинки всех слайдов. Старый набор гаснет и уходит вверх на 18px,
+   новый проявляется снизу со сдвигом 90 мс между местами. После интро места проявляются так же.
+   При прокрутке место гаснет, подходя к шапке (--fade из HeroSlides.tsx): под логотип, телефон
+   и бургер картинки не заходят. */
+.slot {
+  position: absolute;
+  z-index: 1;
+  display: none;
+  opacity: 0;
+}
+
+.ready .slot {
+  opacity: var(--fade, 1);
+  animation: mediaIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) calc(6.5s + var(--i) * 90ms) backwards;
+}
+
+.slot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+  opacity: 0;
+  translate: 0 24px;
+}
+
+.slot img.on {
+  opacity: 1;
+  translate: none;
+  transition:
+    opacity 0.6s ease-out calc(0.3s + var(--i) * 90ms),
+    translate 0.8s cubic-bezier(0.16, 1, 0.3, 1) calc(0.3s + var(--i) * 90ms);
+}
+
+.slot img.out {
+  translate: 0 -18px;
+  transition:
+    opacity 0.4s ease-in,
+    translate 0.4s ease-in;
+}
+
+@keyframes mediaIn {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}
+
+/* Индикатор — под кнопкой, по левому краю подводки. Номер и полоска; у активного полоска
+   заполняется за 5 с, по её animationend HeroSlides.tsx листает дальше (.live — после интро,
+   .paused — Hero ушёл с экрана или вкладка скрыта). Зона нажатия — 44px. */
+.dots {
+  position: absolute;
+  top: calc(86% - 22px);
+  left: calc(50% + 0.6 * var(--swing) + var(--gap));
+  z-index: 4;
+  display: flex;
+  gap: 14px;
+  opacity: 0;
+}
+
+.ready .dots {
+  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+}
+
+.dot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(10, 10, 10, 0.35);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+  transition: color 0.3s ease-out;
+}
+
+.dot.on {
+  color: var(--color-fg);
+}
+
+@media (hover: hover) {
+  .dot:hover {
+    color: var(--color-fg);
+  }
+}
+
+.bar {
+  position: relative;
+  width: 30px;
+  height: 1.5px;
+  background: rgba(10, 10, 10, 0.15);
+}
+
+/* Заливка: у ушедшего номера гаснет на месте, потом сбрасывается. */
+.bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-fg);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition:
+    opacity 0.3s ease-out,
+    transform 0s linear 0.3s;
+}
+
+.dot.on .bar::after {
+  opacity: 1;
+  transition: none;
+}
+
+.live .dot.on .bar::after {
+  animation: barFill 5s linear forwards;
+}
+
+.paused .dot.on .bar::after {
+  animation-play-state: paused;
+}
+
+@keyframes barFill {
+  to {
     transform: none;
   }
 }
@@ -749,14 +1039,51 @@
     height: 48px;
     padding: 0 24px;
   }
+
+  .sw + .sw {
+    right: auto;
+    left: 0;
+  }
+
+  /* Индикатор — сразу под подводкой (низ её блока — --lead-b из HeroSlides.tsx), где линия ещё
+     справа; у точки покоя линия уходит к центру, там места нет. Компактнее — 188px. */
+  .dots {
+    top: calc(var(--lead-b, calc(var(--y1) + 3.05 * var(--title-size) + 96px)) + 12px);
+    left: 20px;
+    gap: 4px;
+  }
+
+  .dot {
+    gap: 6px;
+  }
+
+  .bar {
+    width: 18px;
+  }
 }
 
 /* Короткий ландшафт: вёрстка десктопная, но строк мало по высоте — подзаголовок шире
-   и мельче, в три строки, чтобы не заходить на CTA. */
+   и мельче, в три строки, чтобы не заходить на CTA. Индикатор — в строку с кнопкой, правым
+   краем по краю подводки, компактнее; картинок нет. */
 @media (min-width: 768px) and (max-height: 500px) {
   .lead {
     width: min(40vw, 380px);
     font-size: 14px;
+  }
+
+  .dots {
+    top: calc(78% - 22px);
+    right: calc(50% - 0.6 * var(--swing) - var(--gap) - min(40vw, 380px));
+    left: auto;
+    gap: 8px;
+  }
+
+  .dot {
+    gap: 8px;
+  }
+
+  .bar {
+    width: 20px;
   }
 }
 
@@ -850,8 +1177,14 @@
   .logo,
   .phone,
   .nav,
-  .menu {
+  .menu,
+  .dots {
     opacity: 1;
+  }
+
+  /* Без автопрокрутки полоска активного номера просто залита. */
+  .dot.on .bar::after {
+    transform: none;
   }
 
   .drop {
