@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { onScroll, setVar, viewportH } from '@/lib/scroll/onScroll';
 import styles from './Scene2.module.css';
+import { ART } from './Scene2Art';
 
 // Колена траектории. Phase отсчитывается от scroll = 43vh (момент фиксации точки в центре).
 // 7vh «прелюдии» — ничтожная вертикальная прямая прежде чем начнётся первое колено.
@@ -37,68 +38,78 @@ const PHONE_PATH: [number, number][] = [
 type Block = {
   title: string;
   body: string;
+  tags: string[];
   side: 'left' | 'right';
   trigger: number; // scrollVh, на котором блок становится полностью видимым
   parallaxY: number; // индивидуальный коэффициент Y-параллакса (глубина блока)
 };
 
+// Услуги. Неразрывный пробел (\u00a0) — перед тире и внутри названия Telegram Mini App.
 const BLOCKS: Block[] = [
   // Колено 0 — точка идёт влево, блоки справа
   {
-    title: 'Кто мы',
-    body: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    title: 'Сайты под ключ',
+    body: 'Корпоративные сайты и лендинги: от структуры и текстов до запуска и аналитики.',
+    tags: ['Лендинги', 'Корпоративные', 'Каталоги', 'Промо'],
     side: 'right',
     trigger: 75,
     parallaxY: 0.22,
   },
   {
-    title: 'Манифест',
-    body: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor.',
+    title: 'Интернет-магазины',
+    body: 'Каталог, корзина, оплата и доставка\u00a0— магазин, который удобно вести и легко растить.',
+    tags: ['Каталог', 'Оплата и доставка', '1С и CRM'],
     side: 'right',
     trigger: 120,
     parallaxY: 0.32,
   },
   // Колено 1 — точка идёт вправо, блоки слева
   {
-    title: 'Что делаем',
-    body: 'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+    title: 'Продуктовая аналитика',
+    body: 'Изучаем аудиторию и конкурентов до разработки, чтобы продукт решал настоящие задачи.',
+    tags: ['Интервью', 'Конкуренты', 'CJM', 'Прототипы'],
     side: 'left',
     trigger: 175,
     parallaxY: 0.18,
   },
   {
-    title: 'Подходы',
-    body: 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.',
+    title: 'UX/UI-дизайн',
+    body: 'Проектируем сценарии и рисуем интерфейсы, понятные с первого экрана.',
+    tags: ['Интерфейсы', 'Дизайн-системы', 'Анимация', '3D'],
     side: 'left',
     trigger: 220,
     parallaxY: 0.28,
   },
   // Колено 2 — точка идёт влево, блоки справа
   {
-    title: 'Этапы',
-    body: 'Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem.',
+    title: 'Брендинг',
+    body: 'Имя, логотип и айдентика, которые узнают сразу, и бренд-бук, чтобы их сохранить.',
+    tags: ['Нейминг', 'Логотип', 'Айдентика', 'Бренд-бук'],
     side: 'right',
     trigger: 275,
     parallaxY: 0.26,
   },
   {
-    title: 'Принципы',
-    body: 'Quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.',
+    title: 'Мобильные приложения и Telegram\u00a0Mini\u00a0App',
+    body: 'iOS, Android и приложения внутри Telegram\u00a0— от прототипа до публикации.',
+    tags: ['iOS', 'Android', 'Telegram Mini App'],
     side: 'right',
     trigger: 320,
     parallaxY: 0.20,
   },
   // Колено 3 — точка идёт вправо, блоки слева
   {
-    title: 'Проекты',
-    body: 'Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur adipisci velit, sed quia non numquam.',
+    title: 'ИИ и автоматизация',
+    body: 'Чат-боты на нейросетях и автоматизация рутины: связываем сайт, CRM и 1С, чтобы заявки и документы шли сами.',
+    tags: ['ИИ-боты', 'Интеграции', 'CRM и 1С', 'Бизнес-процессы'],
     side: 'left',
     trigger: 375,
     parallaxY: 0.30,
   },
   {
-    title: 'Результаты',
-    body: 'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti.',
+    title: 'Поддержка, развитие и SEO',
+    body: 'Дорабатываем, следим за стабильностью и приводим клиентов из поиска.',
+    tags: ['Поддержка', 'Доработки', 'SEO', 'Аналитика'],
     side: 'left',
     trigger: 420,
     parallaxY: 0.24,
@@ -160,6 +171,25 @@ function getCompactBlock(top: number, h: number): { opacity: number; rise: numbe
   const appear = Math.max(0, Math.min(1, (0.92 * h - top) / (0.26 * h)));
   const leave = Math.max(0, Math.min(1, (top - 80) / (0.12 * h)));
   return { opacity: Math.min(appear, leave), rise: (1 - appear) * 24 };
+}
+
+// Расстояние от прямоугольника на экране до трассы, включая саму точку (конец трассы).
+// Трасса — те же точки, что в buildPathD, только у прямоугольника по высоте (с запасом 40px).
+function trailGap(
+  r: { left: number; right: number; top: number; bottom: number },
+  { w, h, scrollVh, phone }: { w: number; h: number; scrollVh: number; phone: boolean },
+): number {
+  const sAt = (y: number) => scrollVh + ((y - 20) * 100) / h - 50;
+  const to = Math.min(scrollVh, sAt(r.bottom + 40));
+  let gap = Number.POSITIVE_INFINITY;
+  for (let s = Math.max(43, sAt(r.top - 40)); s <= to + 0.25; s += 0.5) {
+    const x = ((50 + getDropX(Math.min(s, to), phone)) * w) / 100;
+    const y = ((50 + Math.min(s, to) - scrollVh) * h) / 100 + 20;
+    const dx = Math.max(r.left - x, 0, x - r.right);
+    const dy = Math.max(r.top - y, 0, y - r.bottom);
+    gap = Math.min(gap, Math.hypot(dx, dy));
+  }
+  return gap;
 }
 
 function buildPathD(scrollVh: number, w: number, h: number): string {
@@ -227,9 +257,61 @@ export function Scene2() {
     const section = sectionRef.current;
     if (!section) return;
     const blockEls = section.querySelectorAll<HTMLElement>('aside');
+    const artEls = section.querySelectorAll<HTMLElement>(`.${styles.art}`);
     let pathKey = '';
     let bridgeKey = '';
     let lastY = 0;
+    // Элементы вокруг пункта (Scene2Art) гаснут, не дойдя до чужого текста (блоки пары с разным
+    // параллаксом сходятся), до трассы с точкой и до шапки (на десктопе она под сценами и
+    // закрыла бы логотип и телефон). Зазор — с запасом на покачивание ±3px. Высоты считаем по
+    // этому проходу (рамки getBoundingClientRect — с прошлого кадра), сдвиг элемента — его --d.
+    // Анимация — только пока хоть один элемент пункта виден.
+    // Без движения блоки видны всегда (Scene2.module.css) — и элементы вместе с ними.
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const depth = [...artEls].map((a) =>
+      [...a.children].map((c) => Number.parseFloat(getComputedStyle(c).getPropertyValue('--d')) || 0),
+    );
+    const setArt = (
+      i: number,
+      view: { w: number; h: number; scrollVh: number; phone: boolean },
+      tops: number[],
+      ys: number[],
+      ops: number[],
+    ) => {
+      let shown = false;
+      for (let k = 0; k < artEls[i].children.length; k++) {
+        const el = artEls[i].children[k] as HTMLElement;
+        // Скрыт на этом экране или слой только что включён (замерим в следующем проходе).
+        if (!el.offsetParent) {
+          setVar(`--art-${i + 1}-${k + 1}`, '0');
+          continue;
+        }
+        const { left, right } = el.getBoundingClientRect();
+        const top = tops[i] + el.offsetTop + depth[i][k] * ys[i];
+        const r = { left, right, top, bottom: top + el.offsetHeight };
+        // Запасы: 8px + размах покачивания; у трассы ещё радиус точки.
+        let o = Math.min(
+          (top - 72) / (0.1 * view.h),
+          (trailGap(r, view) - 22) / 16,
+          (Math.min(left, view.w - right) - 8) / 16, // и у края экрана
+        );
+        for (let j = 0; j < blockEls.length; j++) {
+          if (j === i || ops[j] <= 0.05) continue;
+          const b = blockEls[j].getBoundingClientRect();
+          const gap = Math.max(
+            b.left - r.right,
+            r.left - b.right,
+            tops[j] - r.bottom,
+            r.top - tops[j] - b.height,
+          );
+          o = Math.min(o, (gap - 16) / 16);
+        }
+        o = Math.max(0, Math.min(1, o));
+        setVar(`--art-${i + 1}-${k + 1}`, `${o}`);
+        shown ||= ops[i] > 0 && o > 0 && top < view.h && r.bottom > 0;
+      }
+      setVar(`--block-${i + 1}-art-play`, shown ? 'running' : 'paused');
+    };
     const update = () => {
       const w = window.innerWidth;
       // Общая высота экрана (как --ih в CSS): на телефоне vh больше innerHeight.
@@ -257,6 +339,9 @@ export function Scene2() {
       // дальше не трогаем: каждая смена пересчитывает стили всей страницы.
       const rect = section.getBoundingClientRect();
       const blocksGone = rect.bottom < 0;
+      const tops: number[] = [];
+      const ys: number[] = [];
+      const ops: number[] = [];
       for (let i = 0; i < BLOCKS.length && !blocksGone; i++) {
         const block = BLOCKS[i];
         if (compact) {
@@ -264,20 +349,34 @@ export function Scene2() {
           setVar(`--block-${i + 1}-opacity`, `${opacity}`);
           setVar(`--block-${i + 1}-y`, `${rise}px`);
           setVar(`--block-${i + 1}-x`, '0vw');
+          tops[i] = rect.top + blockEls[i].offsetTop + rise;
+          ys[i] = rise;
+          ops[i] = still ? 1 : opacity;
           continue;
         }
-        setVar(
-          `--block-${i + 1}-opacity`,
-          `${getBlockOpacity(scrollVh, block.trigger)}`,
-        );
-        setVar(
-          `--block-${i + 1}-y`,
-          `${(getBlockParallaxY(scrollVh, block.trigger, block.parallaxY) * h) / 100}px`,
-        );
+        const opacity = getBlockOpacity(scrollVh, block.trigger);
+        const y = (getBlockParallaxY(scrollVh, block.trigger, block.parallaxY) * h) / 100;
+        setVar(`--block-${i + 1}-opacity`, `${opacity}`);
+        setVar(`--block-${i + 1}-y`, `${y}px`);
         setVar(
           `--block-${i + 1}-x`,
           `${getBlockParallaxX(scrollVh, block.trigger, block.side)}vw`,
         );
+        tops[i] = rect.top + blockEls[i].offsetTop + y;
+        ys[i] = y;
+        ops[i] = still ? 1 : opacity;
+      }
+      for (let i = 0; i < BLOCKS.length; i++) {
+        // Элементы далеко от экрана (и вся секция выше него) выключены целиком: каждая смена
+        // переменных пересчитывает стили всей страницы, и лишние узлы его утяжеляют.
+        const near =
+          !blocksGone &&
+          ops[i] > 0 &&
+          tops[i] < 1.5 * h &&
+          tops[i] + blockEls[i].offsetHeight > -0.5 * h;
+        setVar(`--block-${i + 1}-art-show`, near ? 'block' : 'none');
+        if (near) setArt(i, { w, h, scrollVh, phone }, tops, ys, ops);
+        else setVar(`--block-${i + 1}-art-play`, 'paused');
       }
 
       // Путь (до ~1800 точек) строим, только если трасса видна и что-то сдвинулось.
@@ -333,8 +432,31 @@ export function Scene2() {
           key={block.title}
           className={`${styles.block} ${block.side === 'right' ? styles.right : styles.left} ${styles[`block${i + 1}`]}`}
         >
+          <div className={styles.art} aria-hidden="true">
+            {ART[i].map((art, j) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: состав элементов постоянный
+                key={j}
+                className={`${styles[art.slot]} ${art.phone === false ? styles.noPhone : ''}`}
+                // Гашение у шапки — своё у каждого элемента (Scene2.tsx), покачивание — со своим
+                // сдвигом по фазе.
+                style={{
+                  opacity: `var(--art-${i + 1}-${j + 1}, 1)`,
+                  animationDelay: `${-(((i * 3 + j) * 1.7) % 5)}s`,
+                  ...art.style,
+                }}
+              >
+                {art.el}
+              </div>
+            ))}
+          </div>
           <h2>{block.title}</h2>
           <p>{block.body}</p>
+          <ul className={styles.tags}>
+            {block.tags.map((tag) => (
+              <li key={tag}>{tag}</li>
+            ))}
+          </ul>
         </aside>
       ))}
     </section>

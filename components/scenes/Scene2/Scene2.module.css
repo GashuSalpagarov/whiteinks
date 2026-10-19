@@ -47,12 +47,119 @@
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.15;
+  text-wrap: balance;
 }
 
 .block p {
   font-size: 1rem;
   line-height: 1.55;
   color: rgba(10, 10, 10, 0.72);
+}
+
+/* Теги — подпись, как метки Сцены 5 без прописных. Точка-разделитель стоит в зазоре перед
+ * тегом; у первого в строке она уходит за край списка и обрезается. */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1.4em;
+  margin-top: 1rem;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: rgba(10, 10, 10, 0.5);
+}
+
+.tags li {
+  position: relative;
+  white-space: nowrap;
+}
+
+.tags li::before {
+  content: "·";
+  content: "·" / "";
+  position: absolute;
+  right: 100%;
+  width: 1.4em;
+  text-align: center;
+}
+
+/* Элементы вокруг пункта (Scene2Art.tsx): слой размером с блок, места — вокруг текста. Размеры
+ * в em: 10px при ширине 1440, дальше пропорционально экрану. Слева — зеркально (scale слоя),
+ * сами элементы — не зеркальные. Каждый сдвигается на свою долю параллакса блока (--d),
+ * покачивается ±3px за 5 с; гаснет у шапки, чужого текста и трассы (--art-N-K), невидимые —
+ * на паузе (--block-N-art-play): см. Scene2.tsx. */
+.art {
+  display: var(--art-show);
+  position: absolute;
+  inset: 0;
+  color: var(--accent);
+  font-size: clamp(7px, 0.694vw, 13px);
+}
+
+.left .art,
+.left .art > * {
+  scale: -1 1;
+}
+
+.art > * {
+  position: absolute;
+  translate: 0 calc(var(--art-y) * var(--d));
+  animation: sway 2.5s ease-in-out infinite alternate;
+  animation-play-state: var(--art-play);
+}
+
+/* globals.css ограничивает svg шириной родителя — у элемента за краем блока она нулевая. */
+.art svg {
+  max-width: none;
+  overflow: visible;
+}
+
+/* Места: у верхнего блока пары — сверху снаружи, снаружи и снизу у трассы; у нижнего —
+ * снаружи, снизу и у трассы. «Снаружи» — к краю экрана, от трассы. Скорость (--d) у каждого
+ * места своя и маленькая: блоки пары сходятся и расходятся при прокрутке, и элемент между
+ * ними не должен въехать в текст. У элемента под верхним блоком она отрицательная — он
+ * обгоняет блок вверх, вслед за нижним блоком. */
+.topOut {
+  right: 0;
+  bottom: calc(100% + max(2.6em, 24px));
+  --d: 0.06;
+}
+
+.out {
+  top: 0;
+  left: calc(100% + 2em);
+  --d: 0.1;
+}
+
+.bottomIn {
+  top: calc(100% + 3.4em);
+  left: 0;
+  --d: -0.06;
+}
+
+.bottom {
+  top: calc(100% + 3.4em);
+  left: 42%;
+  --d: 0.12;
+}
+
+.in {
+  top: 18%;
+  right: calc(100% + 2.6em);
+  --d: 0.08;
+}
+
+@keyframes sway {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(3px);
+  }
 }
 
 .right {
@@ -81,45 +188,77 @@
   top: calc(var(--ih, 100vh) * 0.1);
   opacity: var(--block-1-opacity, 0);
   transform: translate(var(--block-1-x, 0), var(--block-1-y, 0));
+  --accent: #f7dccb;
+  --art-y: var(--block-1-y, 0px);
+  --art-play: var(--block-1-art-play, paused);
+  --art-show: var(--block-1-art-show, none);
 }
 .block2 {
   top: calc(var(--ih, 100vh) * 0.55);
   right: 18vw;
   opacity: var(--block-2-opacity, 0);
   transform: translate(var(--block-2-x, 0), var(--block-2-y, 0));
+  --accent: #d3ebdd;
+  --art-y: var(--block-2-y, 0px);
+  --art-play: var(--block-2-art-play, paused);
+  --art-show: var(--block-2-art-show, none);
 }
 .block3 {
   top: calc(var(--ih, 100vh) * 1.1);
   opacity: var(--block-3-opacity, 0);
   transform: translate(var(--block-3-x, 0), var(--block-3-y, 0));
+  --accent: #dddaf5;
+  --art-y: var(--block-3-y, 0px);
+  --art-play: var(--block-3-art-play, paused);
+  --art-show: var(--block-3-art-show, none);
 }
 .block4 {
   top: calc(var(--ih, 100vh) * 1.55);
   left: 18vw;
   opacity: var(--block-4-opacity, 0);
   transform: translate(var(--block-4-x, 0), var(--block-4-y, 0));
+  --accent: #f4ebc3;
+  --art-y: var(--block-4-y, 0px);
+  --art-play: var(--block-4-art-play, paused);
+  --art-show: var(--block-4-art-show, none);
 }
 .block5 {
   top: calc(var(--ih, 100vh) * 2.1);
   opacity: var(--block-5-opacity, 0);
   transform: translate(var(--block-5-x, 0), var(--block-5-y, 0));
+  --accent: #f7dccb;
+  --art-y: var(--block-5-y, 0px);
+  --art-play: var(--block-5-art-play, paused);
+  --art-show: var(--block-5-art-show, none);
 }
 .block6 {
   top: calc(var(--ih, 100vh) * 2.55);
   right: 18vw;
   opacity: var(--block-6-opacity, 0);
   transform: translate(var(--block-6-x, 0), var(--block-6-y, 0));
+  --accent: #d3ebdd;
+  --art-y: var(--block-6-y, 0px);
+  --art-play: var(--block-6-art-play, paused);
+  --art-show: var(--block-6-art-show, none);
 }
 .block7 {
   top: calc(var(--ih, 100vh) * 3.1);
   opacity: var(--block-7-opacity, 0);
   transform: translate(var(--block-7-x, 0), var(--block-7-y, 0));
+  --accent: #dddaf5;
+  --art-y: var(--block-7-y, 0px);
+  --art-play: var(--block-7-art-play, paused);
+  --art-show: var(--block-7-art-show, none);
 }
 .block8 {
   top: calc(var(--ih, 100vh) * 3.55);
   left: 18vw;
   opacity: var(--block-8-opacity, 0);
   transform: translate(var(--block-8-x, 0), var(--block-8-y, 0));
+  --accent: #f4ebc3;
+  --art-y: var(--block-8-y, 0px);
+  --art-play: var(--block-8-art-play, paused);
+  --art-show: var(--block-8-art-show, none);
 }
 
 /* ---------- Телефон (< 768px; тот же порог — в Scene2.tsx) ----------
@@ -144,6 +283,40 @@
     font-size: 15px;
     overflow-wrap: normal;
     text-wrap: pretty;
+  }
+
+  .tags {
+    margin-top: 10px;
+  }
+
+  /* Сбоку от блока места нет: элементы — над верхним блоком пары и под нижним, в просвет
+   * пары ничего не ставим. Где места нет (трасса переходит на другую сторону) — элемент
+   * скрыт (noPhone). */
+  .art {
+    font-size: 7px;
+  }
+
+  .noPhone {
+    display: none;
+  }
+
+  .bottomIn {
+    top: auto;
+    bottom: calc(100% + max(2.6em, 24px));
+  }
+
+  .out,
+  .bottom {
+    top: calc(100% + 3.4em);
+  }
+
+  .out {
+    right: 0;
+    left: auto;
+  }
+
+  .bottom {
+    left: 0;
   }
 
   .right,
