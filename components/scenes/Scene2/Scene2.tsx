@@ -221,12 +221,15 @@ function buildPathD(scrollVh: number, w: number, h: number): string {
 export function Scene2() {
   const sectionRef = useRef<HTMLElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
+  const bridgeRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
     const blockEls = section.querySelectorAll<HTMLElement>('aside');
     let pathKey = '';
+    let bridgeKey = '';
+    let lastY = 0;
     const update = () => {
       const w = window.innerWidth;
       // Общая высота экрана (как --ih в CSS): на телефоне vh больше innerHeight.
@@ -283,6 +286,21 @@ export function Scene2() {
         pathKey = key;
         pathRef.current.setAttribute('d', key && buildPathD(scrollVh, w, h));
       }
+
+      // Нахлёст на стыке: начало трассы ещё и в слое страницы, вместе с линией Hero. При прокрутке
+      // мимо Lenis (палец, клавиатура) fixed-трасса на кадр отстаёт — отрезок закрывает щель.
+      // Лежит на прямом участке трассы (20px и прелюдия до колена; на телефоне колено сразу), не
+      // ниже точки, на 1px уже линии — в покое не виден. Вверх щели нет — и отрезка нет.
+      const up = window.scrollY < lastY;
+      lastY = window.scrollY;
+      const straight = 20 + ((phone ? 0 : KNEES[0].start - 1) * h) / 100;
+      const reach = Math.min(straight, ((scrollVh - 43) * h) / 100 + 20);
+      const top = ((93 - scrollVh) * h) / 100 - rect.top;
+      const bridge = scrollVh > 43 && !up ? `M${w / 2} ${top} V${top + reach}` : '';
+      if (bridgeRef.current && bridge !== bridgeKey) {
+        bridgeKey = bridge;
+        bridgeRef.current.setAttribute('d', bridge);
+      }
     };
 
     return onScroll(section, update);
@@ -298,6 +316,15 @@ export function Scene2() {
           strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
+        />
+      </svg>
+      <svg className={styles.bridge} aria-hidden="true">
+        <path
+          ref={bridgeRef}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
         />
       </svg>
 

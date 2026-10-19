@@ -58,6 +58,9 @@ function run() {
   screens = window.scrollY / h;
 }
 
+// Тот же проход вне событий — его вызывает провайдер Lenis сразу после сдвига страницы.
+export const syncScroll = run;
+
 // Подписка обработчика сцены; el — её секция (по ней порядок и ResizeObserver).
 export function onScroll(el: Element, fn: () => void): () => void {
   const sub = { el, fn };
