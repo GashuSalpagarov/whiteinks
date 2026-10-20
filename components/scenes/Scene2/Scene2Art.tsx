@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 // скругления 4–6. Декор не должен выглядеть нажимаемым: без кнопок, полей ввода и призывов.
 // Координаты viewBox — пиксели при ширине 1440; размер — в em слоя (.art).
 // Место (slot) — вокруг текста, см. Scene2.module.css; phone: false — не показывать на телефоне.
-export type Slot = "topOut" | "out" | "bottomIn" | "bottom" | "in";
+export type Slot = "topOut" | "out" | "bottom" | "in";
 export type Art = { slot: Slot; el: ReactNode; phone?: false; style?: CSSProperties };
 
 const K = "#0a0a0a";
@@ -116,7 +116,8 @@ export const ART: Art[][] = [
       phone: false,
     },
     {
-      slot: "bottomIn",
+      slot: "in",
+      phone: false,
       el: (
         <Svg w={100} h={52}>
           <rect width={100} height={52} rx={6} fill="currentColor" />
@@ -204,7 +205,8 @@ export const ART: Art[][] = [
       phone: false,
     },
     {
-      slot: "bottomIn",
+      slot: "in",
+      phone: false,
       el: (
         <Svg w={86} h={62}>
           <rect x={0.75} y={0.75} width={84.5} height={60.5} rx={6} fill="#fff" {...line} />
@@ -261,7 +263,8 @@ export const ART: Art[][] = [
     },
     { slot: "out", el: <Swatches column />, phone: false },
     {
-      slot: "bottomIn",
+      slot: "in",
+      phone: false,
       el: (
         <Svg w={72} h={66}>
           <rect width={72} height={66} rx={6} fill="currentColor" />
@@ -301,6 +304,7 @@ export const ART: Art[][] = [
     },
     {
       slot: "bottom",
+      phone: false,
       el: (
         <Svg w={92} h={40}>
           <path
@@ -346,7 +350,8 @@ export const ART: Art[][] = [
       phone: false,
     },
     {
-      slot: "bottomIn",
+      slot: "in",
+      phone: false,
       el: (
         <Svg w={116} h={26}>
           <path d="M34 13h12M80 13h22" {...line} />
@@ -376,6 +381,7 @@ export const ART: Art[][] = [
     },
     {
       slot: "bottom",
+      phone: false,
       el: (
         <Svg w={86} h={62}>
           <rect width={86} height={62} rx={6} fill="currentColor" />

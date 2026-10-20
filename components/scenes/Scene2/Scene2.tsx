@@ -173,25 +173,6 @@ function getCompactBlock(top: number, h: number): { opacity: number; rise: numbe
   return { opacity: Math.min(appear, leave), rise: (1 - appear) * 24 };
 }
 
-// Расстояние от прямоугольника на экране до трассы, включая саму точку (конец трассы).
-// Трасса — те же точки, что в buildPathD, только у прямоугольника по высоте (с запасом 40px).
-function trailGap(
-  r: { left: number; right: number; top: number; bottom: number },
-  { w, h, scrollVh, phone }: { w: number; h: number; scrollVh: number; phone: boolean },
-): number {
-  const sAt = (y: number) => scrollVh + ((y - 20) * 100) / h - 50;
-  const to = Math.min(scrollVh, sAt(r.bottom + 40));
-  let gap = Number.POSITIVE_INFINITY;
-  for (let s = Math.max(43, sAt(r.top - 40)); s <= to + 0.25; s += 0.5) {
-    const x = ((50 + getDropX(Math.min(s, to), phone)) * w) / 100;
-    const y = ((50 + Math.min(s, to) - scrollVh) * h) / 100 + 20;
-    const dx = Math.max(r.left - x, 0, x - r.right);
-    const dy = Math.max(r.top - y, 0, y - r.bottom);
-    gap = Math.min(gap, Math.hypot(dx, dy));
-  }
-  return gap;
-}
-
 function buildPathD(scrollVh: number, w: number, h: number): string {
   if (scrollVh <= 41) return '';
 
@@ -257,61 +238,11 @@ export function Scene2() {
     const section = sectionRef.current;
     if (!section) return;
     const blockEls = section.querySelectorAll<HTMLElement>('aside');
-    const artEls = section.querySelectorAll<HTMLElement>(`.${styles.art}`);
     let pathKey = '';
     let bridgeKey = '';
     let lastY = 0;
-    // Элементы вокруг пункта (Scene2Art) гаснут, не дойдя до чужого текста (блоки пары с разным
-    // параллаксом сходятся), до трассы с точкой и до шапки (на десктопе она под сценами и
-    // закрыла бы логотип и телефон). Зазор — с запасом на покачивание ±3px. Высоты считаем по
-    // этому проходу (рамки getBoundingClientRect — с прошлого кадра), сдвиг элемента — его --d.
-    // Анимация — только пока хоть один элемент пункта виден.
     // Без движения блоки видны всегда (Scene2.module.css) — и элементы вместе с ними.
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const depth = [...artEls].map((a) =>
-      [...a.children].map((c) => Number.parseFloat(getComputedStyle(c).getPropertyValue('--d')) || 0),
-    );
-    const setArt = (
-      i: number,
-      view: { w: number; h: number; scrollVh: number; phone: boolean },
-      tops: number[],
-      ys: number[],
-      ops: number[],
-    ) => {
-      let shown = false;
-      for (let k = 0; k < artEls[i].children.length; k++) {
-        const el = artEls[i].children[k] as HTMLElement;
-        // Скрыт на этом экране или слой только что включён (замерим в следующем проходе).
-        if (!el.offsetParent) {
-          setVar(`--art-${i + 1}-${k + 1}`, '0');
-          continue;
-        }
-        const { left, right } = el.getBoundingClientRect();
-        const top = tops[i] + el.offsetTop + depth[i][k] * ys[i];
-        const r = { left, right, top, bottom: top + el.offsetHeight };
-        // Запасы: 8px + размах покачивания; у трассы ещё радиус точки.
-        let o = Math.min(
-          (top - 72) / (0.1 * view.h),
-          (trailGap(r, view) - 22) / 16,
-          (Math.min(left, view.w - right) - 8) / 16, // и у края экрана
-        );
-        for (let j = 0; j < blockEls.length; j++) {
-          if (j === i || ops[j] <= 0.05) continue;
-          const b = blockEls[j].getBoundingClientRect();
-          const gap = Math.max(
-            b.left - r.right,
-            r.left - b.right,
-            tops[j] - r.bottom,
-            r.top - tops[j] - b.height,
-          );
-          o = Math.min(o, (gap - 16) / 16);
-        }
-        o = Math.max(0, Math.min(1, o));
-        setVar(`--art-${i + 1}-${k + 1}`, `${o}`);
-        shown ||= ops[i] > 0 && o > 0 && top < view.h && r.bottom > 0;
-      }
-      setVar(`--block-${i + 1}-art-play`, shown ? 'running' : 'paused');
-    };
     const update = () => {
       const w = window.innerWidth;
       // Общая высота экрана (как --ih в CSS): на телефоне vh больше innerHeight.
@@ -340,7 +271,6 @@ export function Scene2() {
       const rect = section.getBoundingClientRect();
       const blocksGone = rect.bottom < 0;
       const tops: number[] = [];
-      const ys: number[] = [];
       const ops: number[] = [];
       for (let i = 0; i < BLOCKS.length && !blocksGone; i++) {
         const block = BLOCKS[i];
@@ -350,7 +280,6 @@ export function Scene2() {
           setVar(`--block-${i + 1}-y`, `${rise}px`);
           setVar(`--block-${i + 1}-x`, '0vw');
           tops[i] = rect.top + blockEls[i].offsetTop + rise;
-          ys[i] = rise;
           ops[i] = still ? 1 : opacity;
           continue;
         }
@@ -363,20 +292,18 @@ export function Scene2() {
           `${getBlockParallaxX(scrollVh, block.trigger, block.side)}vw`,
         );
         tops[i] = rect.top + blockEls[i].offsetTop + y;
-        ys[i] = y;
         ops[i] = still ? 1 : opacity;
       }
+      // Элементы пункта (Scene2Art) видны вместе с ним: прозрачность у них — его. Далеко от
+      // экрана (и вся секция выше него) они выключены целиком: каждая смена переменных
+      // пересчитывает стили всей страницы, и лишние узлы его утяжеляют. Покачивание — только
+      // пока пункт с элементами (до ~160px за его рамкой) на экране.
       for (let i = 0; i < BLOCKS.length; i++) {
-        // Элементы далеко от экрана (и вся секция выше него) выключены целиком: каждая смена
-        // переменных пересчитывает стили всей страницы, и лишние узлы его утяжеляют.
-        const near =
-          !blocksGone &&
-          ops[i] > 0 &&
-          tops[i] < 1.5 * h &&
-          tops[i] + blockEls[i].offsetHeight > -0.5 * h;
+        const bottom = tops[i] + blockEls[i].offsetHeight;
+        const near = !blocksGone && ops[i] > 0 && tops[i] < 1.5 * h && bottom > -0.5 * h;
+        const seen = near && tops[i] < h + 160 && bottom > -160;
         setVar(`--block-${i + 1}-art-show`, near ? 'block' : 'none');
-        if (near) setArt(i, { w, h, scrollVh, phone }, tops, ys, ops);
-        else setVar(`--block-${i + 1}-art-play`, 'paused');
+        setVar(`--block-${i + 1}-art-play`, seen ? 'running' : 'paused');
       }
 
       // Путь (до ~1800 точек) строим, только если трасса видна и что-то сдвинулось.
@@ -438,13 +365,8 @@ export function Scene2() {
                 // biome-ignore lint/suspicious/noArrayIndexKey: состав элементов постоянный
                 key={j}
                 className={`${styles[art.slot]} ${art.phone === false ? styles.noPhone : ''}`}
-                // Гашение у шапки — своё у каждого элемента (Scene2.tsx), покачивание — со своим
-                // сдвигом по фазе.
-                style={{
-                  opacity: `var(--art-${i + 1}-${j + 1}, 1)`,
-                  animationDelay: `${-(((i * 3 + j) * 1.7) % 5)}s`,
-                  ...art.style,
-                }}
+                // Покачивание — у каждого элемента со своим сдвигом по фазе.
+                style={{ animationDelay: `${-(((i * 3 + j) * 1.7) % 5)}s`, ...art.style }}
               >
                 {art.el}
               </div>
