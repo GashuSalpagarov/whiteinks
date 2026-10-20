@@ -20,7 +20,10 @@ import { SLIDES } from "./slides";
 const INTRO_MS = 7200; // как в HeroScrollLock
 const ROWS = [styles.word1, styles.word2, styles.word3];
 
-type Rect = readonly [x: number, y: number, w: number, h: number] | null;
+// Место картинки: положение, размер, поворот в градусах и слой (кто кого перекрывает).
+type Rect =
+  | readonly [x: number, y: number, w: number, h: number, turn: number, layer: number]
+  | null;
 type Box = { l: number; t: number; r: number; b: number };
 
 const box = (el: HTMLElement): Box => ({
@@ -65,14 +68,14 @@ function measure(h1: HTMLElement): number[][] {
 // Раскладка картинок каждого слайда. desk — россыпь на десктопе, у каждого слайда своя, как
 // фото на столе: [центр по x, центр по y — доли экрана; ширина — доля min(ширина, 1.6 × высота)
 // экрана; пропорция (ширина / высота), её держим точно; поворот в градусах], порядок — как
-// в slides.ts. Задано по экрану 1440×900. phone — своя композиция телефона: [номер картинки,
-// пропорция] для большой и меньшей над заголовком (большая у левого поля или у правого) и для
-// нижней, между индикатором и кнопкой.
+// в slides.ts. Задано по экрану 1440×900. phone — веер из трёх карт над заголовком: fan —
+// [номер картинки, пропорция, поворот] слева, посередине (спереди) и справа, у каждого слайда
+// свои; edge — отступы веера от левого и правого края экрана.
 type Spec = readonly [cx: number, cy: number, width: number, aspect: number, turn: number];
-type Pick = readonly [image: number, aspect: number];
+type Card = readonly [image: number, aspect: number, turn: number];
 type Layout = {
   desk: readonly Spec[];
-  phone: { left: boolean; big: Pick; small: Pick; low: Pick };
+  phone: { fan: readonly [Card, Card, Card]; edge: readonly [number, number] };
 };
 const LAYOUTS: readonly Layout[] = [
   {
@@ -81,7 +84,14 @@ const LAYOUTS: readonly Layout[] = [
       [0.9069, 0.3659, 0.1194, 3 / 5, 2],
       [0.8785, 0.6889, 0.1597, 1, -1],
     ],
-    phone: { left: false, big: [0, 4 / 3], small: [1, 3 / 4], low: [2, 1] },
+    phone: {
+      fan: [
+        [1, 3 / 4, -6],
+        [0, 4 / 3, 0],
+        [2, 1, 6],
+      ],
+      edge: [20, 32],
+    },
   },
   {
     desk: [
@@ -89,7 +99,14 @@ const LAYOUTS: readonly Layout[] = [
       [0.6944, 0.2704, 0.1389, 3 / 4, -2],
       [0.8208, 0.7356, 0.1583, 3 / 2, 1],
     ],
-    phone: { left: true, big: [0, 1], small: [2, 4 / 3], low: [1, 3 / 4] },
+    phone: {
+      fan: [
+        [1, 3 / 4, -5],
+        [0, 1, 1],
+        [2, 4 / 3, 7],
+      ],
+      edge: [32, 20],
+    },
   },
   {
     desk: [
@@ -97,7 +114,14 @@ const LAYOUTS: readonly Layout[] = [
       [0.8924, 0.2278, 0.1319, 1, -2],
       [0.6701, 0.2698, 0.2292, 16 / 9, 1],
     ],
-    phone: { left: false, big: [0, 3 / 2], small: [1, 3 / 5], low: [2, 4 / 3] },
+    phone: {
+      fan: [
+        [2, 4 / 3, -7],
+        [0, 3 / 2, -1],
+        [1, 3 / 5, 5],
+      ],
+      edge: [24, 36],
+    },
   },
   {
     desk: [
@@ -105,7 +129,14 @@ const LAYOUTS: readonly Layout[] = [
       [0.891, 0.4361, 0.1319, 2 / 3, 1.5],
       [0.6875, 0.2733, 0.1806, 1, -2],
     ],
-    phone: { left: true, big: [0, 5 / 4], small: [2, 1], low: [1, 3 / 4] },
+    phone: {
+      fan: [
+        [2, 1, -8],
+        [0, 5 / 4, 0],
+        [1, 3 / 4, 6],
+      ],
+      edge: [36, 24],
+    },
   },
 ];
 
@@ -209,33 +240,40 @@ function desktop(W: number, H: number, lead: Box, cta: Box, dots: Box, { desk }:
   const ui = [grow(cta, 24), grow({ ...dots, t: dots.t + 13, b: dots.b - 13 }, 24)];
   let { list } = arrange(rs, as, [...ui, grow(lead, 24)], k, 32);
   if (list.includes(null)) list = arrange(rs, as, ui, k, 32).list;
-  return list.map((r) => r && [r.l, r.t, r.r - r.l, r.b - r.t]);
+  return list.map((r, k) => r && [r.l, r.t, r.r - r.l, r.b - r.t, desk[k][4], 0]);
 }
 
-// Телефон. Над заголовком — пара: верх на 12px ниже полосы шапки (72px), низ не ближе 12px
-// к заголовку; большая у своего поля (20px), меньшая рядом через 12px, её высота — 0.6–0.9
-// от большой, чтобы пара заняла ширину; на низком экране пара просто уже. Нижняя — у левого
-// поля, как кнопка, посередине полосы между номерами индикатора и кнопкой (по 16px), левее
-// середины экрана (линия туда не заходит). Мало места — картинки меньше, совсем мелких нет.
-function phone(W: number, title: number, dots: Box, cta: Box, { phone: p }: Layout): Rect[] {
+// Телефон. Над заголовком — веер из трёх карт, как в руке: у карт одна высота, пропорции
+// и порядок — по слайду. Средняя спереди, по центру; боковые под ней (их внутренние 30% ширины
+// уходят под среднюю), чуть ниже и повёрнуты наружу. Веер целиком, с повёрнутыми углами, — от
+// отступа слева до отступа справа (edge) и от 12px под полосой шапки (72px) до 12px над
+// заголовком; размер — наибольший, при котором он туда помещается, а остаток — поровну по
+// краям. Мельче 48px по высоте — без картинок (короткий экран).
+function phone(W: number, title: number, { phone: p }: Layout): Rect[] {
   const out: Rect[] = [null, null, null];
-  const [bi, ab] = p.big;
-  const [si, as] = p.small;
+  const [eL, eR] = p.edge;
   const top = 84;
-  const room = W - 52;
-  const h = Math.min(title - 12 - top, room / (ab + 0.6 * as));
-  const hs = Math.min(0.9, (room - ab * h) / (as * h)) * h;
-  if (h >= 64 && Math.min(hs, hs * as) >= 44) {
-    const wb = ab * h;
-    const ws = as * hs;
-    out[bi] = [p.left ? 20 : W - 20 - wb, top, wb, h];
-    out[si] = [p.left ? 32 + wb : W - 32 - wb - ws, top, ws, hs];
-  }
-  const [li, al] = p.low;
-  const y0 = dots.b + 3;
-  const band = cta.t - 16 - y0;
-  const hl = Math.min(band, (W / 2 - 36) / al);
-  if (Math.min(hl, hl * al) >= 56) out[li] = [20, y0 + (band - hl) / 2, hl * al, hl];
+  const band = title - 12 - top;
+  const room = W - eL - eR;
+  // Веер при высоте карты 1: центры карт относительно средней и полуразмеры с учётом поворота.
+  const [l, m, r] = p.fan;
+  const cx = [-m[1] / 2 - 0.2 * l[1], 0, m[1] / 2 + 0.2 * r[1]];
+  const cy = [0.06, 0, 0.06];
+  const half = p.fan.map(([, a, turn]) => {
+    const t = (Math.abs(turn) * Math.PI) / 180;
+    return [(a * Math.cos(t) + Math.sin(t)) / 2, (a * Math.sin(t) + Math.cos(t)) / 2];
+  });
+  const left = Math.min(...cx.map((x, k) => x - half[k][0]));
+  const right = Math.max(...cx.map((x, k) => x + half[k][0]));
+  const upper = Math.min(...cy.map((y, k) => y - half[k][1]));
+  const lower = Math.max(...cy.map((y, k) => y + half[k][1]));
+  const h = Math.min(room / (right - left), band / (lower - upper));
+  if (h < 48) return out;
+  const x0 = eL + (room - (right - left) * h) / 2 - left * h;
+  const y0 = top + (band - (lower - upper) * h) / 2 - upper * h;
+  p.fan.forEach(([i, a, turn], k) => {
+    out[i] = [x0 + (cx[k] - a / 2) * h, y0 + (cy[k] - 0.5) * h, a * h, h, turn, k === 1 ? 2 : 1];
+  });
   return out;
 }
 
@@ -301,16 +339,14 @@ export function HeroSlides({
       const rects = matchMedia("(max-height: 500px)").matches
         ? []
         : mobile
-          ? SLIDES.flatMap((_, i) =>
-              phone(W, rows[0].offsetTop, dots, cta, LAYOUTS[i % LAYOUTS.length]),
-            )
+          ? SLIDES.flatMap((_, i) => phone(W, rows[0].offsetTop, LAYOUTS[i % LAYOUTS.length]))
           : SLIDES.flatMap((_, i) => desktop(W, H, lead, cta, dots, LAYOUTS[i % LAYOUTS.length]));
       root.querySelectorAll<HTMLElement>(`.${styles.slot}`).forEach((el, k) => {
         const r = rects[k];
         el.style.display = r ? "block" : "";
         if (!r) return;
-        const turn = LAYOUTS[Math.floor(k / 3) % LAYOUTS.length].desk[k % 3][4];
-        el.style.rotate = mobile ? "" : `${turn}deg`;
+        el.style.rotate = r[4] ? `${r[4]}deg` : "";
+        el.style.zIndex = r[5] ? `${r[5]}` : "";
         el.style.left = `${r[0]}px`;
         el.style.top = `${r[1]}px`;
         el.style.width = `${r[2]}px`;
