@@ -1,9 +1,12 @@
+/* Высота — из Scene3.tsx (экраны хода сцены + экран самого sticky). Секция начинается на экран
+   раньше своего места: на последнем экране Сцены 2, где трасса уже погасла и осталась одна
+   точка. Так sticky встаёт ровно тогда, когда точка входит в сцену, — без пустого разгона.
+   Экран — общая высота --ih (lib/scroll/onScroll). Клики ловит только кнопка финала. */
 .scene3 {
   position: relative;
-  /* 5 экранов нарратива + 1 экран pinned-хвоста (TAIL_VH в Scene3.tsx). Экран — общая
-     высота --ih (lib/scroll/onScroll): на телефоне не дёргается от панели браузера. */
-  height: calc(var(--ih, 100vh) * 6);
+  margin-top: calc(var(--ih, 100vh) * -1);
   z-index: 4;
+  pointer-events: none;
 }
 
 .sticky {
@@ -11,5 +14,231 @@
   top: 0;
   height: var(--ih, 100vh);
   width: 100%;
-  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Вход: заголовок над точкой (точка — на 20px ниже центра экрана). */
+.intro {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--ih, 100vh) / 2 + 36px);
+  left: 0;
+  padding: 0 20px;
+  text-align: center;
+  opacity: 0;
+}
+
+.introTitle {
+  font-size: clamp(64px, 8vw, 150px);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.introLead {
+  margin-top: 16px;
+  font-size: 17px;
+}
+
+/* Карточка: белое паспарту в тонкой рамке, внутри картинка 4:3 тоже в рамке. Место и размер
+   (окно чтения) задаёт Scene3.tsx, полёт — transform. */
+.card {
+  position: absolute;
+  margin: 0;
+  padding: 12px;
+  border: 1.5px solid var(--color-fg);
+  background: var(--color-bg);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.preview {
+  height: 100%;
+  border: 1.5px solid var(--color-fg);
+}
+
+.preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.badge {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  padding: 5px 11px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  background: var(--color-bg);
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* В сетке номер — в подписи под плиткой. */
+.sticky[data-stage="grid"] .badge {
+  opacity: 0;
+}
+
+/* Подпись в окне чтения. */
+.caption {
+  position: absolute;
+  opacity: 0;
+}
+
+.count {
+  font-size: 15px;
+}
+
+.count span,
+.meta dt,
+.label span:last-child {
+  opacity: 0.45;
+}
+
+.title {
+  margin-top: 12px;
+  font-size: clamp(32px, 3.4vw, 60px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 24px;
+  margin-top: 22px;
+  font-size: 15px;
+}
+
+.meta dd {
+  margin: 0;
+}
+
+.result {
+  margin-top: 28px;
+  font-size: clamp(56px, 5.6vw, 104px);
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.resultNote {
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  margin-top: 20px;
+  padding: 0 20px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+/* Финал: подписи плиток, линия из перекрестья вниз — по ней точка уходит в Сцену 4. */
+.label {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 12px;
+  font-size: 15px;
+  line-height: 1.3;
+  opacity: 0;
+}
+
+.exit {
+  position: absolute;
+  margin-left: -1.5px;
+  background: var(--color-fg);
+  opacity: 0;
+}
+
+.finale {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Справа от сетки — по центру точки; на телефоне — под сеткой. */
+.finale[data-side="right"] {
+  translate: 0 -50%;
+}
+
+.finaleTitle {
+  font-size: clamp(36px, 3.4vw, 60px);
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.finaleTitle sup {
+  margin-left: 4px;
+  font-size: 0.3em;
+  letter-spacing: 0;
+  vertical-align: top;
+}
+
+.finaleLine {
+  margin-top: 16px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.button {
+  margin-top: 24px;
+  height: 52px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  appearance: none;
+}
+
+/* Телефон и короткий экран — пока только мельче текст (раскладка телефона — отдельный шаг). */
+@media (max-width: 767px), (max-height: 600px) {
+  .introTitle {
+    font-size: 56px;
+  }
+
+  .title {
+    margin-top: 8px;
+    font-size: 28px;
+  }
+
+  .meta {
+    margin-top: 12px;
+    font-size: 13.5px;
+  }
+
+  .result {
+    margin-top: 14px;
+    font-size: 44px;
+  }
+
+  .resultNote,
+  .finaleLine {
+    font-size: 13.5px;
+  }
+
+  .label {
+    font-size: 12.5px;
+  }
+
+  .button {
+    margin-top: 14px;
+    height: 48px;
+  }
 }
