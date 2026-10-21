@@ -1,179 +1,317 @@
-/* Футер — последний экран, и под ним зона раскрытия точки: секция на 100vh длиннее экрана,
-   столько футер стоит sticky (длина зоны считается в Footer.tsx от высоты секции).
-   z-index выше всех сцен и Hero: залитый экран накрывает и фиксированные логотип, телефон
-   и точку Hero — кадр совпадает с первым кадром интро. */
+/* Футер — белый, как сцены до него, и не на весь экран, а на его нижнюю часть (--fh): линия
+   пути спускается по центру и кончается точкой, рядом — Telegram и почта, внизу мелкая
+   строка. Под футером зона --zone: футер стоит внизу экрана, линия уходит в петлю (Footer.tsx).
+   z-index выше всех сцен и Hero: к прыжку экран — только фон футера и круг, без логотипа,
+   телефона и точки Hero, как кадр интро в момент «вдоха» круга. */
 .footer {
+  --fh: 60dvh;
+  --zone: 100vh;
+  /* Пунктир пути «впереди» — как .ghost в Scene5.module.css: точки 2px через 8px. */
+  --ghost: radial-gradient(circle at 50% 1px, rgba(10, 10, 10, 0.32) 1px, transparent 1.5px) 0
+    0 / 2px 8px repeat-y;
   position: relative;
   z-index: 5;
-  /* dvh — видимая часть экрана: на телефоне при любой панели браузера экран залит целиком. */
-  height: calc(100dvh + 100vh);
-  background: var(--color-fg);
+  height: calc(var(--fh) + var(--zone));
+  background: var(--color-bg);
+  color: var(--color-fg);
 }
 
-.sticky {
-  position: sticky;
+/* Линия продолжает путь Сцены 5 — он кончается по центру её нижнего края — и кончается
+   точкой 12px. Пока бриф не отправлен, путь там — пунктир «впереди», и здесь тот же пунктир.
+   Отправили (data-fallen) — точка Сцены 5 падает по пути, за ней чернила 4px, и, когда она
+   долетела (0,3 + 1,6 с — как .fallen в Scene5.module.css), чернила дорисовываются и здесь. */
+.line,
+.footer::before {
+  position: absolute;
   top: 0;
-  height: 100dvh;
-  overflow: hidden;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: var(--ghost);
+}
+
+/* Пока футер стоит внизу, над ним открывается верх секции — линия идёт и там, без разрыва. */
+.footer::before {
+  content: '';
+  bottom: 0;
+}
+
+[data-scene='scene5'][data-fallen] + .footer::before {
+  left: calc(50% - 2px);
+  width: 4px;
   background: var(--color-fg);
-  color: var(--color-bg);
-  /* Центр точки — над подсказкой, по центру внизу. */
-  --dot-y: calc(100% - 104px);
 }
 
-.inner {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: clamp(32px, 7vh, 88px);
+.stage {
+  --dot-y: 42%;
+  position: sticky;
+  top: calc(100dvh - var(--fh));
+  height: var(--fh);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.line {
+  height: var(--dot-y);
+}
+
+.line::after {
+  content: '';
+  position: absolute;
+  inset: 0 -1px;
+  background: var(--color-fg);
+  clip-path: inset(0 0 100%);
+}
+
+[data-scene='scene5'][data-fallen] + .footer .line::after {
+  clip-path: inset(0);
+  transition: clip-path 0.25s linear 1.9s;
+}
+
+/* Точка; в зоне она обводит петлю (--dx, --dy — смещение от касания, Footer.tsx). */
+.dot {
+  position: absolute;
+  top: calc(var(--dot-y) - 6px);
+  left: calc(50% - 6px);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-fg);
+  translate: var(--dx, 0px) var(--dy, 0px);
+}
+
+/* Петля: круг слева от линии, касается её в точке. Пунктир — путь «впереди», как .line и
+   путь Сцены 5 (точки 2px через 8px), проявляется с началом зоны; линия 4px рисуется по
+   прогрессу зоны (--k). */
+.loop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 96px 32px 160px;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.closing {
-  font-size: clamp(36px, min(7vw, 12vh), 120px);
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+.ring {
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
-.columns {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
+.ghost,
+.trace {
+  fill: none;
+  stroke-linecap: round;
 }
 
-.column {
+.ghost {
+  stroke: rgba(10, 10, 10, 0.32);
+  stroke-width: 2;
+  stroke-dasharray: 0 8;
+  opacity: min(1, calc(var(--k, 0) * 16));
+}
+
+.trace {
+  stroke: var(--color-fg);
+  stroke-width: 4;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: calc(1 - var(--k, 0));
+}
+
+/* Круг, в который заливается петля (fixed, на экране): позиция и размер — WAAPI в Footer.tsx.
+   Цвет — как у точки и круга Hero: после прыжка палитра переворачивается, и тот же круг
+   становится белым на чёрном. */
+.disk {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  background: var(--color-fg);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Доигрывание: линия, точка и подпись уходят, на экране остаётся только круг. */
+.closing .disk {
+  visibility: visible;
+}
+
+.closing::before,
+.closing .line,
+.closing .dot,
+.closing .contacts,
+.closing .fine {
+  opacity: 0;
+  transition: opacity 0.38s ease-out 0.22s;
+}
+
+/* Только без анимаций: сразу в начало. */
+.again {
+  display: none;
+  margin-top: 6px;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: rgba(10, 10, 10, 0.5);
+  cursor: pointer;
+}
+
+/* Подпись справа от точки: первая строка — на её высоте. */
+.contacts {
+  position: absolute;
+  top: calc(var(--dot-y) - 14px);
+  left: calc(50% + 30px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
-  font-size: clamp(15px, 1.15vw, 18px);
-  line-height: 1.4;
+  gap: 4px;
+  font-size: 1.0625rem;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
-.column a {
+.contacts a,
+.mail {
+  padding-block: 3px;
   color: inherit;
   text-decoration: none;
-  overflow-wrap: anywhere;
 }
 
-.column a:hover,
-.column a:focus-visible {
+.mail {
+  padding-inline: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: rgba(10, 10, 10, 0.5);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fine {
+  position: absolute;
+  right: 32px;
+  bottom: 24px;
+  left: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgba(10, 10, 10, 0.5);
+}
+
+.fine a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.copy {
+  margin-left: auto;
+}
+
+.contacts a:hover,
+.contacts a:focus-visible,
+.mail:hover,
+.mail:focus-visible,
+.again:hover,
+.again:focus-visible,
+.fine a:hover,
+.fine a:focus-visible {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 
-.label {
-  margin-bottom: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.muted {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.hint {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 56px;
-  padding: 0 32px;
-  text-align: center;
-  font-size: 0.8125rem;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.5);
-  pointer-events: none;
-}
-
-/* Точка и её раскрытие. Цвет — --color-fg через invert(1): ровно так же Hero-круг
-   выглядит в инвертированной палитре, поэтому залитый экран и первый кадр интро после
-   прыжка совпадают пиксель в пиксель (и во втором круге — двойная инверсия). */
-.bloom {
-  position: absolute;
-  inset: 0;
-  background: var(--color-fg);
-  filter: invert(1);
-  clip-path: circle(var(--r, 6px) at 50% var(--dot-y));
-  pointer-events: none;
-}
-
-/* Невысокий экран (телефон боком): плотнее, чтобы колонки не заходили на точку. */
-@media (max-height: 560px) {
-  .inner {
-    gap: 24px;
-    padding-top: 40px;
-    padding-bottom: 128px;
-  }
-}
-
-/* Сенсорные экраны (телефон и телефон боком): у ссылок зона нажатия 44px — отступами
-   сверху и снизу, промежуток между строками теперь внутри них. */
+/* Сенсорные экраны (телефон и телефон боком): у ссылок зона нажатия 44px — отступами. */
 @media (max-width: 767px), (max-height: 560px) {
-  .column {
+  .contacts {
+    top: calc(var(--dot-y) - 22px);
     gap: 0;
   }
 
-  .column a {
-    min-width: 44px;
-    padding-block: 11.5px;
+  .contacts a,
+  .mail,
+  .again {
+    padding-block: 11px;
   }
 
-  .label {
-    margin-bottom: 0;
+  .fine {
+    bottom: 12px;
+    gap: 0 20px;
   }
 
-  /* Под заголовком колонки сразу строка без зоны — воздух, как у ссылки. */
-  .label + .muted {
-    margin-top: 11px;
+  .fine a {
+    padding-block: 12px;
+  }
+
+  .copy {
+    align-self: center;
   }
 }
 
-/* Телефон: «Связаться» и «Соцсети» рядом, «Студия» под ними на всю ширину. */
+/* Палец и инерция уносят дальше колеса: зона длиннее, чтобы быстрый свайп у футера не
+   долетал до перехода (он и так начинается, только когда прокрутка стихла). */
+@media (pointer: coarse) {
+  .footer {
+    --zone: 150vh;
+  }
+}
+
+/* Телефон: подпись — под точкой, по центру; петля проходит по ней — подпись гаснет (--cap). */
 @media (max-width: 767px) {
-  .inner {
-    justify-content: flex-start;
-    gap: 28px;
-    padding: 64px 20px 140px;
+  .footer {
+    --fh: 62dvh;
   }
 
-  .columns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px 16px;
+  .stage {
+    --dot-y: 36%;
   }
 
-  .column:last-child {
-    grid-column: 1 / -1;
+  .contacts {
+    top: calc(var(--dot-y) + 14px);
+    left: 50%;
+    align-items: center;
+    transform: translateX(-50%);
+    opacity: var(--cap, 1);
   }
 
-  .hint {
-    padding: 0 20px;
+  .mail {
+    text-align: center;
+  }
+
+  .fine {
+    right: 20px;
+    left: 20px;
+    gap: 0 14px;
+  }
+
+  .copy {
+    margin-left: 0;
   }
 }
 
-/* Невысокий телефон (SE с панелями Safari): колонки выше — плотнее сверху, чтобы не
-   подходить к точке. */
-@media (max-width: 767px) and (max-height: 600px) {
-  .inner {
-    gap: 20px;
-    padding-top: 40px;
-  }
-}
-
-/* Без анимаций петли нет: футер — конец страницы, без зоны и подсказки. */
+/* Без анимаций: футер — конец страницы, без зоны; петля нарисована сразу (на телефоне легла бы
+   на подпись — там её нет), в начало — строкой «↺ замкнуть круг». */
 @media (prefers-reduced-motion: reduce) {
   .footer {
-    height: 100dvh;
+    height: var(--fh);
   }
 
-  .hint {
+  .footer::before {
     display: none;
+  }
+
+  .again {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
+  .loop {
+    display: none;
+  }
+
+  .contacts {
+    opacity: 1;
   }
 }
