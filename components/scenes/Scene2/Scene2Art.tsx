@@ -12,9 +12,17 @@ const K = "#0a0a0a";
 const G = { fill: K, fillOpacity: 0.16 };
 const line = { stroke: K, strokeWidth: 1.5 };
 
+// no-invert (globals.css): на втором круге (перевёрнутая палитра) элементы — в своих цветах,
+// как картинки; переворачиваются только текст, трасса и фон.
 function Svg({ w, h, children }: { w: number; h: number; children: ReactNode }) {
   return (
-    <svg width={`${w / 10}em`} height={`${h / 10}em`} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+    <svg
+      className="no-invert"
+      width={`${w / 10}em`}
+      height={`${h / 10}em`}
+      viewBox={`0 0 ${w} ${h}`}
+      aria-hidden="true"
+    >
       {children}
     </svg>
   );

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import { onScroll, setVar, viewportH } from '@/lib/scroll/onScroll';
+import heroStyles from '../Hero/Hero.module.css';
 import styles from './Scene2.module.css';
-import { ART } from './Scene2Art';
+import { ART, type Slot } from './Scene2Art';
 
 // Колена траектории. Phase отсчитывается от scroll = 43vh (момент фиксации точки в центре).
 // 7vh «прелюдии» — ничтожная вертикальная прямая прежде чем начнётся первое колено.
@@ -31,6 +32,17 @@ const PHONE_PATH: [number, number][] = [
   [377, 37],
   [407, 0],
 ];
+
+// Конец трассы (scroll, vh): точка вернулась в центр — конец последнего колена и серпантина.
+// Дальше трасса уезжает вверх вместе со страницей, а с точкой её конец связывает нить — прямая
+// по центру. Когда конец трассы уходит за верх экрана (уже в Сцене 3), точка втягивает нить
+// в себя за REEL экрана прокрутки.
+const TRAIL_END = 43 + 407;
+const REEL = 0.1;
+
+// Скорость элемента пункта (Scene2Art) — доля параллакса блока, у каждого места своя и
+// маленькая: за время жизни пункта элемент не доезжает до соседнего текста.
+const ART_DEPTH: Record<Slot, number> = { topOut: 0.06, out: 0.1, bottom: 0.12, in: 0.08 };
 
 // Каждый блок имеет triggerVh — scroll-позицию, на которой точка проходит «мимо» него.
 // Раньше triggerVh-25 блок невидим, после triggerVh — полностью виден и остаётся
@@ -165,54 +177,31 @@ function getBlockParallaxX(scrollVh: number, triggerVh: number, side: 'left' | '
 }
 
 // Телефон и короткий ландшафт: параллакса нет — он сводил блоки друг с другом и с трассой.
-// Блок проявляется по своему месту на экране (top, px): снизу — с подъёмом на 24px, а выше
-// 80px гаснет, не заходя под шапку (её полоса — 72px).
+// Блок проявляется по своему месту на экране (top, px): снизу — с подъёмом на 24px. Дальше
+// остаётся и уезжает вверх вместе со страницей — под шапку с её полосой (Hero.module.css).
 function getCompactBlock(top: number, h: number): { opacity: number; rise: number } {
   const appear = Math.max(0, Math.min(1, (0.92 * h - top) / (0.26 * h)));
-  const leave = Math.max(0, Math.min(1, (top - 80) / (0.12 * h)));
-  return { opacity: Math.min(appear, leave), rise: (1 - appear) * 24 };
+  return { opacity: appear, rise: (1 - appear) * 24 };
 }
 
-function buildPathD(scrollVh: number, w: number, h: number): string {
-  if (scrollVh <= 41) return '';
-
+// Трасса целиком, в координатах страницы при прокрутке 0: точка на прокрутке s (vh) стоит
+// в (50vw + getDropX(s), 50vh + s + 20px). Строится раз на размер экрана, на экране её двигает
+// transform, а видна она только выше точки (Scene2.module.css, .trail).
+function buildTrail(w: number, h: number): string {
   const phone = w < 768;
-  const points: [number, number][] = [];
-
-  // Начало пути — конец линии Hero (точка покоя, 93vh): вместе они читаются как одна линия.
-  const labelX = w * 0.5;
-  const labelY = ((93 - scrollVh) * h) / 100;
-  points.push([labelX, labelY]);
-
-  // 20px — тот же сдвиг точки вниз, что выставляется через --drop-offset.
-  // Трасса должна заканчиваться ровно у точки, поэтому добавляем к каждому sample.
-  const dropYOffset = 20;
-  const startS = 43;
-  const step = 0.6;
-  let lastS = startS;
-  for (let s = startS; s <= scrollVh; s += step) {
-    const dropX = getDropX(s, phone);
-    const x = ((50 + dropX) * w) / 100;
-    const y = ((50 + s - scrollVh) * h) / 100 + dropYOffset;
-    points.push([x, y]);
-    lastS = s;
-  }
-
-  // Если шаг не попал точно в текущий scroll — добавим финальную точку,
-  // чтобы трасса заканчивалась ровно у точки.
-  if (scrollVh - lastS > 0.01) {
-    const finalDropX = getDropX(scrollVh, phone);
-    points.push([((50 + finalDropX) * w) / 100, h * 0.5 + dropYOffset]);
-  }
-
-  if (points.length < 2) return '';
-  if (points.length === 2) {
-    return `M${points[0][0]} ${points[0][1]} L${points[1][0]} ${points[1][1]}`;
+  // Начало — конец линии Hero (точка покоя, 93vh): вместе они читаются как одна линия. 20px —
+  // сдвиг точки вниз после Hero (--drop-offset).
+  const points: [number, number][] = [[w * 0.5, h * 0.93]];
+  const n = Math.ceil((TRAIL_END - 43) / 0.6);
+  for (let i = 0; i <= n; i++) {
+    const s = 43 + ((TRAIL_END - 43) * i) / n;
+    points.push([((50 + getDropX(s, phone)) * w) / 100, ((50 + s) * h) / 100 + 20]);
   }
 
   // Catmull-Rom через cubic Bezier — кривая проходит через все sample points
   // с C1-гладкостью.
-  let d = `M${points[0][0]} ${points[0][1]}`;
+  const f = (p: [number, number]) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+  let d = `M${f(points[0])}`;
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = i > 0 ? points[i - 1] : points[i];
     const p1 = points[i];
@@ -224,37 +213,68 @@ function buildPathD(scrollVh: number, w: number, h: number): string {
     const c2x = p2[0] - (p3[0] - p1[0]) / 6;
     const c2y = p2[1] - (p3[1] - p1[1]) / 6;
 
-    d += ` C${c1x} ${c1y} ${c2x} ${c2y} ${p2[0]} ${p2[1]}`;
+    d += ` C${f([c1x, c1y])} ${f([c2x, c2y])} ${f(p2)}`;
   }
   return d;
 }
 
 export function Scene2() {
   const sectionRef = useRef<HTMLElement>(null);
+  const trailRef = useRef<HTMLDivElement>(null);
+  const trailSvgRef = useRef<SVGSVGElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const bridgeRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
-    if (!section) return;
-    const blockEls = section.querySelectorAll<HTMLElement>('aside');
-    let pathKey = '';
+    const trail = trailRef.current;
+    const trailSvg = trailSvgRef.current;
+    const thread = threadRef.current;
+    const path = pathRef.current;
+    if (!section || !trail || !trailSvg || !thread || !path) return;
+    const blockEls = [...section.querySelectorAll<HTMLElement>('aside')];
+    const artEls = blockEls.map((el, i) =>
+      [...el.querySelectorAll<HTMLElement>(`.${styles.art} > *`)].map((art, j) => ({
+        el: art,
+        depth: ART_DEPTH[ART[i][j].slot],
+      })),
+    );
+    // Стили пишем прямо на элементы и только изменившиеся. Не переменными на корне: каждая
+    // их смена пересчитывает стили всей страницы (~850 узлов, 7–10 мс на кадр).
+    const written = new Map<Element, Map<string, string>>();
+    const put = (el: HTMLElement | SVGElement, prop: string, value: string) => {
+      const last = written.get(el) ?? new Map<string, string>();
+      if (last.get(prop) === value) return;
+      last.set(prop, value);
+      written.set(el, last);
+      el.style.setProperty(prop, value);
+    };
+    let drop: HTMLElement | null = null;
+    let trailSize = '';
     let bridgeKey = '';
     let lastY = 0;
-    // Без движения блоки видны всегда (Scene2.module.css) — и элементы вместе с ними.
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const update = () => {
       const w = window.innerWidth;
       // Общая высота экрана (как --ih в CSS): на телефоне vh больше innerHeight.
       const h = viewportH();
       if (!h) return; // иначе scrollVh = NaN
-      const scrollVh = (window.scrollY / h) * 100;
+      const scrollY = window.scrollY;
+      const scrollVh = (scrollY / h) * 100;
       const phone = w < 768;
       const compact = phone || h <= 500; // телефон или короткий ландшафт
-      const dropX = getDropX(scrollVh, phone);
 
-      // X-смещение точки — отсюда. Y-смещение и фиксация — Hero.
-      setVar('--drop-x', `${dropX}vw`);
+      // Сначала замеры, потом записи: замер после записи заново пересчитывал бы стили.
+      // Секция целиком выше экрана — блоки тоже (параллакс отстаёт от скролла), их не трогаем.
+      const rect = section.getBoundingClientRect();
+      const blocksGone = rect.bottom < 0;
+      const tops = blocksGone ? [] : blockEls.map((el) => rect.top + el.offsetTop);
+      const heights = blocksGone ? [] : blockEls.map((el) => el.offsetHeight);
+
+      // X-смещение точки — отсюда, Y-смещение и фиксация — Hero. Переменная — на самой точке
+      // (она в вёрстке Hero), а не на корне: меняется почти каждый кадр.
+      if (!drop?.isConnected) drop = document.querySelector<HTMLElement>(`.${heroStyles.drop}`);
+      if (drop) put(drop, '--drop-x', `${getDropX(scrollVh, phone)}vw`);
 
       // После Hero-фазы (scrollVh > 43) сдвигаем точку на 20px вниз — единый
       // уровень с Scene 3, где точка попадает в gap финальной сетки.
@@ -262,67 +282,67 @@ export function Scene2() {
         setVar('--drop-offset', '20px');
       }
 
-      // Трасса плавно гаснет в конце Scene 2: к scrollVh 500 — полностью прозрачна.
-      const trailOpacity = Math.max(0, Math.min(1, (500 - scrollVh) / 70));
-      setVar('--trail-opacity', `${trailOpacity}`);
+      // Трасса: путь — раз на размер экрана, дальше только сдвиг вверх вместе со страницей
+      // (transform без перерисовки) — целыми пикселями экрана, чтобы линия не размывалась.
+      // Конец трассы, ушедший за верх экрана, дальше не двигаем.
+      if (trailSize !== `${w} ${h}`) {
+        trailSize = `${w} ${h}`;
+        path.setAttribute('d', buildTrail(w, h));
+      }
+      put(trail, 'visibility', scrollVh > 43 ? 'visible' : 'hidden');
+      if (scrollVh > 43) {
+        const dpr = window.devicePixelRatio || 1;
+        const px = (v: number) => Math.round(v * dpr) / dpr;
+        const shift = px(scrollY);
+        put(trailSvg, 'transform', `translateY(${-Math.min(shift, 5 * h + 40)}px)`);
+        // Нить — верх у конца трассы, низ обрезан по центру точки; втягивается плавно
+        // (smoothstep) от конца трассы к точке, назад — так же.
+        const dot = h / 2 + 20;
+        const end = ((50 + TRAIL_END) * h) / 100 + 20 - shift;
+        const k = Math.max(0, Math.min(1, (-end - 4) / (REEL * h)));
+        const top = Math.min(dot, end + (dot - end) * k * k * (3 - 2 * k));
+        put(thread, 'transform', `translateY(${px(top)}px)`);
+      }
 
-      // Секция целиком выше экрана — блоки тоже (параллакс отстаёт от скролла). Их переменные
-      // дальше не трогаем: каждая смена пересчитывает стили всей страницы.
-      const rect = section.getBoundingClientRect();
-      const blocksGone = rect.bottom < 0;
-      const tops: number[] = [];
-      const ops: number[] = [];
+      // Блок: прозрачность и сдвиг (параллакс, на телефоне — подъём при появлении), элементы
+      // пункта (Scene2Art) — на свою долю его сдвига. Блок дальше полэкрана от экрана не
+      // трогаем. Покачивание — только пока пункт с элементами (до ~160px за его рамкой) на экране.
       for (let i = 0; i < BLOCKS.length && !blocksGone; i++) {
         const block = BLOCKS[i];
+        let opacity: number;
+        let y: number; // px
+        let x = 0; // vw
         if (compact) {
-          const { opacity, rise } = getCompactBlock(rect.top + blockEls[i].offsetTop, h);
-          setVar(`--block-${i + 1}-opacity`, `${opacity}`);
-          setVar(`--block-${i + 1}-y`, `${rise}px`);
-          setVar(`--block-${i + 1}-x`, '0vw');
-          tops[i] = rect.top + blockEls[i].offsetTop + rise;
-          ops[i] = still ? 1 : opacity;
-          continue;
+          const c = getCompactBlock(tops[i], h);
+          opacity = c.opacity;
+          y = c.rise;
+        } else {
+          opacity = getBlockOpacity(scrollVh, block.trigger);
+          y = (getBlockParallaxY(scrollVh, block.trigger, block.parallaxY) * h) / 100;
+          x = getBlockParallaxX(scrollVh, block.trigger, block.side);
         }
-        const opacity = getBlockOpacity(scrollVh, block.trigger);
-        const y = (getBlockParallaxY(scrollVh, block.trigger, block.parallaxY) * h) / 100;
-        setVar(`--block-${i + 1}-opacity`, `${opacity}`);
-        setVar(`--block-${i + 1}-y`, `${y}px`);
-        setVar(
-          `--block-${i + 1}-x`,
-          `${getBlockParallaxX(scrollVh, block.trigger, block.side)}vw`,
-        );
-        tops[i] = rect.top + blockEls[i].offsetTop + y;
-        ops[i] = still ? 1 : opacity;
-      }
-      // Элементы пункта (Scene2Art) видны вместе с ним: прозрачность у них — его. Далеко от
-      // экрана (и вся секция выше него) они выключены целиком: каждая смена переменных
-      // пересчитывает стили всей страницы, и лишние узлы его утяжеляют. Покачивание — только
-      // пока пункт с элементами (до ~160px за его рамкой) на экране.
-      for (let i = 0; i < BLOCKS.length; i++) {
-        const bottom = tops[i] + blockEls[i].offsetHeight;
-        const near = !blocksGone && ops[i] > 0 && tops[i] < 1.5 * h && bottom > -0.5 * h;
-        const seen = near && tops[i] < h + 160 && bottom > -160;
-        setVar(`--block-${i + 1}-art-show`, near ? 'block' : 'none');
-        setVar(`--block-${i + 1}-art-play`, seen ? 'running' : 'paused');
-      }
-
-      // Путь (до ~1800 точек) строим, только если трасса видна и что-то сдвинулось.
-      const key = trailOpacity > 0 ? `${scrollVh} ${w} ${h}` : '';
-      if (pathRef.current && key !== pathKey) {
-        pathKey = key;
-        pathRef.current.setAttribute('d', key && buildPathD(scrollVh, w, h));
+        const el = blockEls[i];
+        const top = tops[i] + y;
+        const seen = opacity > 0 && top < h + 160 && top + heights[i] > -160;
+        put(el, '--art-play', seen ? 'running' : 'paused');
+        if (top > 1.5 * h || top + heights[i] < -0.5 * h) continue;
+        put(el, 'opacity', `${opacity}`);
+        put(el, 'transform', `translate(${x}vw, ${y}px)`);
+        for (const art of artEls[i]) put(art.el, 'translate', `0 ${y * art.depth}px`);
       }
 
       // Нахлёст на стыке: начало трассы ещё и в слое страницы, вместе с линией Hero. При прокрутке
       // мимо Lenis (палец, клавиатура) fixed-трасса на кадр отстаёт — отрезок закрывает щель.
       // Лежит на прямом участке трассы (20px и прелюдия до колена; на телефоне колено сразу), не
       // ниже точки, на 1px уже линии — в покое не виден. Вверх щели нет — и отрезка нет.
-      const up = window.scrollY < lastY;
-      lastY = window.scrollY;
+      const up = scrollY < lastY;
+      lastY = scrollY;
       const straight = 20 + ((phone ? 0 : KNEES[0].start - 1) * h) / 100;
       const reach = Math.min(straight, ((scrollVh - 43) * h) / 100 + 20);
-      const top = ((93 - scrollVh) * h) / 100 - rect.top;
-      const bridge = scrollVh > 43 && !up ? `M${w / 2} ${top} V${top + reach}` : '';
+      // top по смыслу постоянен, но дробный шум менял бы d каждый кадр — округляем до 0,1px.
+      const top = Math.round((((93 - scrollVh) * h) / 100 - rect.top) * 10) / 10;
+      const end = Math.round((top + reach) * 10) / 10;
+      const bridge = scrollVh > 43 && !up ? `M${w / 2} ${top} V${end}` : '';
       if (bridgeRef.current && bridge !== bridgeKey) {
         bridgeKey = bridge;
         bridgeRef.current.setAttribute('d', bridge);
@@ -334,16 +354,19 @@ export function Scene2() {
 
   return (
     <section ref={sectionRef} className={styles.scene2} data-scene="scene2">
-      <svg className={styles.trail} aria-hidden="true">
-        <path
-          ref={pathRef}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <div ref={trailRef} className={styles.trail}>
+        <svg ref={trailSvgRef} aria-hidden="true">
+          <path
+            ref={pathRef}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <div ref={threadRef} className={styles.thread} />
+      </div>
       <svg className={styles.bridge} aria-hidden="true">
         <path
           ref={bridgeRef}
