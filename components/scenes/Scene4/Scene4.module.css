@@ -1,50 +1,232 @@
+/* Сцена 4 «Веер» — в языке Сцены 3: белое поле, рамки 1.5px, пастельные картинки, номера
+   карточек в «пилюлях». Места элементов задаёт Scene4.tsx (при смене размера экрана), движение —
+   transform от прогресса прокрутки. */
 .scene4 {
   position: relative;
-  /* Высота — сумма отрезков этапов (TOTAL_VH в stages.ts), задаётся из Scene4.tsx. */
+  /* Высота — TOTAL_SCREENS экранов (stages.ts), задаётся из Scene4.tsx. */
   z-index: 4;
 }
 
 .sticky {
   position: sticky;
   top: 0;
-  /* Высота экрана сцен (lib/scroll/onScroll): та же, что у канваса и в JS. */
+  /* Высота экрана сцен (lib/scroll/onScroll): та же, что в JS. */
   height: var(--ih, 100vh);
   width: 100%;
-  pointer-events: none;
+  /* По горизонтали веер не выходит за экран. */
+  overflow-x: clip;
 }
 
-/* Подпись под словом: базовая линия слова (--word-line, px от верха: 58% высоты, на телефоне
-   50%), выносные элементы («р», «ф», «у») — около 0.22 кегля; строку и кегль своего слова
-   (--word-size) пишет Scene4.tsx. */
-.caption {
+.sticky > * {
   position: absolute;
-  top: calc(var(--word-line, 58%) + 0.24 * var(--word-size, 20vw) + 28px);
-  left: 0;
-  right: 0;
-  padding: 0 32px;
-  text-align: center;
-  opacity: 0;
-}
-
-@media (max-width: 767px) {
-  .caption {
-    padding: 0 20px;
-  }
-}
-
-.stage {
-  margin: 0 0 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #888;
-}
-
-.line {
   margin: 0;
-  font-size: clamp(15px, 1.25vw, 22px);
-  line-height: 1.5;
-  color: rgba(10, 10, 10, 0.72);
+}
+
+/* Заголовок — кеглем «Работы (06)» из финала Сцены 3, не крупнее. */
+.title {
+  font-size: clamp(36px, 3.4vw, 60px);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.title sup {
+  margin-left: 4px;
+  font-size: 0.3em;
+  letter-spacing: 0;
+  vertical-align: top;
+}
+
+.lead {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.lead b {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.leadShort {
+  display: none;
+}
+
+/* Номер на карточке — «пилюля», как у кейсов Сцены 3; у текущего этапа — чёрная. */
+.badge {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 11px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  background: var(--color-bg);
+  font-size: 14px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.card[data-on="true"] .badge {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+
+/* Карточка этапа, как в Сцене 3: белое паспарту в тонкой рамке, внутри картинка 4:3.
+   Поворот — вокруг общей оси веера (transform-origin задаёт Scene4.tsx). */
+.card {
+  padding: 12px;
+  border: 1.5px solid var(--color-fg);
+  background: var(--color-bg);
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.preview {
+  height: 100%;
+  border: 1.5px solid var(--color-fg);
+}
+
+.preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Подпись этапа — как подпись кейса в Сцене 3: «03 / 05», название, делаем / получаете,
+   крупный срок. */
+.caption {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.count {
+  font-size: 15px;
+}
+
+.count span,
+.meta dt {
+  opacity: 0.45;
+}
+
+.capTitle {
+  margin-top: 10px;
+  font-size: clamp(30px, 2.9vw, 50px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 24px;
+  margin-top: 18px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.meta dd {
+  margin: 0;
+}
+
+.term {
+  margin-top: 22px;
+  font-size: clamp(40px, 4vw, 72px);
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.note {
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+/* Точка сцены — копия общей .drop (Hero): 12px, цвет текста. Положение — transform из
+   Scene4.tsx от левого верхнего угла экрана; над карточками — она ось веера. */
+.dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--color-fg);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Короткий ландшафт: всё мельче. */
+.sticky[data-mode="short"] .title {
+  font-size: 28px;
+}
+
+.sticky[data-mode="short"] .lead {
+  margin-top: 6px;
+  font-size: 13.5px;
+}
+
+/* Телефон и короткий ландшафт: подпись мельче. */
+.sticky[data-mode="tall"] .title {
+  font-size: 28px;
+}
+
+.sticky[data-mode="tall"] .lead {
+  margin-top: 6px;
+  font-size: 13.5px;
+}
+
+.sticky[data-mode="tall"] .leadLong {
+  display: none;
+}
+
+.sticky[data-mode="tall"] .leadShort {
+  display: inline;
+}
+
+.sticky:is([data-mode="tall"], [data-mode="short"]) .badge {
+  top: 16px;
+  left: 16px;
+  height: 20px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.sticky:is([data-mode="tall"], [data-mode="short"]) .count {
+  font-size: 13px;
+}
+
+.sticky:is([data-mode="tall"], [data-mode="short"]) .capTitle {
+  margin-top: 4px;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.sticky:is([data-mode="tall"], [data-mode="short"]) .meta {
+  gap: 2px 14px;
+  margin-top: 8px;
+  font-size: 13.5px;
+}
+
+.sticky:is([data-mode="tall"], [data-mode="short"]) .term {
+  margin-top: 10px;
+  font-size: min(40px, calc(var(--ih, 100vh) * 0.058));
+}
+
+.sticky:is([data-mode="tall"], [data-mode="short"]) .note {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.sticky[data-low="true"] .count,
+.sticky[data-low="true"] .note {
+  display: none;
 }

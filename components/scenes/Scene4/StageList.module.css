@@ -1,0 +1,93 @@
+/* Чек-лист этапов: строки «номер · название» без рамок. Впереди — бледные, текущая — крупнее
+   (--grow), пройденные зачёркнуты линией 1.5px (--strike). Раскладку сцены (data-mode, data-low
+   на её кадре) задаёт Scene4.tsx. */
+.list {
+  --row: 54px;
+  --big: 1.6;
+  margin: 0;
+  padding: 0;
+  font-weight: 500;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  height: var(--row);
+  white-space: nowrap;
+  transform-origin: 0 50%;
+  transform: scale(calc(1 + (var(--big) - 1) * var(--grow, 0)));
+}
+
+.row[data-state="off"] {
+  color: rgba(10, 10, 10, 0.35);
+}
+
+.n {
+  position: relative;
+  width: 34px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.w {
+  position: relative;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.strike {
+  position: absolute;
+  top: 54%;
+  right: -2px;
+  left: -2px;
+  height: 1.5px;
+  background: var(--color-fg);
+  transform-origin: 0 50%;
+  transform: scaleX(var(--strike, 0));
+}
+
+/* Зачёркивание номера — только на низком телефоне, где названий нет. */
+.strikeN {
+  display: none;
+}
+
+/* Телефон и короткий ландшафт: строки мельче. */
+:is([data-mode="tall"], [data-mode="short"]) .list {
+  --row: 30px;
+  --big: 1.45;
+}
+
+:is([data-mode="tall"], [data-mode="short"]) .n {
+  width: 28px;
+  font-size: 12px;
+}
+
+:is([data-mode="tall"], [data-mode="short"]) .w {
+  font-size: 15px;
+}
+
+/* Низкий телефон: строкой и только номера — зачёркнутые, текущий крупнее и чёрный. */
+[data-low="true"] .list {
+  --row: 26px;
+  --big: 1.3;
+  display: flex;
+  gap: 14px;
+}
+
+[data-low="true"] .row {
+  transform-origin: 50% 50%;
+}
+
+[data-low="true"] .n {
+  width: auto;
+  font-size: 14px;
+}
+
+[data-low="true"] .w {
+  display: none;
+}
+
+[data-low="true"] .strikeN {
+  display: block;
+}
