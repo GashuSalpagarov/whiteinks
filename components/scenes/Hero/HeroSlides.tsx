@@ -378,15 +378,17 @@ export function HeroSlides({
     };
   }, [hero]);
 
-  // Интро и каждый новый круг пути: слайд 1, отсчёт — после интро.
+  // Интро и каждый новый круг пути: слайд 1, отсчёт — после интро. Новый круг идёт с момента
+  // detail.from (мс, Footer) — до конца интро остаётся на столько же меньше.
   useEffect(() => {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let timer = 0;
-    const start = () => {
+    const start = (e?: Event) => {
       setPair([0, -1]);
       setLive(reduced);
       clearTimeout(timer);
-      if (!reduced) timer = window.setTimeout(() => setLive(true), INTRO_MS);
+      const from = (e as CustomEvent<{ from?: number }> | undefined)?.detail?.from ?? 0;
+      if (!reduced) timer = window.setTimeout(() => setLive(true), INTRO_MS - from);
     };
     start();
     window.addEventListener(LOOP_EVENT, start);
@@ -396,25 +398,19 @@ export function HeroSlides({
     };
   }, []);
 
-  // Пауза: Hero ушёл с экрана (общий onScroll) или вкладка скрыта. Там же — картинки гаснут,
-  // подходя к шапке: к 72px от верха (полоса шапки на телефоне, ниже логотипа, телефона
-  // и бургера на десктопе) прозрачны, гаснут за 12% высоты экрана, как блоки Сцены 2.
+  // Пауза: Hero ушёл с экрана (общий onScroll) или вкладка скрыта.
   useEffect(() => {
     const root = hero.current;
     if (!root) return;
-    const slots = [...root.querySelectorAll<HTMLElement>(`.${styles.slot}`)];
     const onVisibility = () => setHidden(document.hidden);
     onVisibility();
     document.addEventListener("visibilitychange", onVisibility);
+    let last = false;
     const unsubscribe = onScroll(root, () => {
-      const rect = root.getBoundingClientRect();
-      setAway(rect.bottom <= 0);
-      for (const el of slots) {
-        if (!el.offsetParent) continue;
-        const room = Math.max(1, Math.min(0.12 * viewportH(), el.offsetTop - 72));
-        const fade = Math.max(0, Math.min(1, (rect.top + el.offsetTop - 72) / room));
-        el.style.setProperty("--fade", `${fade}`);
-      }
+      const gone = root.getBoundingClientRect().bottom <= 0;
+      if (gone === last) return;
+      last = gone;
+      setAway(gone);
     });
     return () => {
       unsubscribe();

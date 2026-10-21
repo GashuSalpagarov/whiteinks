@@ -70,17 +70,27 @@ export function Hero() {
     requestAnimationFrame(() => setReady(true));
   }, []);
 
-  // Новый круг пути (Footer): интро заново с t = 0. Снимаем .ready, пересчитываем стили
-  // и возвращаем — CSS-анимации стартуют с начала в этом же кадре. Скролл не блокируем.
+  // Новый круг пути (Footer): интро заново — с момента detail.from (мс; футер отдаёт кадр
+  // «вдоха» круга, 3,9 с). Снимаем .ready, пересчитываем стили и возвращаем — CSS-анимации
+  // стартуют в этом же кадре, и всем сразу ставим этот момент: Hero, шапке и меню (HeaderMenu —
+  // следующий за шапкой элемент). Скролл держит HeroScrollLock.
   useEffect(() => {
-    const restart = () => {
+    const restart = (e: Event) => {
       const hero = heroRef.current;
       if (!hero) return;
+      const header = headerRef.current;
       hero.classList.remove(styles.ready);
-      headerRef.current?.classList.remove(styles.ready);
+      header?.classList.remove(styles.ready);
       hero.getBoundingClientRect();
       hero.classList.add(styles.ready);
-      headerRef.current?.classList.add(styles.ready);
+      header?.classList.add(styles.ready);
+      const from = (e as CustomEvent<{ from?: number }>).detail?.from ?? 0;
+      if (!from) return;
+      for (const root of [hero, header, header?.nextElementSibling]) {
+        for (const a of root?.getAnimations({ subtree: true }) ?? []) {
+          if (a instanceof CSSAnimation) a.currentTime = from;
+        }
+      }
     };
     window.addEventListener(LOOP_EVENT, restart);
     return () => window.removeEventListener(LOOP_EVENT, restart);
@@ -98,30 +108,20 @@ export function Hero() {
     return () => window.removeEventListener('resize', updatePath);
   }, []);
 
-  // Hero отвечает только за вертикальное движение точки к центру и её фиксацию.
+  // Hero отвечает только за фиксацию точки: до 43vh прокрутки она стоит у конца линии и едет
+  // вместе со страницей (Hero.module.css), дальше — закреплена в центре экрана.
   // Горизонтальная траектория и контент сцены 2 — в Scene2.
   useEffect(() => {
     if (!heroRef.current) return;
     const updateOffset = () => {
       if (!dropRef.current) return;
+      // Общая высота экрана, как у линии Hero и трассы Scene 2 (на мобильных CSS vh больше
+      // innerHeight). При h = 0 точку не трогаем.
       const h = viewportH();
-      // При h = 0 вышло бы NaN, а `NaNpx` делает transform у .drop невалидным —
-      // точка проваливается в центр экрана. Такие кадры пропускаем.
       if (!h) return;
-      const scrollVh = (window.scrollY / h) * 100;
-      const offsetVh = Math.max(43 - scrollVh, 0);
-      const offsetPx = (offsetVh * h) / 100;
-      if (!Number.isFinite(offsetPx)) return;
-
-      // В px от общей высоты экрана — в тех же единицах, что линия Hero и трасса Scene 2
-      // (на мобильных CSS vh больше innerHeight, и точка отъезжала бы от конца линии).
-      setVar('--drop-offset', `${offsetPx}px`);
-
-      if (offsetVh <= 0) {
-        dropRef.current.classList.add(styles.dropPinned);
-      } else {
-        dropRef.current.classList.remove(styles.dropPinned);
-      }
+      // Закреплённой точке сдвиг — с корня: 0, дальше свой ставят Сцены 2 и 3 (20px).
+      setVar('--drop-offset', '0px');
+      dropRef.current.classList.toggle(styles.dropPinned, window.scrollY >= 0.43 * h);
     };
 
     return onScroll(heroRef.current, updateOffset);
@@ -159,7 +159,7 @@ export function Hero() {
         <div ref={dropRef} className={styles.drop} aria-hidden="true" />
       </section>
 
-      {/* Шапка — вне слоя Hero (у него z-index 2): на телефоне она встаёт над сценами. */}
+      {/* Шапка — вне слоя Hero (у него z-index 2): так она встаёт над сценами. */}
       <header ref={headerRef} className={`${styles.header} ${ready ? styles.ready : ''}`}>
         <span className={styles.logo}>White Inks</span>
         <HeaderNav />
