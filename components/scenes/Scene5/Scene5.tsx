@@ -491,12 +491,6 @@ export function Scene5() {
                   {errors.form}
                 </p>
               )}
-              <div className={styles.reply}>
-                <span className={styles.avatar} aria-hidden="true" />
-                <p>
-                  Ответит {BRIEF_CONFIG.person} · обычно {BRIEF_CONFIG.replyIn} · {BRIEF_CONFIG.nda}
-                </p>
-              </div>
             </form>
           )}
         </div>

@@ -4,15 +4,13 @@ import { ADDONS, type Estimate, SCALES, type Selection, TYPES } from "./pricing"
 // Yandex Cloud Function). Не задан — открываем письмо (mailto:) с брифом в тексте: работает
 // на статическом хостинге и ничего не хранит.
 
-// ЗАГЛУШКИ — заполнит владелец: почта для писем, кто отвечает и что обещаем.
+// ЗАГЛУШКИ — заполнит владелец: почта для писем и что обещаем.
 export const BRIEF_CONFIG = {
   email: "brief@example.com",
   // Контакты сайта (Hero, футер) — тоже отсюда.
   telegram: "@whiteinks",
   phone: "+7 (999) 000-00-00",
-  person: "Анна, продюсер",
   replyIn: "в течение 2 часов",
-  nda: "NDA до разговора",
   promise: "Смета в PDF за 24 часа · цена фиксируется на 14 дней",
 };
 
