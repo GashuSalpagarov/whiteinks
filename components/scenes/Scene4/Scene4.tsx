@@ -6,31 +6,53 @@ import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import { PathLine, paintLine, placeLine } from "./PathLine";
 import styles from "./Scene4.module.css";
 import { paintList, StageList } from "./StageList";
-import { captionAt, dropAt, fanAt, N, STEPS, sceneAt, TOTAL_SCREENS, TOTAL_TERM } from "./stages";
+import {
+  appearAt,
+  appearFrom,
+  captionAt,
+  dropAt,
+  fanAt,
+  growAt,
+  N,
+  STEPS,
+  sceneAt,
+  TOTAL_SCREENS,
+  TOTAL_TERM,
+} from "./stages";
 
 const DOT_R = 6; // px, радиус точки (как .drop в Hero, 12px)
+const DOT_Y = 20; // дом точки — на 20px ниже центра экрана, как в Сценах 2 и 3
+const START_SCALE = 0.04; // первая карточка растёт из точки от 4% размера, как в туннеле Сцены 3
+const RISE = 20; // px, на столько ниже блок слева начинает всплывать
 
 // Точка входа — где Сцена 3 оставляет точку, когда отпускает свой sticky: место покоя под её
-// сеткой (dropRest в Scene3.tsx — один источник для обеих сцен). Отсюда точка уходит под веер.
+// сеткой (dropRest в Scene3.tsx — один источник для обеих сцен). Отсюда точка плывёт в центр
+// первой карточки.
 const entryPoint = (w: number, h: number) => dropRest(w, h);
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const easeOut = (t: number) => t * (2 - t);
 const num = (i: number) => String(i + 1).padStart(2, "0");
 // Карточка: поля 12px и рамки 1.5px вокруг картинки 4:3 (как в Сцене 3).
 const cardH = (w: number) => 27 + 0.75 * (w - 27);
 const fitW = (h: number) => (h - 27) / 0.75 + 27;
 
-// entry — точка входа на экране, ax/py — ось веера (там встаёт капля), D — шаг веера, град.
-// Линия — только на выходе: в координатах кадра от оси до его низа, видна её часть до капли.
+// entry — точка входа на экране, ax — ось веера по горизонтали, cy — центр первой карточки (там
+// точка лежит под веером), lift — от него до оси, edge — от него до места, где точка ещё под
+// нижним краем карточки, D — шаг веера, град. Линия — только на выходе: в координатах кадра от
+// центра карточки до низа кадра (span), видна её часть до капли. appear — блоки слева и с
+// какого s каждый всплывает.
 type Geo = {
   key: string;
   entry: { x: number; y: number };
   ax: number;
-  py: number;
+  cy: number;
+  lift: number;
+  edge: number;
   D: number;
-  top: number;
   span: number;
+  appear: { el: HTMLElement; from: number }[];
 };
 
 export function Scene4() {
@@ -68,14 +90,31 @@ export function Scene4() {
       if (h !== undefined) el.style.height = `${h}px`;
     };
     const bottom = (el: HTMLElement | null) => (el ? el.offsetTop + el.offsetHeight : 0);
+    // Верх элемента в кадре, px.
+    const topIn = (el: HTMLElement) => {
+      let y = 0;
+      for (let e: HTMLElement | null = el; e && e !== sticky; e = e.offsetParent as HTMLElement) {
+        y += e.offsetTop;
+      }
+      return y;
+    };
+    // Блок слева всплывает: прозрачность и сдвиг вверх (свойством translate — transform у строк
+    // чек-листа занят их ростом).
+    const rise = (el: HTMLElement, o: number) => {
+      const css = o.toFixed(3);
+      if (written.get(el) === css) return;
+      written.set(el, css);
+      el.style.opacity = css;
+      el.style.translate = `0 ${((1 - o) * RISE).toFixed(1)}px`;
+    };
     const mark = (el: HTMLElement | null, name: string, value: string) => {
       if (el && el.dataset[name] !== value) el.dataset[name] = value;
     };
 
     // Раскладка — при смене размера экрана. Широкий экран: заголовок и чек-лист слева, веер
-    // по центру (ось — на 0.8 высоты), подпись справа от него. Короткий ландшафт — так же,
-    // всё мельче. Телефон и планшет в портрете: заголовок, чек-лист и подпись сверху, веер
-    // внизу.
+    // по центру (центр первой карточки — дом точки), подпись справа от него. Короткий
+    // ландшафт — так же, всё мельче. Телефон и планшет в портрете: заголовок, чек-лист и подпись
+    // сверху, веер внизу.
     const layout = (w: number, h: number, key: string): Geo => {
       const mode =
         w >= 700 && h <= 500 ? "short" : w >= 768 && !(w < h && w < 1000) ? "wide" : "tall";
@@ -98,7 +137,9 @@ export function Scene4() {
         place(map, low ? 20 : 44, bottom(head) + 12, w - (low ? 40 : 64));
         const top = bottom(map) + 18;
         for (const c of caps) place(c, 20, top, w - 40);
-        py = Math.round(h - (low ? 64 : h < 720 ? 96 : 116));
+        // Под осью — только нижние углы раскрытого веера: на невысоком телефоне ось ниже, иначе
+        // карточка заходит на подпись.
+        py = Math.round(h - (h < 720 ? 64 : 116));
         r0 = 22;
         D = h < 720 ? 9 : 7.5;
         // Веер — между подписью и осью: раскрытый, он на ~8% выше стоящей карточки.
@@ -110,13 +151,16 @@ export function Scene4() {
         place(head, 32, short ? 78 : 96, short ? 0.45 * w : Math.min(560, w - 64));
         place(map, short ? 32 : 56, bottom(head) + (short ? 12 : 40));
         // Короткий ландшафт: под осью — место для нижних углов раскрытого веера, над ним —
-        // ниже заголовка.
-        py = Math.round(short ? h - 56 : 0.8 * h);
+        // ниже заголовка. Широкий: первая карточка — вокруг дома точки, ось — под ней; но не
+        // выше, чем на 90px под чек-листом: на узком широком экране (1024) левые карточки
+        // раскрытого веера иначе заходят на его строки.
         r0 = short ? 22 : 40;
         D = short ? 7 : 13;
+        py = Math.round(h - 56);
         cw = short
           ? Math.min(0.3 * w, fitW((py - r0 - bottom(head) - 14) / 1.06))
           : Math.min(400, 0.26 * w);
+        if (!short) py = Math.round(Math.max(h / 2 + DOT_Y + cardH(cw) / 2 + r0, bottom(map) + 90));
         const x = dx + cw / 2 + (short ? 32 : 56);
         for (const c of caps) place(c, x, 0, w - 32 - x);
         const ch = cardH(cw);
@@ -130,11 +174,17 @@ export function Scene4() {
         place(card, dx - cw / 2, py - r0 - ch, cw, ch);
         if (card) card.style.transformOrigin = `${cw / 2}px ${ch + r0}px`;
       }
-      // Линия — от оси вниз: её рисует падающая капля, у низа кадра её продолжает трасса Сцены 5.
-      const top = py;
-      const span = h - top;
-      placeLine(lineRef.current, dx, top, span);
-      return { key, entry, ax: dx, py, D, top, span };
+      // Линия — из-под веера вниз: её рисует падающая капля, начало — в центре первой карточки,
+      // под карточками; у низа кадра её продолжает трасса Сцены 5.
+      const cy = py - r0 - ch / 2;
+      placeLine(lineRef.current, dx, cy, h - cy);
+      // Блоки слева всплывают по очереди: каждый — когда со страницей поднимается до линии; на
+      // телефоне она выше точки (текст идёт поперёк её пути), иначе — на 0.8 экрана.
+      const line = mode === "tall" ? Math.min(entry.y, cy) - 24 : 0.8 * h;
+      const items = [...(head?.children ?? []), ...(map?.children ?? [])] as HTMLElement[];
+      const appear = items.map((el) => ({ el, from: appearFrom(topIn(el), line, h) }));
+      const edge = ch / 2 - DOT_R - 1;
+      return { key, entry, ax: dx, cy, lift: ch / 2 + r0, edge, D, span: h - cy, appear };
     };
 
     const update = () => {
@@ -151,45 +201,59 @@ export function Scene4() {
         geo = layout(w, h, key);
         written.clear();
       }
-      const { entry, ax, py, D, top, span } = geo;
-      const sc = sceneAt(s);
+      const { entry, ax, cy, lift, edge, D, span } = geo;
+      // Без движения — всё сразу на местах: первая карточка уже стоит, пока сцена въезжает.
+      const at = sceneAt(s);
+      const sc = reduced && at.stage < 0 ? { ...at, stage: 0, u: 1 } : at;
 
-      // Веер: rel — 0 стоит прямо, > 0 уже в веере слева, (−1; 0) — выходит справа.
+      // Вход: заголовок, подпись под ним и строки чек-листа всплывают по очереди, пока сцена
+      // въезжает; показанное дальше не гаснет.
+      for (const a of geo.appear) rise(a.el, appearAt(s, a.from, reduced));
+
+      // Веер: rel — 0 стоит прямо, > 0 уже в веере слева, (−1; 0) — выходит справа. Первая
+      // карточка не выходит, а растёт из точки — из своего центра, как карточки туннеля Сцены 3:
+      // от 4% размера, сначала быстро (сдвиг держит центр на месте при масштабе от оси веера).
       const q = fanAt(sc, reduced);
+      const g = growAt(sc, reduced);
       for (let j = 0; j < N; j++) {
         const rel = q - j;
         const card = cardRefs.current[j];
-        // Ещё не вышедшая — без поворота: повёрнутая вправо, она расширяла бы страницу.
-        if (rel <= -1) put(card, 0);
-        else put(card, clamp01((rel + 1) / 0.45), `rotate(${(-D * rel).toFixed(2)}deg)`);
+        if (j === 0 && g < 1) {
+          const k = START_SCALE + (1 - START_SCALE) * easeOut(g);
+          const dy = (-(1 - k) * lift).toFixed(1);
+          put(card, g > 0 ? clamp01(g / 0.32) : 0, `translateY(${dy}px) scale(${k.toFixed(4)})`);
+        } else if (rel <= -1) {
+          // Ещё не вышедшая — без поворота: повёрнутая вправо, она расширяла бы страницу.
+          put(card, 0);
+        } else put(card, clamp01((rel + 1) / 0.45), `rotate(${(-D * rel).toFixed(2)}deg)`);
         mark(card, "on", j === sc.stage && sc.out === 0 ? "true" : "false");
       }
       paintList(mapRef.current, sc, reduced);
-      for (let j = 0; j <= N; j++) {
-        const o = captionAt(j, sc, reduced);
-        put(capRefs.current[j], o, `translateY(${((1 - o) * 12).toFixed(1)}px)`);
+      for (let i = 0; i < N; i++) {
+        const o = captionAt(i, sc, reduced);
+        put(capRefs.current[i], o, `translateY(${((1 - o) * 12).toFixed(1)}px)`);
       }
 
       // Капля. До входа сцены точкой управляет Сцена 3 — не трогаем. Общую точку (.drop) Сцена 3
       // гасит уже со сборки сетки, а ровно на её месте встаёт своя — её двигаем своим transform:
-      // переменные на корне каждым кадром пересчитывали бы стили всей страницы.
-      if (s <= 0) {
+      // переменные на корне каждым кадром пересчитывали бы стили всей страницы. Своя точка —
+      // уже с того пикселя, где секция касается низа экрана: там Сцена 3 свою гасит.
+      if (rect.top > h) {
         put(dotRef.current, 0);
         return;
       }
-      const { lead, fall } = dropAt(sc);
-      // Как только Сцена 3 отпустила сетку, точка остаётся на месте покоя, а страница едет
-      // вверх: веер въезжает снизу, его ось подхватывает точку и уводит на место (если место
-      // покоя выше оси — на телефоне, — точка за время входа опускается к ней). Дальше точка
-      // стоит под веером, без линии. В конце капля падает из оси за нижний край кадра, за ней —
-      // линия, её дальше продолжает трасса Сцены 5. Кадр уходит вверх со страницей.
+      const { glide, fall } = dropAt(sc);
+      // Как только Сцена 3 отпустила сетку, точка плывёт с места покоя под ней в центр первой
+      // карточки — туда, где та окажется, когда сцена встанет на место; оттуда карточка и
+      // растёт. Дальше точка лежит под веером: карточки её закрывают. На выходе капля ждёт под
+      // самым нижним краем карточки (её ещё не видно), выходит из-под веера и падает за нижний
+      // край кадра, за ней — линия, её дальше продолжает трасса Сцены 5. Кадр уходит вверх со
+      // страницей.
       const frame = rect.top > 0 ? rect.top : Math.min(0, rect.bottom - h); // верх кадра
-      const x = fall > 0 ? ax : lerp(entry.x, ax, lead);
+      const x = lerp(entry.x, ax, glide);
       const y =
-        fall > 0
-          ? lerp(py, h + 2 * DOT_R, fall * fall) + frame
-          : Math.min(frame + py, entry.y + Math.max(0, py - entry.y) * lead);
-      const line = reduced || fall >= 1 ? 1 : fall > 0 ? clamp01((y - frame - top) / span) : 0;
+        sc.out > 0 ? lerp(cy + edge, h + 2 * DOT_R, fall * fall) + frame : lerp(entry.y, cy, glide);
+      const line = reduced || fall >= 1 ? 1 : fall > 0 ? clamp01((y - frame - cy) / span) : 0;
       paintLine(lineRef.current, line);
       put(
         dotRef.current,
@@ -231,35 +295,20 @@ export function Scene4() {
             className={styles.card}
             style={{ zIndex: 10 + i }}
           >
-            <div className={styles.preview} style={{ background: step.color }}>
+            <div className={styles.preview}>
+              {/* Цветное поле вокруг вписанной картинки — её собственный фон: на втором круге
+                  (инверсия палитры, globals.css) img возвращается в свои цвета вместе с полем. */}
               {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-              <img src={step.image} alt="" />
+              <img src={step.image} alt="" style={{ background: step.color }} />
             </div>
             <span className={styles.badge}>{num(i)}</span>
           </figure>
         ))}
-        <div
-          ref={(el) => {
-            capRefs.current[0] = el;
-          }}
-          className={styles.caption}
-        >
-          <p className={styles.count}>{String(N).padStart(2, "0")} этапов</p>
-          <h3 className={styles.capTitle}>Весь путь</h3>
-          <dl className={styles.meta}>
-            <dt>От</dt>
-            <dd>первого звонка</dd>
-            <dt>До</dt>
-            <dd>живого сайта и поддержки</dd>
-          </dl>
-          <p className={styles.term}>{TOTAL_TERM}</p>
-          <p className={styles.note}>обычно, от брифа до запуска</p>
-        </div>
         {STEPS.map((step, i) => (
           <div
             key={step.word}
             ref={(el) => {
-              capRefs.current[i + 1] = el;
+              capRefs.current[i] = el;
             }}
             className={styles.caption}
           >
