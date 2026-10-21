@@ -34,11 +34,12 @@ const PHONE_PATH: [number, number][] = [
 ];
 
 // Конец трассы (scroll, vh): точка вернулась в центр — конец последнего колена и серпантина.
-// Дальше трасса уезжает вверх вместе со страницей, а с точкой её конец связывает нить — прямая
-// по центру. Когда конец трассы уходит за верх экрана (уже в Сцене 3), точка втягивает нить
-// в себя за REEL экрана прокрутки.
+// Дальше трасса уезжает вверх вместе со страницей, а её конец с точкой связывает упругая нить —
+// прямая по центру: тянется и тончает (4px -> 1.2px). На входе в Сцену 3 (500vh, конец трассы
+// в 20px от верха) она рвётся посередине, и за SNAP экрана прокрутки хвосты втягиваются:
+// верхний — в конец трассы, нижний — в точку. Назад — всё обратно.
 const TRAIL_END = 43 + 407;
-const REEL = 0.1;
+const SNAP = 0.08;
 
 // Скорость элемента пункта (Scene2Art) — доля параллакса блока, у каждого места своя и
 // маленькая: за время жизни пункта элемент не доезжает до соседнего текста.
@@ -223,6 +224,7 @@ export function Scene2() {
   const trailRef = useRef<HTMLDivElement>(null);
   const trailSvgRef = useRef<SVGSVGElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
+  const tailRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const bridgeRef = useRef<SVGPathElement>(null);
 
@@ -231,8 +233,9 @@ export function Scene2() {
     const trail = trailRef.current;
     const trailSvg = trailSvgRef.current;
     const thread = threadRef.current;
+    const tail = tailRef.current;
     const path = pathRef.current;
-    if (!section || !trail || !trailSvg || !thread || !path) return;
+    if (!section || !trail || !trailSvg || !thread || !tail || !path) return;
     const blockEls = [...section.querySelectorAll<HTMLElement>('aside')];
     const artEls = blockEls.map((el, i) =>
       [...el.querySelectorAll<HTMLElement>(`.${styles.art} > *`)].map((art, j) => ({
@@ -295,13 +298,31 @@ export function Scene2() {
         const px = (v: number) => Math.round(v * dpr) / dpr;
         const shift = px(scrollY);
         put(trailSvg, 'transform', `translateY(${-Math.min(shift, 5 * h + 40)}px)`);
-        // Нить — верх у конца трассы, низ обрезан по центру точки; втягивается плавно
-        // (smoothstep) от конца трассы к точке, назад — так же.
+        // Нить: верх — у конца трассы, низ обрезан по центру точки; ширина — scaleX от 4px.
         const dot = h / 2 + 20;
-        const end = ((50 + TRAIL_END) * h) / 100 + 20 - shift;
-        const k = Math.max(0, Math.min(1, (-end - 4) / (REEL * h)));
-        const top = Math.min(dot, end + (dot - end) * k * k * (3 - 2 * k));
-        put(thread, 'transform', `translateY(${px(top)}px)`);
+        const end = ((50 + TRAIL_END) * h) / 100 + 20 - shift; // конец трассы на экране
+        const full = dot - 20; // длина нити в миг разрыва
+        const k = Math.max(0, Math.min(1, (shift - 5 * h) / (SNAP * h)));
+        // Порвалась — хвосты (по половине) сжимаются плавно (smoothstep) и толстеют обратно.
+        const e = k * k * (3 - 2 * k);
+        const half = (full / 2) * (1 - e);
+        if (k === 0) {
+          const top = Math.min(dot, end);
+          const sx = (4 - 2.8 * Math.min(1, (dot - top) / full)) / 4;
+          put(thread, 'transform', `translateY(${px(top)}px) scaleX(${sx.toFixed(3)})`);
+          put(tail, 'transform', 'scaleY(0)');
+        } else if (half > 0) {
+          const sx = ((1.2 + 2.8 * e) / 4).toFixed(3);
+          put(thread, 'transform', `translateY(${px(dot - half)}px) scaleX(${sx})`);
+          put(
+            tail,
+            'transform',
+            `translateY(${px(end)}px) scaleX(${sx}) scaleY(${(half / dot).toFixed(4)})`,
+          );
+        } else {
+          put(thread, 'transform', `translateY(${px(dot)}px)`);
+          put(tail, 'transform', 'scaleY(0)');
+        }
       }
 
       // Блок: прозрачность и сдвиг (параллакс, на телефоне — подъём при появлении), элементы
@@ -366,6 +387,7 @@ export function Scene2() {
           />
         </svg>
         <div ref={threadRef} className={styles.thread} />
+        <div ref={tailRef} className={styles.tail} />
       </div>
       <svg className={styles.bridge} aria-hidden="true">
         <path

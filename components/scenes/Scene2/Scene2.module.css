@@ -32,9 +32,11 @@
   will-change: transform;
 }
 
-/* Нить от конца трассы до точки (Scene2.tsx): той же толщины, верх скруглён, как конец трассы.
- * Верх — transform, низ обрезан слоем по центру точки. */
-.thread {
+/* Упругая нить от конца трассы до точки (Scene2.tsx): 4px, как трасса, тончает, растягиваясь;
+ * после разрыва .tail — верхний хвост у конца трассы. Всё — transform: scaleX — ширина, scaleY —
+ * длина хвоста; низ нити обрезан слоем по центру точки. */
+.thread,
+.tail {
   position: absolute;
   top: 0;
   left: calc(50% - 2px);
@@ -42,7 +44,16 @@
   height: 100%;
   border-radius: 2px;
   background: currentColor;
+  transform-origin: 50% 0;
   will-change: transform;
+}
+
+.thread {
+  transform: translateY(100%);
+}
+
+.tail {
+  transform: scaleY(0);
 }
 
 /* Начало трассы в слое страницы — отрезок на стыке с линией Hero (Scene2.tsx). */
