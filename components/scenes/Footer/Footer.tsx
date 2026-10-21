@@ -18,9 +18,10 @@ export const HOLD_EVENT = "whiteinks:hold";
 // Прокрутка у конца зоны стихла (и палец отпущен) — переход доигрывается сам. Быстрый свайп
 // долетает до конца, но начнётся всё только после остановки: петля уже видна целиком.
 const SETTLE_MS = 160;
-// Доигрывание, мс: петля заливается в круг (FILL_MS); если она больше круга Hero — круг
-// сжимается до него на месте (RESIZE_MS); HOLD_MS — и прыжок.
-const FILL_MS = 480;
+// Доигрывание, мс: от петли наружу растекаются чернила — фон вокруг круга заливается до углов
+// экрана (FLOOD_MS), круг остаётся светлым; если петля больше круга Hero, чернила сходятся
+// к нему от края петли (RESIZE_MS); HOLD_MS — и прыжок.
+const FLOOD_MS = 620;
 const RESIZE_MS = 420;
 const HOLD_MS = 60;
 
@@ -28,6 +29,13 @@ const HOLD_MS = 60;
 const { telegram, email } = BRIEF_CONFIG;
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+// Обратный цвет (как filter: invert(1)): rgb(10, 10, 10) → rgb(245, 245, 245).
+const invert = (rgb: string) =>
+  `rgb(${(rgb.match(/\d+(\.\d+)?/g) ?? ["0", "0", "0"])
+    .slice(0, 3)
+    .map((v) => 255 - Number(v))
+    .join(", ")})`;
 
 // Круг интро Hero на экране после прыжка наверх (scrollY = 0) — как .pill в Hero.module.css:
 // на телефоне (< 768px) — 140px в (74%, --y1), --y1 — от общей высоты экрана (--ih);
@@ -48,12 +56,13 @@ function heroCircle() {
 // и кончается точкой (пунктир или чернила — как путь Сцены 5 над ним, Footer.module.css).
 // Дальше зона, где футер стоит внизу, а петля рисуется ровно там, где на следующем круге стоит
 // круг интро Hero: точка по прокрутке отступает по своей линии к этому кругу (линия за ней
-// втягивается) и обводит его; пунктир заранее показывает путь. Петля замкнулась и прокрутка
-// стихла — петля заливается в круг на месте (если она больше круга Hero — сжимается до него
-// от центра), всё прочее гаснет, и прыжок: палитра переворачивается (html[data-palette], см.
-// globals.css), страница — наверх, Hero продолжает интро с «вдоха» этого круга. Круг до и после
-// прыжка — в той же точке и того же размера; меняется только палитра: чёрный круг на белом
-// становится белым на чёрном. Reduced motion: зоны нет, футер — конец страницы, «↺ замкнуть круг».
+// втягивается) и обводит его; пунктир круга проступает, как только она вошла на окружность.
+// Петля замкнулась и прокрутка стихла — круг остаётся светлым, а от петли наружу растекаются
+// чернила и заливают фон до краёв экрана (если петля больше круга Hero — чернила сходятся к нему
+// от её края), всё прочее гаснет. Это уже первый кадр Hero следующего круга: светлый круг на
+// тёмном в перевёрнутой палитре. Прыжок: палитра переворачивается (html[data-palette], см.
+// globals.css), страница — наверх, Hero продолжает интро с «вдоха» этого круга — на экране не
+// меняется ничего. Reduced motion: зоны нет, футер — конец страницы, «↺ замкнуть круг».
 export function Footer() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -61,6 +70,7 @@ export function Footer() {
   const contactsRef = useRef<HTMLDivElement>(null);
   const loopRef = useRef<SVGSVGElement>(null);
   const diskRef = useRef<HTMLSpanElement>(null);
+  const floodRef = useRef<HTMLSpanElement>(null);
   const [copied, setCopied] = useState(false);
   const lenis = useLenis();
 
@@ -71,7 +81,8 @@ export function Footer() {
     const contacts = contactsRef.current;
     const loop = loopRef.current;
     const disk = diskRef.current;
-    if (!section || !stage || !dot || !contacts || !loop || !disk) return;
+    const flood = floodRef.current;
+    if (!section || !stage || !dot || !contacts || !loop || !disk || !flood) return;
     const ghost = loop.querySelector("circle");
     const trace = loop.querySelector("path");
     const pen = loop.querySelector(`.${styles.pen}`);
@@ -133,9 +144,6 @@ export function Footer() {
         "d",
         `M${g.ex} ${g.ey} A${g.r} ${g.r} 0 1 1 ${ax} ${ay} A${g.r} ${g.r} 0 1 1 ${g.ex} ${g.ey}`,
       );
-      const size = 2 * Math.max(g.r, g.rh);
-      disk.style.width = `${size}px`;
-      disk.style.height = `${size}px`;
       // Подпись — в координатах экрана, пока футер стоит внизу.
       const s = stage.getBoundingClientRect();
       const k = contacts.getBoundingClientRect();
@@ -159,7 +167,7 @@ export function Footer() {
       last = "";
       section.classList.remove(styles.closing);
       section.removeAttribute("data-loop");
-      for (const el of [disk, loop]) for (const a of el.getAnimations()) a.cancel();
+      for (const el of [disk, flood]) for (const a of el.getAnimations()) a.cancel();
     };
 
     const teleport = () => {
@@ -176,34 +184,53 @@ export function Footer() {
       }
     };
 
-    // Петля замкнулась: доигрываем сами (WAAPI), прокрутку держит HeroScrollLock. Круг — всё
-    // время в центре круга Hero: растёт из центра до петли, потом, если надо, сжимается до круга
-    // Hero. Сдвига нет — только масштаб.
+    // Петля замкнулась: доигрываем сами (WAAPI), прокрутку держит HeroScrollLock. Всё — в центре
+    // круга Hero, только масштаб, без сдвига. Чернила (.flood, обратный фону цвет — фон Hero
+    // следующего круга) растут от наружного края петли до самого дальнего угла экрана и встают
+    // под обводку — она сливается с ними. Круг (.disk) над ними — от внутреннего края обводки
+    // до петли; его цвет из цвета бумаги становится обратным цветом линии — ровно цветом круга
+    // Hero следующего круга. Если петля больше круга Hero, круг сжимается до него.
     const close = () => {
       if (playing || jumped) return;
       playing = true;
       jumped = true;
       window.dispatchEvent(new Event(HOLD_EVENT));
-      const half = Math.max(g.r, g.rh);
-      const at = (k: number) => `translate(${g.cx - half}px, ${g.cy - half}px) scale(${k})`;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const far = Math.hypot(Math.max(g.cx, w - g.cx), Math.max(g.cy, h - g.cy)) + 2;
+      // Место — раскладкой (left/top, дробные px — как у круга Hero), анимируется только масштаб:
+      // край круга отрисован так же, как у него, без пересэмплирования слоя.
+      const place = (el: HTMLElement, r: number) => {
+        el.style.left = `${g.cx - r}px`;
+        el.style.top = `${g.cy - r}px`;
+        el.style.width = `${2 * r}px`;
+        el.style.height = `${2 * r}px`;
+      };
+      const at = (k: number) => `scale(${k})`;
       const resize = Math.abs(g.r - g.rh) > 0.5 ? RESIZE_MS : 0;
-      const total = FILL_MS + resize + HOLD_MS;
+      const total = FLOOD_MS + resize + HOLD_MS;
+      const cs = getComputedStyle(section);
+      const paper = cs.backgroundColor;
+      const ink = invert(cs.color);
+      place(flood, far);
+      place(disk, g.rh);
       section.classList.add(styles.closing);
-      // Обводка шире круга на 2px: петля и точка уходят, когда круг их накрыл.
-      loop.animate([{ opacity: 1 }, { opacity: 1, offset: 0.999 }, { opacity: 0 }], {
-        duration: FILL_MS,
+      flood.animate([{ transform: at((g.r + 2) / far) }, { transform: at(1) }], {
+        duration: FLOOD_MS,
+        easing: "cubic-bezier(0.5, 0, 0.3, 1)",
         fill: "forwards",
       });
       const fill = disk.animate(
         [
-          { offset: 0, transform: at(0), easing: "cubic-bezier(0.33, 1, 0.68, 1)" },
+          { offset: 0, transform: at((g.r - 2) / g.rh), backgroundColor: paper },
           {
-            offset: FILL_MS / total,
-            transform: at(g.r / half),
+            offset: FLOOD_MS / total,
+            transform: at(g.r / g.rh),
+            backgroundColor: ink,
             easing: "cubic-bezier(0.65, 0, 0.35, 1)",
           },
-          { offset: (FILL_MS + resize) / total, transform: at(g.rh / half) },
-          { offset: 1, transform: at(g.rh / half) },
+          { offset: (FLOOD_MS + resize) / total, transform: at(1), backgroundColor: ink },
+          { offset: 1, transform: at(1), backgroundColor: ink },
         ],
         { duration: total, fill: "forwards" },
       );
@@ -263,7 +290,8 @@ export function Footer() {
         section.style.setProperty("--cut", `${cut}px`);
         section.style.setProperty("--clip", `${clip}px`);
         section.style.setProperty("--turn", `${turn}`);
-        section.style.setProperty("--ghost-o", `${clamp01(z1 * 16)}`);
+        // Пунктир круга — только когда точка вошла на окружность: проступает за первые 8% обвода.
+        section.style.setProperty("--ghost-o", `${clamp01(turn / 0.08)}`);
         section.style.setProperty("--cap", `${cap}`);
         pen.setAttribute("cx", `${px}`);
         pen.setAttribute("cy", `${py}`);
@@ -350,7 +378,8 @@ export function Footer() {
         <path className={styles.trace} pathLength={1} />
         <circle className={styles.pen} r={6} />
       </svg>
-      {/* Круг, в который заливается петля: в центре круга Hero, только масштаб. */}
+      {/* Чернила вокруг круга и сам круг — в центре круга Hero, только масштаб. */}
+      <span ref={floodRef} className={styles.flood} aria-hidden="true" />
       <span ref={diskRef} className={styles.disk} aria-hidden="true" />
     </section>
   );
