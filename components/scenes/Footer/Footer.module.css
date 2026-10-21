@@ -1,6 +1,7 @@
 /* Футер — белый, как сцены до него, и не на весь экран, а на его нижнюю часть (--fh): линия
    пути спускается по центру и кончается точкой, рядом — Telegram и почта, внизу мелкая
-   строка. Под футером зона --zone: футер стоит внизу экрана, линия уходит в петлю (Footer.tsx).
+   строка. Под футером зона --zone: футер стоит внизу экрана, а петля рисуется там, где на
+   следующем круге стоит круг Hero (Footer.tsx).
    z-index выше всех сцен и Hero: к прыжку экран — только фон футера и круг, без логотипа,
    телефона и точки Hero, как кадр интро в момент «вдоха» круга. */
 .footer {
@@ -29,10 +30,13 @@
   background: var(--ghost);
 }
 
-/* Пока футер стоит внизу, над ним открывается верх секции — линия идёт и там, без разрыва. */
+/* Пока футер стоит внизу, над ним открывается верх секции — линия идёт и там, без разрыва.
+   В зоне точка отступает по линии к петле — линия втягивается за ней: снизу её режет --clip
+   (над футером) и --cut (в футере). */
 .footer::before {
   content: '';
   bottom: 0;
+  clip-path: inset(0 0 var(--clip, 0px) 0);
 }
 
 [data-scene='scene5'][data-fallen] + .footer::before {
@@ -51,7 +55,7 @@
 }
 
 .line {
-  height: var(--dot-y);
+  height: max(0px, calc(var(--dot-y) - var(--cut, 0px)));
 }
 
 .line::after {
@@ -67,7 +71,7 @@
   transition: clip-path 0.25s linear 1.9s;
 }
 
-/* Точка; в зоне она обводит петлю (--dx, --dy — смещение от касания, Footer.tsx). */
+/* Точка. В зоне (data-loop) её ведёт слой петли (.pen) — она уходит из футера. */
 .dot {
   position: absolute;
   top: calc(var(--dot-y) - 6px);
@@ -76,24 +80,28 @@
   height: 12px;
   border-radius: 50%;
   background: var(--color-fg);
-  translate: var(--dx, 0px) var(--dy, 0px);
 }
 
-/* Петля: круг слева от линии, касается её в точке. Пунктир — путь «впереди», как .line и
-   путь Сцены 5 (точки 2px через 8px), проявляется с началом зоны; линия 4px рисуется по
-   прогрессу зоны (--k). */
+.footer[data-loop] .dot {
+  visibility: hidden;
+}
+
+/* Петля — на экране (fixed), ровно там, где на следующем круге стоит круг интро Hero: точка
+   (.pen) отступает по линии к нему и обводит его. Пунктир — путь «впереди», как .line и путь
+   Сцены 5 (точки 2px через 8px), проявляется с началом зоны; линия 4px рисуется по прогрессу
+   зоны (--turn). Видна только в зоне (data-loop) и на доигрывании. */
 .loop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
   overflow: visible;
   pointer-events: none;
+  visibility: hidden;
 }
 
-.ring {
-  transform-box: fill-box;
-  transform-origin: center;
+.footer[data-loop] .loop {
+  visibility: visible;
 }
 
 .ghost,
@@ -106,17 +114,22 @@
   stroke: rgba(10, 10, 10, 0.32);
   stroke-width: 2;
   stroke-dasharray: 0 8;
-  opacity: min(1, calc(var(--k, 0) * 16));
+  opacity: var(--ghost-o, 0);
 }
 
 .trace {
   stroke: var(--color-fg);
   stroke-width: 4;
   stroke-dasharray: 1 2;
-  stroke-dashoffset: calc(1 - var(--k, 0));
+  stroke-dashoffset: calc(1 - var(--turn, 0));
 }
 
-/* Круг, в который заливается петля (fixed, на экране): позиция и размер — WAAPI в Footer.tsx.
+.pen {
+  fill: var(--color-fg);
+}
+
+/* Круг, в который заливается петля (fixed, на экране): в центре круга Hero, только масштаб —
+   WAAPI в Footer.tsx.
    Цвет — как у точки и круга Hero: после прыжка палитра переворачивается, и тот же круг
    становится белым на чёрном. */
 .disk {
@@ -129,18 +142,17 @@
   pointer-events: none;
 }
 
-/* Доигрывание: линия, точка и подпись уходят, на экране остаётся только круг. */
+/* Доигрывание: линия, подпись и мелкая строка уходят, на экране остаётся только круг. */
 .closing .disk {
   visibility: visible;
 }
 
 .closing::before,
 .closing .line,
-.closing .dot,
 .closing .contacts,
 .closing .fine {
   opacity: 0;
-  transition: opacity 0.38s ease-out 0.22s;
+  transition: opacity 0.3s ease-out 0.12s;
 }
 
 /* Только без анимаций: сразу в начало. */
@@ -156,9 +168,11 @@
   cursor: pointer;
 }
 
-/* Подпись справа от точки: первая строка — на её высоте. */
+/* Подпись справа от точки: первая строка — на её высоте. Если петля ляжет на неё (телефон
+   боком), подпись гаснет в начале зоны (--cap) и возвращается при прокрутке назад. */
 .contacts {
   position: absolute;
+  opacity: var(--cap, 1);
   top: calc(var(--dot-y) - 14px);
   left: calc(50% + 30px);
   display: flex;
@@ -257,7 +271,7 @@
   }
 }
 
-/* Телефон: подпись — под точкой, по центру; петля проходит по ней — подпись гаснет (--cap). */
+/* Телефон: подпись — под точкой, по центру. */
 @media (max-width: 767px) {
   .footer {
     --fh: 62dvh;
@@ -272,7 +286,6 @@
     left: 50%;
     align-items: center;
     transform: translateX(-50%);
-    opacity: var(--cap, 1);
   }
 
   .mail {
@@ -290,8 +303,7 @@
   }
 }
 
-/* Без анимаций: футер — конец страницы, без зоны; петля нарисована сразу (на телефоне легла бы
-   на подпись — там её нет), в начало — строкой «↺ замкнуть круг». */
+/* Без анимаций: футер — конец страницы, без зоны и петли; в начало — строкой «↺ замкнуть круг». */
 @media (prefers-reduced-motion: reduce) {
   .footer {
     height: var(--fh);
@@ -303,15 +315,5 @@
 
   .again {
     display: block;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
-  .loop {
-    display: none;
-  }
-
-  .contacts {
-    opacity: 1;
   }
 }
