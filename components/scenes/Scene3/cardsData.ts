@@ -1,9 +1,6 @@
 // Кейсы Сцены 3: карточка и подпись в туннеле, плитка финальной сетки. Тексты и цифры —
 // заглушки, правьте здесь. Картинки — в public/assets/hero/; color — фон картинки (как первый
 // прямоугольник в её SVG): с ним она вписывается в карточку целиком.
-// tag — ключ для брифа (Сцена 5, «Похожие кейсы»: первый кейс с нужным ключом), на сайте не
-// показывается. Ключ «AI» бриф пока не спрашивает — чтобы ИИ-ассистент попадал в похожие,
-// добавьте «AI» в SIMILAR (Scene5.tsx).
 // href — страница кейса. Пока страниц нет, ссылки «Смотреть кейс» в подписи нет; появится
 // /cases/<slug>/ — впишите адрес сюда, и ссылка покажется.
 
@@ -19,7 +16,6 @@ export type CardContent = {
   resultNote: string;
   image: string;
   color: string;
-  tag: string;
   href?: string;
 };
 
@@ -34,7 +30,6 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "обращений закрывает без оператора",
     image: img("phones"),
     color: "#f4ebc3",
-    tag: "AI",
   },
   {
     title: "E-commerce платформа",
@@ -45,7 +40,6 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "заказов онлайн за год",
     image: img("shop"),
     color: "#dddaf5",
-    tag: "Platform",
   },
   {
     title: "Промо-сайт студии",
@@ -56,7 +50,6 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "от идеи до запуска",
     image: img("browser"),
     color: "#f7dccb",
-    tag: "Web",
   },
   {
     title: "Мобильный банк",
@@ -67,7 +60,6 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "оценка в магазинах приложений",
     image: img("app"),
     color: "#d3ebdd",
-    tag: "Mobile",
   },
   {
     title: "Бренд-система",
@@ -78,7 +70,6 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "гайдлайнов и шаблонов",
     image: img("brand"),
     color: "#f4ebc3",
-    tag: "Branding",
   },
   {
     title: "Онлайн-редактор",
@@ -89,7 +80,6 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "времени на сборку макета",
     image: img("shapes"),
     color: "#dddaf5",
-    tag: "Web",
   },
 ];
 

@@ -14,7 +14,8 @@
       "**/*.json",
       "!**/.next",
       "!**/node_modules",
-      "!**/docs"
+      "!**/docs",
+      "!next-env.d.ts"
     ]
   },
   "formatter": {

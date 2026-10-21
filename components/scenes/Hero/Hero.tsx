@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useLenis } from '@/app/providers';
-import { LOOP_EVENT } from '@/components/scenes/Footer';
-import { BRIEF_CONFIG } from '@/lib/brief';
-import { onScroll, setVar, viewportH } from '@/lib/scroll/onScroll';
-import { HeaderMenu, HeaderNav } from './HeaderMenu';
-import styles from './Hero.module.css';
-import { HeroScrollLock } from './HeroScrollLock';
-import { HeroSlides } from './HeroSlides';
+import { useEffect, useRef, useState } from "react";
+import { useLenis } from "@/app/providers";
+import { LOOP_EVENT } from "@/components/scenes/Footer";
+import { BRIEF_CONFIG } from "@/lib/brief";
+import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
+import { HeaderMenu, HeaderNav } from "./HeaderMenu";
+import styles from "./Hero.module.css";
+import { HeroScrollLock } from "./HeroScrollLock";
+import { HeroSlides } from "./HeroSlides";
 
 // Путь падения точки в px от левого верхнего угла Hero: из центра круга (центр экрана)
 // в точку покоя (50vw, 93vh) мягкой S-кривой — сначала вправо, потом влево. В конец приходит
@@ -28,7 +28,7 @@ function buildFallPath(w: number, h: number): string {
       `M${w * 0.74} ${y1}`,
       `C${w * 0.74} ${y1 + (yp - y1) * 0.4} ${w * 0.79} ${yp - (yp - y1) * 0.33} ${w * 0.79} ${yp}`,
       `C${w * 0.79} ${yp + h * 0.13} ${x} ${h * 0.8} ${x} ${h * 0.93}`,
-    ].join(' ');
+    ].join(" ");
   }
   // Пики изгиба (касательная там вертикальна) — на высоте «цифровые» (58%, 0.6 размаха
   // вправо: ближе к старту, мягче) и «продукты» (74%, полный размах влево; в коротком
@@ -40,7 +40,7 @@ function buildFallPath(w: number, h: number): string {
     `C${x} ${h * 0.535} ${x + a * 0.6} ${h * 0.545} ${x + a * 0.6} ${h * 0.58}`,
     `S${x - a} ${h * (p - 0.06)} ${x - a} ${h * p}`,
     `S${x} ${h * 0.88} ${x} ${h * 0.93}`,
-  ].join(' ');
+  ].join(" ");
 }
 
 export function Hero() {
@@ -48,7 +48,7 @@ export function Hero() {
   const headerRef = useRef<HTMLElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
-  const [fallPath, setFallPath] = useState('');
+  const [fallPath, setFallPath] = useState("");
   const lenis = useLenis();
 
   // CTA ведёт к письму-заявке (Сцена 6) — плавным пролётом по всему пути. Пока интро
@@ -102,10 +102,10 @@ export function Hero() {
   useEffect(() => {
     const updatePath = () => setFallPath(buildFallPath(window.innerWidth, viewportH()));
 
-    window.addEventListener('resize', updatePath);
+    window.addEventListener("resize", updatePath);
     updatePath();
 
-    return () => window.removeEventListener('resize', updatePath);
+    return () => window.removeEventListener("resize", updatePath);
   }, []);
 
   // Hero отвечает только за фиксацию точки: до 43vh прокрутки она стоит у конца линии и едет
@@ -120,7 +120,7 @@ export function Hero() {
       const h = viewportH();
       if (!h) return;
       // Закреплённой точке сдвиг — с корня: 0, дальше свой ставят Сцены 2 и 3 (20px).
-      setVar('--drop-offset', '0px');
+      setVar("--drop-offset", "0px");
       dropRef.current.classList.toggle(styles.dropPinned, window.scrollY >= 0.43 * h);
     };
 
@@ -131,7 +131,7 @@ export function Hero() {
     <>
       <section
         ref={heroRef}
-        className={`scene ${styles.hero} ${ready ? styles.ready : ''}`}
+        className={`scene ${styles.hero} ${ready ? styles.ready : ""}`}
         data-scene="hero"
         id="hero"
       >
@@ -160,10 +160,10 @@ export function Hero() {
       </section>
 
       {/* Шапка — вне слоя Hero (у него z-index 2): так она встаёт над сценами. */}
-      <header ref={headerRef} className={`${styles.header} ${ready ? styles.ready : ''}`}>
+      <header ref={headerRef} className={`${styles.header} ${ready ? styles.ready : ""}`}>
         <span className={styles.logo}>White Inks</span>
         <HeaderNav />
-        <a className={styles.phone} href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, '')}`}>
+        <a className={styles.phone} href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, "")}`}>
           {BRIEF_CONFIG.phone}
         </a>
       </header>

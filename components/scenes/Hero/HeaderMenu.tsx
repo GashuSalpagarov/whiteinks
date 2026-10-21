@@ -26,7 +26,7 @@ export function HeaderNav() {
 }
 
 // Бургер и его панель — своим слоем над всеми сценами и футером (.menu): шапка с логотипом
-// и телефоном остаётся под сценами, как была. Страница ушла от верха — класс .scrolled на шапке:
+// и телефоном — над сценами, но под футером. Страница ушла от верха — класс .scrolled на шапке:
 // пункты в ней уходят, телефон сдвигается, бургер появляется (всё в Hero.module.css).
 export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -51,8 +51,8 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
         scrolled = !scrolled;
         header.current?.classList.toggle(styles.scrolled, scrolled);
       }
-      // Над чёрным футером бургер белый, а растущая точка футера потом накрывает его белым
-      // кругом — к прыжку наверх бургера уже не видно, стык петли не ломается.
+      // Над футером бургер — цвета фона (.onDark): к прыжку наверх его уже не видно, стык петли
+      // не ломается.
       const b = burger.getBoundingClientRect();
       const overFooter = !!footer && footer.getBoundingClientRect().top < b.top + b.height / 2;
       if (overFooter !== dark) {

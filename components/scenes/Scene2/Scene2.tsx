@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { onScroll, setVar, viewportH } from '@/lib/scroll/onScroll';
-import heroStyles from '../Hero/Hero.module.css';
-import styles from './Scene2.module.css';
-import { ART, type Slot } from './Scene2Art';
+import { useEffect, useRef } from "react";
+import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
+import heroStyles from "../Hero/Hero.module.css";
+import styles from "./Scene2.module.css";
+import { ART, type Slot } from "./Scene2Art";
 
 // Колена траектории. Phase отсчитывается от scroll = 43vh (момент фиксации точки в центре).
 // 7vh «прелюдии» — ничтожная вертикальная прямая прежде чем начнётся первое колено.
@@ -52,7 +52,7 @@ type Block = {
   title: string;
   body: string;
   tags: string[];
-  side: 'left' | 'right';
+  side: "left" | "right";
   trigger: number; // scrollVh, на котором блок становится полностью видимым
   parallaxY: number; // индивидуальный коэффициент Y-параллакса (глубина блока)
 };
@@ -61,69 +61,69 @@ type Block = {
 const BLOCKS: Block[] = [
   // Колено 0 — точка идёт влево, блоки справа
   {
-    title: 'Сайты под ключ',
-    body: 'Корпоративные сайты и лендинги: от структуры и текстов до запуска и аналитики.',
-    tags: ['Лендинги', 'Корпоративные', 'Каталоги', 'Промо'],
-    side: 'right',
+    title: "Сайты под ключ",
+    body: "Корпоративные сайты и лендинги: от структуры и текстов до запуска и аналитики.",
+    tags: ["Лендинги", "Корпоративные", "Каталоги", "Промо"],
+    side: "right",
     trigger: 75,
     parallaxY: 0.22,
   },
   {
-    title: 'Интернет-магазины',
-    body: 'Каталог, корзина, оплата и доставка\u00a0— магазин, который удобно вести и легко растить.',
-    tags: ['Каталог', 'Оплата и доставка', '1С и CRM'],
-    side: 'right',
+    title: "Интернет-магазины",
+    body: "Каталог, корзина, оплата и доставка\u00a0— магазин, который удобно вести и легко растить.",
+    tags: ["Каталог", "Оплата и доставка", "1С и CRM"],
+    side: "right",
     trigger: 120,
     parallaxY: 0.32,
   },
   // Колено 1 — точка идёт вправо, блоки слева
   {
-    title: 'Продуктовая аналитика',
-    body: 'Изучаем аудиторию и конкурентов до разработки, чтобы продукт решал настоящие задачи.',
-    tags: ['Интервью', 'Конкуренты', 'CJM', 'Прототипы'],
-    side: 'left',
+    title: "Продуктовая аналитика",
+    body: "Изучаем аудиторию и конкурентов до разработки, чтобы продукт решал настоящие задачи.",
+    tags: ["Интервью", "Конкуренты", "CJM", "Прототипы"],
+    side: "left",
     trigger: 175,
     parallaxY: 0.18,
   },
   {
-    title: 'UX/UI-дизайн',
-    body: 'Проектируем сценарии и рисуем интерфейсы, понятные с первого экрана.',
-    tags: ['Интерфейсы', 'Дизайн-системы', 'Анимация', '3D'],
-    side: 'left',
+    title: "UX/UI-дизайн",
+    body: "Проектируем сценарии и рисуем интерфейсы, понятные с первого экрана.",
+    tags: ["Интерфейсы", "Дизайн-системы", "Анимация", "3D"],
+    side: "left",
     trigger: 220,
     parallaxY: 0.28,
   },
   // Колено 2 — точка идёт влево, блоки справа
   {
-    title: 'Брендинг',
-    body: 'Имя, логотип и айдентика, которые узнают сразу, и бренд-бук, чтобы их сохранить.',
-    tags: ['Нейминг', 'Логотип', 'Айдентика', 'Бренд-бук'],
-    side: 'right',
+    title: "Брендинг",
+    body: "Имя, логотип и айдентика, которые узнают сразу, и бренд-бук, чтобы их сохранить.",
+    tags: ["Нейминг", "Логотип", "Айдентика", "Бренд-бук"],
+    side: "right",
     trigger: 275,
     parallaxY: 0.26,
   },
   {
-    title: 'Мобильные приложения и Telegram\u00a0Mini\u00a0App',
-    body: 'iOS, Android и приложения внутри Telegram\u00a0— от прототипа до публикации.',
-    tags: ['iOS', 'Android', 'Telegram Mini App'],
-    side: 'right',
+    title: "Мобильные приложения и Telegram\u00a0Mini\u00a0App",
+    body: "iOS, Android и приложения внутри Telegram\u00a0— от прототипа до публикации.",
+    tags: ["iOS", "Android", "Telegram Mini App"],
+    side: "right",
     trigger: 320,
-    parallaxY: 0.20,
+    parallaxY: 0.2,
   },
   // Колено 3 — точка идёт вправо, блоки слева
   {
-    title: 'ИИ и автоматизация',
-    body: 'Чат-боты на нейросетях и автоматизация рутины: связываем сайт, CRM и 1С, чтобы заявки и документы шли сами.',
-    tags: ['ИИ-боты', 'Интеграции', 'CRM и 1С', 'Бизнес-процессы'],
-    side: 'left',
+    title: "ИИ и автоматизация",
+    body: "Чат-боты на нейросетях и автоматизация рутины: связываем сайт, CRM и 1С, чтобы заявки и документы шли сами.",
+    tags: ["ИИ-боты", "Интеграции", "CRM и 1С", "Бизнес-процессы"],
+    side: "left",
     trigger: 375,
-    parallaxY: 0.30,
+    parallaxY: 0.3,
   },
   {
-    title: 'Поддержка, развитие и SEO',
-    body: 'Дорабатываем, следим за стабильностью и приводим клиентов из поиска.',
-    tags: ['Поддержка', 'Доработки', 'SEO', 'Аналитика'],
-    side: 'left',
+    title: "Поддержка, развитие и SEO",
+    body: "Дорабатываем, следим за стабильностью и приводим клиентов из поиска.",
+    tags: ["Поддержка", "Доработки", "SEO", "Аналитика"],
+    side: "left",
     trigger: 420,
     parallaxY: 0.24,
   },
@@ -168,10 +168,10 @@ function getBlockParallaxY(scrollVh: number, triggerVh: number, factor: number):
 
 // X-параллакс монотонный: блок дрейфует только в сторону линии (к центру viewport)
 // при увеличении скролла. Ограничен по максимальному смещению, чтобы не наезжать на линию.
-function getBlockParallaxX(scrollVh: number, triggerVh: number, side: 'left' | 'right'): number {
+function getBlockParallaxX(scrollVh: number, triggerVh: number, side: "left" | "right"): number {
   const factor = 0.06;
   const maxOffset = 3; // vw — максимальный сдвиг к линии
-  const towardCenterSign = side === 'right' ? -1 : 1;
+  const towardCenterSign = side === "right" ? -1 : 1;
   const raw = towardCenterSign * (scrollVh - triggerVh) * factor;
   // Clamp в обе стороны
   return Math.max(-maxOffset, Math.min(maxOffset, raw));
@@ -236,7 +236,7 @@ export function Scene2() {
     const tail = tailRef.current;
     const path = pathRef.current;
     if (!section || !trail || !trailSvg || !thread || !tail || !path) return;
-    const blockEls = [...section.querySelectorAll<HTMLElement>('aside')];
+    const blockEls = [...section.querySelectorAll<HTMLElement>("aside")];
     const artEls = blockEls.map((el, i) =>
       [...el.querySelectorAll<HTMLElement>(`.${styles.art} > *`)].map((art, j) => ({
         el: art,
@@ -254,8 +254,8 @@ export function Scene2() {
       el.style.setProperty(prop, value);
     };
     let drop: HTMLElement | null = null;
-    let trailSize = '';
-    let bridgeKey = '';
+    let trailSize = "";
+    let bridgeKey = "";
     let lastY = 0;
     const update = () => {
       const w = window.innerWidth;
@@ -277,12 +277,12 @@ export function Scene2() {
       // X-смещение точки — отсюда, Y-смещение и фиксация — Hero. Переменная — на самой точке
       // (она в вёрстке Hero), а не на корне: меняется почти каждый кадр.
       if (!drop?.isConnected) drop = document.querySelector<HTMLElement>(`.${heroStyles.drop}`);
-      if (drop) put(drop, '--drop-x', `${getDropX(scrollVh, phone)}vw`);
+      if (drop) put(drop, "--drop-x", `${getDropX(scrollVh, phone)}vw`);
 
       // После Hero-фазы (scrollVh > 43) сдвигаем точку на 20px вниз — единый
       // уровень с Scene 3, где точка попадает в gap финальной сетки.
       if (scrollVh > 43) {
-        setVar('--drop-offset', '20px');
+        setVar("--drop-offset", "20px");
       }
 
       // Трасса: путь — раз на размер экрана, дальше только сдвиг вверх вместе со страницей
@@ -290,14 +290,14 @@ export function Scene2() {
       // Конец трассы, ушедший за верх экрана, дальше не двигаем.
       if (trailSize !== `${w} ${h}`) {
         trailSize = `${w} ${h}`;
-        path.setAttribute('d', buildTrail(w, h));
+        path.setAttribute("d", buildTrail(w, h));
       }
-      put(trail, 'visibility', scrollVh > 43 ? 'visible' : 'hidden');
+      put(trail, "visibility", scrollVh > 43 ? "visible" : "hidden");
       if (scrollVh > 43) {
         const dpr = window.devicePixelRatio || 1;
         const px = (v: number) => Math.round(v * dpr) / dpr;
         const shift = px(scrollY);
-        put(trailSvg, 'transform', `translateY(${-Math.min(shift, 5 * h + 40)}px)`);
+        put(trailSvg, "transform", `translateY(${-Math.min(shift, 5 * h + 40)}px)`);
         // Нить: верх — у конца трассы, низ обрезан по центру точки; ширина — scaleX от 4px.
         const dot = h / 2 + 20;
         const end = ((50 + TRAIL_END) * h) / 100 + 20 - shift; // конец трассы на экране
@@ -309,19 +309,19 @@ export function Scene2() {
         if (k === 0) {
           const top = Math.min(dot, end);
           const sx = (4 - 2.8 * Math.min(1, (dot - top) / full)) / 4;
-          put(thread, 'transform', `translateY(${px(top)}px) scaleX(${sx.toFixed(3)})`);
-          put(tail, 'transform', 'scaleY(0)');
+          put(thread, "transform", `translateY(${px(top)}px) scaleX(${sx.toFixed(3)})`);
+          put(tail, "transform", "scaleY(0)");
         } else if (half > 0) {
           const sx = ((1.2 + 2.8 * e) / 4).toFixed(3);
-          put(thread, 'transform', `translateY(${px(dot - half)}px) scaleX(${sx})`);
+          put(thread, "transform", `translateY(${px(dot - half)}px) scaleX(${sx})`);
           put(
             tail,
-            'transform',
+            "transform",
             `translateY(${px(end)}px) scaleX(${sx}) scaleY(${(half / dot).toFixed(4)})`,
           );
         } else {
-          put(thread, 'transform', `translateY(${px(dot)}px)`);
-          put(tail, 'transform', 'scaleY(0)');
+          put(thread, "transform", `translateY(${px(dot)}px)`);
+          put(tail, "transform", "scaleY(0)");
         }
       }
 
@@ -345,11 +345,11 @@ export function Scene2() {
         const el = blockEls[i];
         const top = tops[i] + y;
         const seen = opacity > 0 && top < h + 160 && top + heights[i] > -160;
-        put(el, '--art-play', seen ? 'running' : 'paused');
+        put(el, "--art-play", seen ? "running" : "paused");
         if (top > 1.5 * h || top + heights[i] < -0.5 * h) continue;
-        put(el, 'opacity', `${opacity}`);
-        put(el, 'transform', `translate(${x}vw, ${y}px)`);
-        for (const art of artEls[i]) put(art.el, 'translate', `0 ${y * art.depth}px`);
+        put(el, "opacity", `${opacity}`);
+        put(el, "transform", `translate(${x}vw, ${y}px)`);
+        for (const art of artEls[i]) put(art.el, "translate", `0 ${y * art.depth}px`);
       }
 
       // Нахлёст на стыке: начало трассы ещё и в слое страницы, вместе с линией Hero. При прокрутке
@@ -363,10 +363,10 @@ export function Scene2() {
       // top по смыслу постоянен, но дробный шум менял бы d каждый кадр — округляем до 0,1px.
       const top = Math.round((((93 - scrollVh) * h) / 100 - rect.top) * 10) / 10;
       const end = Math.round((top + reach) * 10) / 10;
-      const bridge = scrollVh > 43 && !up ? `M${w / 2} ${top} V${end}` : '';
+      const bridge = scrollVh > 43 && !up ? `M${w / 2} ${top} V${end}` : "";
       if (bridgeRef.current && bridge !== bridgeKey) {
         bridgeKey = bridge;
-        bridgeRef.current.setAttribute('d', bridge);
+        bridgeRef.current.setAttribute("d", bridge);
       }
     };
 
@@ -402,14 +402,14 @@ export function Scene2() {
       {BLOCKS.map((block, i) => (
         <aside
           key={block.title}
-          className={`${styles.block} ${block.side === 'right' ? styles.right : styles.left} ${styles[`block${i + 1}`]}`}
+          className={`${styles.block} ${block.side === "right" ? styles.right : styles.left} ${styles[`block${i + 1}`]}`}
         >
           <div className={styles.art} aria-hidden="true">
             {ART[i].map((art, j) => (
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: состав элементов постоянный
                 key={j}
-                className={`${styles[art.slot]} ${art.phone === false ? styles.noPhone : ''}`}
+                className={`${styles[art.slot]} ${art.phone === false ? styles.noPhone : ""}`}
                 // Покачивание — у каждого элемента со своим сдвигом по фазе.
                 style={{ animationDelay: `${-(((i * 3 + j) * 1.7) % 5)}s`, ...art.style }}
               >
