@@ -17,29 +17,6 @@
   overflow: hidden;
 }
 
-/* Вход: заголовок над точкой (точка — на 20px ниже центра экрана). */
-.intro {
-  position: absolute;
-  right: 0;
-  bottom: calc(var(--ih, 100vh) / 2 + 36px);
-  left: 0;
-  padding: 0 20px;
-  text-align: center;
-  opacity: 0;
-}
-
-.introTitle {
-  font-size: clamp(64px, 8vw, 150px);
-  font-weight: 500;
-  letter-spacing: -0.055em;
-  line-height: 1;
-}
-
-.introLead {
-  margin-top: 16px;
-  font-size: 17px;
-}
-
 /* Карточка: белое паспарту в тонкой рамке, внутри картинка 4:3 тоже в рамке. Место и размер
    (окно чтения) задаёт Scene3.tsx, полёт — transform. */
 .card {
@@ -80,10 +57,17 @@
   opacity: 0;
 }
 
-/* Подпись в окне чтения. */
+/* Подпись в окне чтения. Под каждой строкой — белая подложка с мягким краем ровно по тексту:
+   поток частиц идёт вокруг, а у букв гаснет. */
 .caption {
   position: absolute;
   opacity: 0;
+}
+
+.caption > * {
+  width: fit-content;
+  background: var(--color-bg);
+  box-shadow: 0 0 14px 10px var(--color-bg);
 }
 
 .count {
@@ -92,7 +76,7 @@
 
 .count span,
 .meta dt,
-.label span:last-child {
+.label > span:last-child {
   opacity: 0.45;
 }
 
@@ -142,7 +126,7 @@
   pointer-events: auto;
 }
 
-/* Финал: подписи плиток, линия из перекрестья вниз — по ней точка уходит в Сцену 4. */
+/* Финал: подписи плиток. */
 .label {
   position: absolute;
   display: flex;
@@ -154,11 +138,47 @@
   opacity: 0;
 }
 
-.exit {
-  position: absolute;
-  margin-left: -1.5px;
-  background: var(--color-fg);
+/* Своя точка финала — на месте общей (.drop в Hero, 12px): скатывается под сетку и ждёт там
+   с лёгким пульсом; место (transform) и прозрачность пишет Scene3.tsx. Пульс — у круга внутри:
+   scale на самой точке умножал бы и её сдвиг. */
+.drop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
   opacity: 0;
+}
+
+.drop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-fg);
+}
+
+.drop[data-wait="true"]::before {
+  animation: wait 2.4s ease-in-out infinite;
+}
+
+@keyframes wait {
+  0%,
+  100% {
+    scale: 1;
+  }
+
+  50% {
+    scale: 1.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop[data-wait="true"]::before {
+    animation: none;
+  }
 }
 
 .finale {
@@ -167,9 +187,13 @@
   visibility: hidden;
 }
 
-/* Справа от сетки — по центру точки; на телефоне — под сеткой. */
+/* Справа от сетки — по центру точки; в портрете — под сеткой, кнопка на всю ширину блока. */
 .finale[data-side="right"] {
   translate: 0 -50%;
+}
+
+.finale[data-side="below"] .button {
+  width: 100%;
 }
 
 .finaleTitle {
@@ -207,38 +231,65 @@
   appearance: none;
 }
 
-/* Телефон и короткий экран — пока только мельче текст (раскладка телефона — отдельный шаг). */
-@media (max-width: 767px), (max-height: 600px) {
-  .introTitle {
-    font-size: 56px;
+/* Телефон и короткий экран: подпись плотнее — клиент, тип и год в одну строку, цифра от высоты
+   экрана; у плиток — только название. Тот же порог — compact в Scene3.tsx. */
+@media (max-width: 767px), (max-height: 500px) {
+  .count {
+    font-size: 13px;
   }
 
   .title {
-    margin-top: 8px;
-    font-size: 28px;
+    margin-top: 6px;
+    font-size: 26px;
+    line-height: 1.1;
   }
 
   .meta {
-    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-top: 8px;
     font-size: 13.5px;
+    line-height: 1.4;
+  }
+
+  .meta dt {
+    display: none;
+  }
+
+  .meta dd:not(:last-child)::after {
+    content: "\00a0·\00a0";
   }
 
   .result {
-    margin-top: 14px;
-    font-size: 44px;
+    margin-top: 12px;
+    font-size: min(44px, calc(var(--ih, 100vh) * 0.07));
   }
 
   .resultNote,
   .finaleLine {
+    margin-top: 6px;
     font-size: 13.5px;
+    line-height: 1.4;
   }
 
   .label {
     font-size: 12.5px;
   }
 
+  .label > span:last-child,
+  .labelNum {
+    display: none;
+  }
+
+  .finaleTitle {
+    font-size: 28px;
+  }
+
   .button {
     margin-top: 14px;
     height: 48px;
+    padding: 0 20px;
+    font-size: 15px;
   }
 }

@@ -15,6 +15,9 @@ const PARTICLE_COUNT_LOW = 130;
 const STREAK_COUNT_LOW = 27;
 const STREAK_LENGTH = 0.3;
 const SCROLL_DRIVE_FACTOR = 10; // путь частицы за всю сцену (p 0 → 1)
+// Поток уже идёт, когда сцена началась: сдвиг больше самого длинного пути — каждая частица на своём
+// месте ровного потока. Сколько его видно, решает reveal (Scene3.tsx): доля пути от точки.
+const PREWARM = 8;
 const CONE_HALF_ANGLE = Math.PI / 3;
 const RESPAWN_PAST_CAMERA = 0.5;
 
@@ -31,7 +34,9 @@ const STREAK_STRETCH = 2; // при |v| = 1 штрих длиннее в (1 + ST
 
 interface Props {
   progressRef: RefObject<number>; // p: 0 — сцена началась, 1 — закончилась
-  opacityRef: RefObject<number>; // видимость потока, её ведёт Scene3.tsx
+  // Поток: прозрачность и reveal — до какой доли пути от точки он уже виден (0 — только точка,
+  // 1 — весь, до камеры). Ведёт Scene3.tsx.
+  streamRef: RefObject<{ opacity: number; reveal: number }>;
 }
 
 function forwardConeRandom(out: { x: number; y: number; z: number }) {
@@ -57,9 +62,8 @@ function createCircleTexture(): THREE.CanvasTexture | null {
   return new THREE.CanvasTexture(canvas);
 }
 
-// Направления, длины путей и фазы потока. Фазы — равномерно по всему пути: частицы выходят из
-// точки ровным потоком. (Прежде фазы были сдвинуты к нулю — частицы стартовали одной волной и
-// разом долетали до камеры: это и был рывок на входе.)
+// Направления, длины путей и фазы потока. Фазы — равномерно по всему пути: поток ровный, без волн.
+// Путь — до камеры и чуть за неё: respawnZ / dir.z, при конусе 60° — не длиннее 2·respawnZ.
 function createStream(count: number, vertices: number) {
   const positions = new Float32Array(count * vertices * 3).fill(0);
   const directions = new Float32Array(count * 3);
@@ -81,7 +85,7 @@ function createStream(count: number, vertices: number) {
   return { positions, directions, pathLengths, phases, geometry };
 }
 
-export function Scene3R3F({ progressRef, opacityRef }: Props) {
+export function Scene3R3F({ progressRef, streamRef }: Props) {
   const pointsRef = useRef<THREE.Points>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
   const prevPRef = useRef<number>(-1);
@@ -125,11 +129,12 @@ export function Scene3R3F({ progressRef, opacityRef }: Props) {
     spring.v += spring.dv * dt;
     const v = spring.v;
     // Канвас рисует по запросу (frameloop="demand"): пока пружина не успокоилась — ещё кадр.
-    if (targetV !== 0 || Math.abs(v) + Math.abs(spring.dv) > 1e-4) invalidate();
+    // Только в сцене и пока это видно: остаток меньше 0.001 — доля пикселя у штрихов.
+    if (inScene && (targetV !== 0 || Math.abs(v) + Math.abs(spring.dv) > 1e-3)) invalidate();
 
     // alphaTest масштабируем вместе с opacity, иначе при opacity < 0.5 частицы (жёсткий диск
     // в текстуре) пропадали бы скачком.
-    const opacity = inScene * opacityRef.current;
+    const opacity = inScene * streamRef.current.opacity;
     const pointsMaterial = pointsRef.current.material as THREE.PointsMaterial;
     pointsMaterial.opacity = opacity;
     pointsMaterial.alphaTest = Math.max(0.01, 0.5 * opacity);
@@ -143,22 +148,20 @@ export function Scene3R3F({ progressRef, opacityRef }: Props) {
     prevPRef.current = p;
     prevStreakLengthRef.current = streakLength;
 
-    const acc = p * SCROLL_DRIVE_FACTOR;
+    const acc = p * SCROLL_DRIVE_FACTOR + PREWARM;
+    const reveal = streamRef.current.reveal;
 
     {
       const { positions, directions, pathLengths, phases } = pointsData;
       for (let i = 0; i < phases.length; i++) {
         const ix = i * 3;
-        const local = acc - phases[i];
-        if (local < 0) {
-          positions[ix] = 0;
-          positions[ix + 1] = 0;
+        const pl = pathLengths[i];
+        const t = ((acc - phases[i]) % pl) / pl;
+        if (t > reveal) {
           positions[ix + 2] = 1e6;
           continue;
         }
-        const pl = pathLengths[i];
         // Ускорение к камере: далеко медленно, близко быстро.
-        const t = (local % pl) / pl;
         const along = pl * t * t;
         positions[ix] = directions[ix] * along;
         positions[ix + 1] = directions[ix + 1] * along;
@@ -171,14 +174,13 @@ export function Scene3R3F({ progressRef, opacityRef }: Props) {
       const { positions, directions, pathLengths, phases } = streaksData;
       for (let i = 0; i < phases.length; i++) {
         const ix = i * 6;
-        const local = acc - phases[i];
-        if (local < 0) {
+        const pl = pathLengths[i];
+        const t = ((acc - phases[i]) % pl) / pl;
+        if (t > reveal) {
           positions[ix + 2] = 1e6;
           positions[ix + 5] = 1e6;
           continue;
         }
-        const pl = pathLengths[i];
-        const t = (local % pl) / pl;
         const front = pl * t * t;
         const back = Math.max(0, front - streakLength);
         const dirX = directions[i * 3];
