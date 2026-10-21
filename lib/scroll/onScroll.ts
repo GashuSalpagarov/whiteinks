@@ -26,18 +26,40 @@ let ih = 0;
 let iw = 0;
 export function viewportH(): number {
   const w = window.innerWidth;
-  if (!ih || w !== iw || !matchMedia("(pointer: coarse)").matches) {
+  if (!ih || w !== iw || !coarse()) {
     ih = window.innerHeight;
     iw = w;
   }
   return ih;
 }
 
+// Сенсорный экран — запоминаем один раз и обновляем по смене (подключили мышь): matchMedia
+// на каждом вызове viewportH() — лишняя работа в каждом проходе.
+let isCoarse: boolean | null = null;
+function coarse(): boolean {
+  if (isCoarse === null) {
+    const query = matchMedia("(pointer: coarse)");
+    isCoarse = query.matches;
+    query.addEventListener("change", (e) => {
+      isCoarse = e.matches;
+    });
+  }
+  return isCoarse;
+}
+
 // Прокрутка в экранах на конец прошлого прохода — до поворота, пока вёрстка была согласована.
 let screens = 0;
+// Прокрутка и экран на прошлом проходе.
+let lastY = Number.NaN;
+let lastW = 0;
+let lastH = 0;
 
 function run() {
   const h = viewportH();
+  const y = window.scrollY;
+  lastY = y;
+  lastW = window.innerWidth;
+  lastH = h;
   const prevH = Number.parseFloat(written.get("--ih") ?? "");
   setVar("--ih", `${h}px`);
   for (const sub of subs) sub.fn();
@@ -52,14 +74,26 @@ function run() {
   // место только для vh), и прокрутка в px указала бы в другую сцену — или в конец страницы,
   // то есть в прыжок петли футера. Возвращаем тот же прогресс в экранах.
   if (!h) return;
-  if (prevH && prevH !== h && matchMedia("(pointer: coarse)").matches) {
+  if (prevH && prevH !== h && coarse()) {
     window.scrollTo(0, screens * h);
+    screens = window.scrollY / h;
+    return;
   }
-  screens = window.scrollY / h;
+  // Прокрутка — с начала прохода: чтение scrollY после записи переменных пересчитывало бы
+  // стили прямо здесь.
+  screens = y / h;
+}
+
+// Проход по событию scroll и из Lenis — только если прокрутка или экран изменились. Колесо:
+// Lenis сдвигает страницу и сразу проходит по сценам, а событие scroll с той же прокруткой
+// приходит следующим кадром — второй проход ничего бы не поменял.
+function runIfMoved() {
+  if (window.scrollY === lastY && window.innerWidth === lastW && viewportH() === lastH) return;
+  run();
 }
 
 // Тот же проход вне событий — его вызывает провайдер Lenis сразу после сдвига страницы.
-export const syncScroll = run;
+export const syncScroll = runIfMoved;
 
 // Подписка обработчика сцены; el — её секция (по ней порядок и ResizeObserver).
 export function onScroll(el: Element, fn: () => void): () => void {
@@ -69,7 +103,7 @@ export function onScroll(el: Element, fn: () => void): () => void {
   subs.sort((a, b) => (a.el.compareDocumentPosition(b.el) & after ? -1 : 1));
   if (!observer) {
     observer = new ResizeObserver(run);
-    window.addEventListener("scroll", run, { passive: true });
+    window.addEventListener("scroll", runIfMoved, { passive: true });
     window.addEventListener("resize", run);
   }
   observer.observe(el);
@@ -81,7 +115,7 @@ export function onScroll(el: Element, fn: () => void): () => void {
     if (subs.length) return;
     observer?.disconnect();
     observer = null;
-    window.removeEventListener("scroll", run);
+    window.removeEventListener("scroll", runIfMoved);
     window.removeEventListener("resize", run);
   };
 }
