@@ -1,0 +1,714 @@
+/* Сцена 6 — письмо-заявка: свой экран между каталогом и футером. Линия пути приходит из
+   Сцены 5 сверху по центру, проходит заголовок и подложку и упирается в шапку окна — там
+   точка. Ниже окна к футеру — пунктир «впереди». Отправили (.fallen): окно складывается в
+   конверт, точка падает сквозь острие клапана до низа сцены (--fall — замер в Scene6.tsx), за
+   ней — чернила; к 1,9 с она у футера, и он дорисовывает свою линию (Footer.module.css). */
+.scene6 {
+  position: relative;
+  z-index: 1;
+  min-height: var(--ih, 100svh);
+  padding: 0 32px clamp(96px, calc(var(--ih, 100svh) * 0.16), 160px);
+  overflow: clip;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  --muted: rgba(10, 10, 10, 0.58);
+  --dim: rgba(10, 10, 10, 0.36);
+  --hair: rgba(10, 10, 10, 0.14);
+  --lav: #dddaf5;
+  --pad: 24px; /* поле подложки вокруг окна */
+  --bar: 44px; /* шапка окна — в её центре точка */
+  --ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --fall-ease: cubic-bezier(0.5, 0, 0.75, 0.45);
+  /* Пунктир пути — как в футере: точки 2px через 8px. */
+  --ghost: radial-gradient(circle at 50% 1px, rgba(10, 10, 10, 0.32) 1px, transparent 1.5px) 0
+    0 / 2px 8px repeat-y;
+}
+
+/* ---------- Заголовок ---------- */
+
+/* Отступ сверху — внутри заголовка: линия идёт от верха сцены без разрыва (::before). */
+.head {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(96px, calc(var(--ih, 100svh) * 0.16), 160px) 0 24px;
+}
+
+.head::before,
+.letter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(50% - 2px);
+  width: 4px;
+  background: var(--color-fg);
+}
+
+.head::before {
+  bottom: 0;
+}
+
+.head > * {
+  position: relative;
+}
+
+.eyebrow {
+  font-size: 0.875rem;
+  line-height: 1.3;
+  color: #888;
+}
+
+/* Кегль — не больше «Работы (06)» в Сцене 3; заголовок слева от линии, не доходит до неё. */
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 10px;
+  font-size: clamp(30px, 2.8vw, 44px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.lead {
+  max-width: 22em;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: right;
+}
+
+.stampx {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  rotate: -6deg;
+  animation: stampIn 0.45s var(--ease-out) 0.8s backwards;
+}
+
+@keyframes stampIn {
+  from {
+    opacity: 0;
+    scale: 1.6;
+    rotate: -14deg;
+  }
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.lead .link {
+  margin-top: 4px;
+  color: var(--color-fg);
+}
+
+.link:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+/* ---------- Письмо ---------- */
+
+.letter {
+  position: relative;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+/* Линия над подложкой — до точки в шапке окна; под окном она скрыта. */
+.letter::before {
+  z-index: 1;
+  height: calc(var(--pad) + var(--bar) / 2);
+}
+
+.plate {
+  position: relative;
+  padding: var(--pad);
+  border-radius: 4px;
+}
+
+.tint {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lav);
+}
+
+.win {
+  position: relative;
+  z-index: 2;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 10px;
+  background: var(--color-bg);
+  overflow: clip;
+  transform-origin: 50% 0;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--bar);
+  padding: 0 16px;
+  border-bottom: 1.5px solid var(--color-fg);
+  font-size: 0.875rem;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dots i {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 50%;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 24px;
+  border-bottom: 1.5px solid var(--hair);
+  font-size: 0.9375rem;
+}
+
+.row b {
+  font-size: 1.0625rem;
+  font-weight: 500;
+}
+
+.key {
+  flex: none;
+  width: 40px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.body {
+  padding: 18px 24px;
+  font-size: 1.3125rem;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+}
+
+.message {
+  display: block;
+  width: 100%;
+  min-height: 3.1em;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  resize: none;
+  outline: none;
+  field-sizing: content;
+}
+
+.message::placeholder,
+.contact::placeholder {
+  color: var(--dim);
+}
+
+.sign {
+  margin-top: 10px;
+}
+
+.contact {
+  width: 13em;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-bottom: 1.5px solid var(--color-fg);
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  outline: none;
+}
+
+.contact:focus-visible,
+.contact[aria-invalid="true"] {
+  border-bottom-width: 3px;
+}
+
+.message:focus-visible {
+  box-shadow: inset 3px 0 0 var(--color-fg);
+}
+
+/* Поле в фокусе — ниже шапки (72px) и выше края экрана с клавиатурой. */
+.message,
+.contact,
+.check {
+  scroll-margin: 96px 0 24px;
+}
+
+/* Ошибка — в тон сайта: точка героя и короткая фраза. */
+.error {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+  animation: errorIn 0.35s var(--ease-out);
+}
+
+.error::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  translate: 0 -1px;
+}
+
+@keyframes errorIn {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+.formError {
+  margin: 0 24px 14px;
+}
+
+.trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 14px 12px 24px;
+  border-top: 1.5px solid var(--hair);
+}
+
+.consentBox {
+  max-width: 280px;
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.consent label {
+  cursor: pointer;
+}
+
+.consent a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.check {
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.check::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border: solid var(--color-bg);
+  border-width: 0 0 2px 2px;
+  translate: 0 -1px;
+  rotate: -45deg;
+  scale: 0;
+  transition: scale 0.2s var(--ease-out);
+}
+
+.check:checked {
+  background: var(--color-fg);
+}
+
+.check:checked::after {
+  scale: 1;
+}
+
+.check[aria-invalid="true"] {
+  box-shadow: 0 0 0 1px var(--color-fg);
+}
+
+.foot .link {
+  margin-left: auto;
+}
+
+.send {
+  height: 52px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+.send:focus-visible,
+.link:focus-visible,
+.check:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+/* ---------- Конверт ---------- */
+
+.env {
+  display: none;
+  position: relative;
+  z-index: 2;
+  height: 300px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 6px;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.flap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 0;
+}
+
+.flap polyline {
+  fill: none;
+  stroke: var(--color-fg);
+  stroke-width: 1.5;
+}
+
+.stamp {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 78px;
+  border: 1.5px dashed var(--color-fg);
+  background: var(--color-bg);
+}
+
+/* На марке — круг пути. */
+.stamp::before {
+  content: "";
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-fg);
+}
+
+.postmark {
+  position: absolute;
+  top: 44px;
+  right: 64px;
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  border: 1.5px solid rgba(10, 10, 10, 0.55);
+  border-radius: 50%;
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  color: rgba(10, 10, 10, 0.6);
+  rotate: -12deg;
+}
+
+.address {
+  position: absolute;
+  bottom: 24px;
+  left: 28px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.address b {
+  font-weight: 500;
+}
+
+.address span {
+  color: var(--muted);
+}
+
+/* ---------- Путь вниз ---------- */
+
+.ghost,
+.tail {
+  position: absolute;
+  left: calc(50% - 1px);
+  width: 2px;
+}
+
+/* Пунктир — от низа окна (или конверта) до низа сцены: лишнее срезает overflow секции. */
+.ghost {
+  top: calc(100% - var(--pad));
+  height: 200vh;
+  background: var(--ghost);
+}
+
+/* Чернила падения — от точки до низа сцены; прорисовываются вслед за ней. Под конвертом скрыты. */
+.tail {
+  top: calc(var(--pad) + var(--bar) / 2);
+  left: calc(50% - 2px);
+  width: 4px;
+  height: var(--fall, 0px);
+  background: var(--color-fg);
+  clip-path: inset(0 0 100% 0);
+}
+
+.drop {
+  position: absolute;
+  top: calc(var(--pad) + var(--bar) / 2 - 6px);
+  left: calc(50% - 6px);
+  z-index: 3;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-fg);
+  pointer-events: none;
+}
+
+/* ---------- Отправлено: складывание и падение ---------- */
+
+/* Подложка — по размеру конверта: сжимающееся окно обрезано по ней. */
+.fallen .plate {
+  overflow: clip;
+}
+
+.fallen .win {
+  position: absolute;
+  inset: var(--pad) var(--pad) auto;
+  opacity: 0;
+  pointer-events: none;
+  animation: winOut 0.45s var(--ease);
+}
+
+.fallen .env {
+  display: block;
+  animation: envIn 0.4s var(--ease-out) 0.3s backwards;
+}
+
+.fallen .flap {
+  animation: flapIn 0.45s var(--ease) 0.45s backwards;
+}
+
+.fallen .stamp,
+.fallen .postmark {
+  animation: stampIn 0.45s var(--ease-out) 0.7s backwards;
+}
+
+.fallen .address {
+  animation: fadeIn 0.4s ease 0.55s backwards;
+}
+
+.fallen .drop {
+  translate: 0 var(--fall, 0px);
+  transition: translate 1.1s var(--fall-ease) 0.8s;
+}
+
+.fallen .tail {
+  clip-path: inset(0);
+  transition: clip-path 1.1s var(--fall-ease) 0.8s;
+}
+
+@keyframes winOut {
+  from {
+    opacity: 1;
+    scale: 1 1;
+  }
+  70% {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 0;
+    scale: 1 0.78;
+  }
+}
+
+@keyframes envIn {
+  from {
+    opacity: 0;
+    scale: 1 1.12;
+  }
+}
+
+/* Клапан закрывается: сверху опускается к острию. */
+@keyframes flapIn {
+  from {
+    scale: 1 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- Телефон ---------- */
+
+/* Телефон и телефон боком: поля 20px, окно на всю ширину. Заголовок — поверх линии на белом:
+   она уходит под него и выходит у окна. */
+@media (max-width: 767px), (max-height: 500px) {
+  .scene6 {
+    padding: 0 20px 96px;
+    --pad: 8px;
+    --bar: 40px;
+  }
+
+  .head {
+    display: block;
+    padding: 96px 0 20px;
+  }
+
+  .head > * {
+    background: var(--color-bg);
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  /* Отступ — внутри подводки: её белый фон закрывает линию и в зазоре под заголовком. */
+  .lead {
+    padding-top: 8px;
+    font-size: 0.9375rem;
+    text-align: left;
+  }
+
+  .letter {
+    margin: 0 -8px;
+  }
+
+  .row {
+    min-height: 40px;
+    padding: 0 16px;
+  }
+
+  .body {
+    padding: 14px 16px;
+    font-size: 1.125rem;
+  }
+
+  .contact {
+    width: 100%;
+  }
+
+  .foot {
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 14px 16px 16px;
+  }
+
+  .consentBox {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  /* Зона нажатия 44px: подпись согласия накрывает и галочку. */
+  .consent label {
+    position: relative;
+    margin: -12px 0 -12px -28px;
+    padding: 12px 0 12px 28px;
+  }
+
+  .send {
+    order: 3;
+    flex: 1 1 100%;
+  }
+
+  .foot .link {
+    order: 4;
+    min-height: 44px;
+    margin: 0;
+  }
+
+  .formError {
+    margin: 0 16px 14px;
+  }
+
+  .env {
+    height: 230px;
+  }
+
+  .stamp {
+    top: 14px;
+    right: 14px;
+    width: 52px;
+    height: 64px;
+  }
+
+  .postmark {
+    top: 34px;
+    right: 46px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .address {
+    bottom: 16px;
+    left: 16px;
+    font-size: 0.875rem;
+  }
+}

@@ -218,9 +218,9 @@ export function Scene3() {
   const streamRef = useRef({ opacity: 0, reveal: 0 });
   const lenis = useLenis();
 
-  // Пока страниц кейсов нет — к брифу (Сцена 5), как «Связаться» в Hero.
+  // Пока страниц кейсов нет — к письму-заявке (Сцена 6), как «Связаться» в Hero.
   const toBrief = () => {
-    const brief = document.querySelector<HTMLElement>('[data-scene="scene5"]');
+    const brief = document.querySelector<HTMLElement>('[data-scene="scene6"]');
     if (!brief) return;
     if (!lenis) {
       brief.scrollIntoView();

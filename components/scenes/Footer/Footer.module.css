@@ -39,7 +39,7 @@
   clip-path: inset(0 0 var(--clip, 0px) 0);
 }
 
-[data-scene='scene5'][data-fallen] + .footer::before {
+[data-scene='scene6'][data-fallen] + .footer::before {
   left: calc(50% - 2px);
   width: 4px;
   background: var(--color-fg);
@@ -66,7 +66,7 @@
   clip-path: inset(0 0 100%);
 }
 
-[data-scene='scene5'][data-fallen] + .footer .line::after {
+[data-scene='scene6'][data-fallen] + .footer .line::after {
   clip-path: inset(0);
   transition: clip-path 0.25s linear 1.9s;
 }

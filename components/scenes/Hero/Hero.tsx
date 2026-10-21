@@ -51,10 +51,10 @@ export function Hero() {
   const [fallPath, setFallPath] = useState('');
   const lenis = useLenis();
 
-  // CTA ведёт к конструктору брифа (Сцена 5) — плавным пролётом по всему пути. Пока интро
+  // CTA ведёт к письму-заявке (Сцена 6) — плавным пролётом по всему пути. Пока интро
   // держит скролл (HeroScrollLock остановил Lenis), scrollTo без force ничего не делает.
   const goToBrief = () => {
-    const brief = document.querySelector<HTMLElement>('[data-scene="scene5"]');
+    const brief = document.querySelector<HTMLElement>('[data-scene="scene6"]');
     if (!brief) return;
     if (!lenis) {
       brief.scrollIntoView();
