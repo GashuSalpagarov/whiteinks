@@ -1,18 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  type CSSProperties,
-  type FormEvent,
-  type ReactNode,
-  type TransitionEvent,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
-import { useLenis } from "@/app/providers";
-import { CARDS_CONTENT } from "@/components/scenes/Scene3/cardsData";
+import { type CSSProperties, type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { BRIEF_CONFIG, type Intent, submitBrief } from "@/lib/brief";
 import {
   ADDONS,
@@ -25,71 +14,60 @@ import {
   SCALES,
   type Selection,
   TYPES,
-  type TypeId,
 } from "@/lib/pricing";
 import styles from "./Scene5.module.css";
 
-const STEPS = [
-  { label: "Тип", title: "Что строим?", lead: "Выберите основу — цена посчитается сразу." },
-  { label: "Размер", title: "Какого размера?", lead: "Объём работы: страницы, товары, экраны." },
-  {
-    label: "Дополнения",
-    title: "Что добавить?",
-    lead: "Проценты — к стоимости работ, рубли — сверху.",
-  },
-  {
-    label: "Бриф",
-    title: "Ваш бриф",
-    lead: "Проверьте и оставьте контакт — пришлём детальную смету.",
-  },
-];
-const LAST = STEPS.length - 1;
-
-// Похожие кейсы для брифа — из кейсов Сцены 3, по тегам в порядке близости к типу.
-const SIMILAR: Record<TypeId, string[]> = {
-  landing: ["Web", "Branding"],
-  builder: ["Web", "Branding"],
-  corp: ["Web", "Branding"],
-  shop: ["Platform", "Web"],
-  unique: ["Platform", "Mobile"],
-};
-
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TELEGRAM = /^(@|(https?:\/\/)?t\.me\/)[a-z0-9_]{5,32}\/?$/i;
+// Как в Scene5.module.css: одна колонка, цена — полосой внизу.
+const PHONE = "(max-width: 899px), (max-height: 500px)";
 
 const cx = (...names: (string | false)[]) => names.filter(Boolean).join(" ");
 
-// Трасса — в px от левого верхнего угла секции. Входит сверху по центру вертикально (это
-// продолжение линии взлёта Сцены 4, x = 50vw), дугой уходит влево, заворачивает в узел 1
-// и мягкой волной идёт через узлы 2–4 по ширине контента.
-// Телефон и телефон боком (short — экран до 500px): сверху полоса шапки 72px, поэтому ввод
-// идёт под ней, а дуга, узлы и метки — сразу ниже; так выглядит и кадр после CTA Hero,
-// который приводит ровно к верху секции. На телефоне трасса короче (Scene5.module.css).
-// Части: вход до узла 1 и три отрезка волны — по ним меряем доли длины до узлов.
-function buildTrack(w: number, short: boolean) {
-  const mobile = w < 768;
-  const pad = mobile ? 26 : 38;
-  const ys = mobile ? [108, 114, 104, 110] : [136, 156, 128, 148];
-  const nodes = ys.map((y, i): [number, number] => [pad + (i * (w - 2 * pad)) / 3, y]);
-  const c = w / 2;
-  const [x1, y1] = nodes[0];
-  const r = mobile ? 12 : 22; // радиус заворота в узел 1
-  // Вертикальный ввод от верхнего края и изгиб дуги: насколько она идёт вниз от ввода
-  // и насколько поднимается над заворотом.
-  const [lead, bend, rise] = mobile ? [60, 24, 16] : short ? [64, 50, 30] : [20, 100, 70];
-  const parts = [
-    `M${c} -4 L${c} ${lead} C${c} ${lead + bend} ${x1 - r} ${y1 - r - rise} ${x1 - r} ${y1 - r} C${x1 - r} ${y1 - r * 0.45} ${x1 - r * 0.45} ${y1} ${x1} ${y1}`,
-    ...nodes.slice(1).map(([x, y], i) => {
-      const [px, py] = nodes[i];
-      const dx = (x - px) / 2;
-      return `C${px + dx} ${py} ${x - dx} ${y} ${x} ${y}`;
-    }),
-  ];
-  return { parts, nodes };
-}
-
-type Track = { d: string; nodes: [number, number][]; stops: number[] };
+type Route = { entry: string; fall: string; land?: [number, number] };
 type Errors = { contact?: string; consent?: string; form?: string };
+
+// Путь капли — в px от левого верхнего угла секции.
+// Вход — продолжение линии Сцены 4: сверху по центру (x = 50%), как у прежней трассы. На
+// десктопе он дугой уходит вправо и входит в верх чёрной карточки, на телефоне — влево
+// к «Прайс» и встаёт там точкой.
+// Падение — путь белой точки после отправки, от её места в карточке (rest). На десктопе —
+// вниз, под всем содержимым дугой к центру и вниз в футер: его линия тоже по центру. Под
+// карточкой путь скрыт, ниже — пунктиром, так что к футеру он цельный и без отправки. На
+// телефоне карточка последняя — видна только сама точка. data-fallen на секции — по нему
+// футер продолжает путь чернилами, а не пунктиром (Footer.module.css).
+function buildRoute(
+  section: HTMLElement,
+  options: HTMLElement,
+  card: HTMLElement,
+  eyebrow: HTMLElement,
+  rest: HTMLElement,
+): Route {
+  const s = section.getBoundingClientRect();
+  const c = s.width / 2;
+  const h = s.height;
+  const r = rest.getBoundingClientRect();
+  const [rx, ry] = [r.left - s.left + r.width / 2, r.top - s.top + r.height / 2];
+
+  if (window.matchMedia(PHONE).matches) {
+    const e = eyebrow.getBoundingClientRect();
+    const [lx, ly] = [e.left - s.left + 6, e.top - s.top + e.height / 2];
+    return {
+      entry: `M${c} -4 V${ly - 40} C${c} ${ly - 8} ${lx + 22} ${ly - 24} ${lx} ${ly}`,
+      fall: `M${rx} ${ry} C${rx} ${ry + 60} ${c} ${ry + 30} ${c} ${ry + 110} V${h + 8}`,
+      land: [lx, ly],
+    };
+  }
+
+  const k = card.getBoundingClientRect();
+  const x = k.left - s.left + k.width / 2;
+  const top = k.top - s.top;
+  const y = Math.max(k.bottom, options.getBoundingClientRect().bottom) - s.top + 32;
+  return {
+    entry: `M${c} -4 V${top * 0.16} C${c} ${top * 0.6} ${x} ${top * 0.34} ${x} ${top - 22} V${top + 4}`,
+    fall: `M${rx} ${ry} V${y} C${rx} ${y + 44} ${c} ${y + 12} ${c} ${y + 56} V${h + 8}`,
+  };
+}
 
 // Строка, у которой каждый знак проявляется сам: сменился знак на своём месте — новый
 // ключ, и только он заново проступает из размытия (CSS). Для чтения — целой строкой.
@@ -113,85 +91,87 @@ function Ink({ text }: { text: string }) {
   );
 }
 
+// Без типа — множитель размера: «−20 %», «база», «+40 %».
+const scaleNote = (k: number) =>
+  k === 1 ? "база" : `${k < 1 ? "−" : "+"}${Math.round(Math.abs(k - 1) * 100)} %`;
+
 export function Scene5() {
-  const lenis = useLenis();
   const sectionRef = useRef<HTMLElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const headings = useRef<(HTMLHeadingElement | null)[]>([]);
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const eyebrowRef = useRef<HTMLParagraphElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const footRef = useRef<HTMLDivElement>(null);
+  const restRef = useRef<HTMLSpanElement>(null);
   const contactRef = useRef<HTMLInputElement>(null);
+  const commentRef = useRef<HTMLInputElement>(null);
   const consentRef = useRef<HTMLInputElement>(null);
   const shownAt = useRef(0); // когда показали форму — для отсечки ботов
-  const navigated = useRef(false);
   const ids = useId();
 
   const [sel, setSel] = useState<Selection>(DEFAULT_SELECTION);
-  const [step, setStep] = useState(0);
-  const [track, setTrack] = useState<Track | null>(null);
+  const [route, setRoute] = useState<Route | null>(null);
   const [contact, setContact] = useState("");
   const [comment, setComment] = useState("");
+  const [commentOpen, setCommentOpen] = useState(false);
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "mail">("idle");
   const [copied, setCopied] = useState<"" | "ok" | "fail">("");
-  const [today, setToday] = useState("");
 
   const est = estimate(sel);
-  const type = TYPES.find((t) => t.id === sel.type) ?? TYPES[0];
+  const type = TYPES.find((t) => t.id === sel.type);
   const scale = SCALES.find((s) => s.id === sel.scale) ?? SCALES[1];
   const extras = ADDONS.filter((a) => !a.monthly && sel.addons.includes(a.id));
   const support = sel.addons.includes("support");
-  const similar = SIMILAR[sel.type].flatMap(
-    (tag) => CARDS_CONTENT.find((c) => c.tag === tag) ?? [],
-  );
   const signed = status === "sent" || status === "mail";
+  const summary = type
+    ? [
+        type.title,
+        scale.title,
+        ...extras.map((a) => a.title),
+        ...(support ? ["Поддержка"] : []),
+      ].join(" · ")
+    : "Выберите, что строим, — цена станет точнее.";
 
-  // Бриф из адреса (#brief=corp.m.anim,3d) — сразу на его лист. Мессенджеры кодируют
-  // запятые (%2C) — возвращаем их.
+  // Бриф из адреса (#brief=corp.m.anim,3d) — выбор восстанавливается. Мессенджеры кодируют
+  // запятые (%2C) — возвращаем их. Форма видна сразу — отсчёт для отсечки ботов отсюда.
   useEffect(() => {
+    shownAt.current = Date.now();
     const match = /^#brief=(.+)$/.exec(window.location.hash);
     const restored = match && decodeSelection(match[1].replace(/%2C/gi, ","));
-    if (restored) {
-      setSel(restored);
-      setStep(LAST);
-      shownAt.current = Date.now();
-    }
-    setToday(
-      new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }),
-    );
+    if (restored) setSel(restored);
   }, []);
 
-  // Трасса от ширины секции; доли длины до узлов меряет сам браузер — по ним же он рисует
-  // штрих (pathLength) и ведёт точку (offset-distance), так что оба встают ровно в узел.
+  // Путь — от раскладки: пересчёт, когда меняются размеры секции, выбора или карточки
+  // (экран, форма ↔ «отправлено», комментарий, ошибки).
   useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const update = () => {
-      const { parts, nodes } = buildTrack(svg.clientWidth, window.innerHeight <= 500);
-      const probe = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      svg.appendChild(probe);
-      const lengths = parts.map((_, i) => {
-        probe.setAttribute("d", parts.slice(0, i + 1).join(" "));
-        return probe.getTotalLength();
-      });
-      probe.remove();
-      const total = lengths[lengths.length - 1];
-      setTrack({ d: parts.join(" "), nodes, stops: lengths.map((l) => l / total) });
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    const [section, options, card, eyebrow, rest, foot] = [
+      sectionRef.current,
+      optionsRef.current,
+      cardRef.current,
+      eyebrowRef.current,
+      restRef.current,
+      footRef.current,
+    ];
+    if (!section || !options || !card || !eyebrow || !rest || !foot) return;
+    const observer = new ResizeObserver(() => {
+      const next = buildRoute(section, options, card, eyebrow, rest);
+      setRoute((r) => (r && r.entry === next.entry && r.fall === next.fall ? r : next));
+    });
+    for (const el of [section, options, foot]) observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
-  // После перехода — фокус на заголовок шага (клавиатура и скринридер не теряются).
+  // Открыли комментарий — фокус в поле (кнопка «+ комментарий» на его месте исчезла).
   useEffect(() => {
-    if (navigated.current) headings.current[step]?.focus({ preventScroll: true });
-  }, [step]);
+    if (commentOpen) commentRef.current?.focus();
+  }, [commentOpen]);
 
-  const writeHash = (next: Selection) =>
-    window.history.replaceState(null, "", `#brief=${encodeSelection(next)}`);
+  const writeHash = (next: Selection) => {
+    if (next.type) window.history.replaceState(null, "", `#brief=${encodeSelection(next)}`);
+  };
 
-  // Подписанный бриф поменяли — это уже другой бриф: снова форма, контакт на месте.
+  // Отправленный бриф поменяли — это уже другой бриф: снова форма, контакт на месте.
   const choose = (next: Selection) => {
     setSel(next);
     writeHash(next);
@@ -203,21 +183,6 @@ export function Scene5() {
       ...sel,
       addons: ADDONS.filter((a) => (a.id === id) !== sel.addons.includes(a.id)).map((a) => a.id),
     });
-
-  const goTo = (next: number) => {
-    navigated.current = true;
-    if (next === LAST && !shownAt.current) shownAt.current = Date.now();
-    setStep(next);
-    // Шаг начинается выше экрана или под шапкой телефона (её высота — scroll-margin-top
-    // у .stage) — возвращаем к трассе: заголовок и первый ряд сразу на виду.
-    const section = sectionRef.current;
-    const stage = stageRef.current;
-    if (!section || !stage) return;
-    const header = Number.parseFloat(getComputedStyle(stage).scrollMarginTop) || 0;
-    if (stage.getBoundingClientRect().top >= header) return;
-    if (lenis) lenis.scrollTo(section);
-    else section.scrollIntoView({ block: "start" });
-  };
 
   const clearError = (key: keyof Errors) =>
     setErrors((e) => (e[key] || e.form ? { ...e, [key]: undefined, form: undefined } : e));
@@ -274,69 +239,6 @@ export function Scene5() {
     }
   };
 
-  const restart = () => {
-    setSel(DEFAULT_SELECTION);
-    setContact("");
-    setComment("");
-    setConsent(false);
-    setErrors({});
-    setStatus("idle");
-    setCopied("");
-    shownAt.current = 0;
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
-    goTo(0);
-  };
-
-  // Точка приехала в узел — мягко сплющивается, как капля (направление — вдоль волны).
-  const squash = (e: TransitionEvent<HTMLSpanElement>) => {
-    if (e.propertyName !== "offset-distance") return;
-    e.currentTarget.animate(
-      [{ scale: "1" }, { scale: "0.72 1.28" }, { scale: "1.1 0.92" }, { scale: "1" }],
-      { duration: 520, easing: "cubic-bezier(0.3, 0.7, 0.4, 1)" },
-    );
-  };
-
-  // Шаг — функция разметки, а не компонент: DOM шагов живёт между рендерами (переходы, фокус).
-  const stepPanel = (index: number, children: ReactNode) => (
-    <div
-      className={cx(styles.step, index === step && styles.stepOn, index < step && styles.stepPast)}
-      inert={index !== step}
-    >
-      <p className={styles.eyebrow}>
-        Шаг {index + 1} из {STEPS.length}
-      </p>
-      <h2
-        ref={(el) => {
-          headings.current[index] = el;
-        }}
-        className={styles.title}
-        tabIndex={-1}
-      >
-        {STEPS[index].title}
-      </h2>
-      <p className={styles.lead}>{STEPS[index].lead}</p>
-      {children}
-      <div className={styles.nav}>
-        {index < LAST && (
-          <button type="button" className={styles.primary} onClick={() => goTo(index + 1)}>
-            {index === LAST - 1 ? "К брифу" : "Дальше"}
-            <span className={styles.arrow} aria-hidden="true">
-              →
-            </span>
-          </button>
-        )}
-        {index > 0 && (
-          <button type="button" className={styles.back} onClick={() => goTo(index - 1)}>
-            <span className={styles.arrow} aria-hidden="true">
-              ←
-            </span>
-            Назад
-          </button>
-        )}
-      </div>
-    </div>
-  );
-
   const chip = (pressed: boolean, onClick: () => void, title: string, note: string) => (
     <button
       key={title}
@@ -350,349 +252,264 @@ export function Scene5() {
     </button>
   );
 
+  const addonChip = (a: (typeof ADDONS)[number]) =>
+    chip(
+      sel.addons.includes(a.id),
+      () => toggleAddon(a.id),
+      a.title,
+      a.monthly ? "в месяц" : a.pct ? `+${a.pct} %` : `+${a.fixed} тыс.`,
+    );
+
   return (
     <section
       ref={sectionRef}
-      className={styles.scene5}
+      className={cx(styles.scene5, signed && styles.fallen)}
       data-scene="scene5"
-      aria-label="Тропа проекта"
+      data-fallen={signed || undefined}
+      aria-label="Прайс"
     >
-      <div className={styles.track}>
-        <svg ref={svgRef} className={styles.trackSvg} aria-hidden="true">
-          {track && (
-            <>
-              <path className={styles.ghost} d={track.d} />
-              <path
-                className={styles.ink}
-                d={track.d}
-                pathLength={1}
-                style={{ strokeDashoffset: 1 - track.stops[step] }}
-              />
-              {track.nodes.map(([x, y], i) => (
-                <circle
-                  key={STEPS[i].label}
-                  className={cx(styles.node, i <= step && styles.nodeOn)}
-                  cx={x}
-                  cy={y}
-                  r={5}
-                />
-              ))}
-            </>
+      {route && (
+        <svg className={styles.route} aria-hidden="true">
+          <path className={styles.ghost} d={route.fall} />
+          <path className={cx(styles.ink, styles.fallInk)} d={route.fall} pathLength={1} />
+          <path className={styles.ink} d={route.entry} />
+          {route.land && (
+            <circle className={styles.land} cx={route.land[0]} cy={route.land[1]} r={6} />
           )}
         </svg>
-        {track && (
-          <>
-            <span
-              className={styles.dot}
-              style={{
-                offsetPath: `path('${track.d}')`,
-                offsetDistance: `${track.stops[step] * 100}%`,
-              }}
-              onTransitionEnd={squash}
-              aria-hidden="true"
-            />
-            <ol className={styles.labels}>
-              {STEPS.map((s, i) => (
-                <li key={s.label} style={{ left: track.nodes[i][0], top: track.nodes[i][1] + 16 }}>
-                  <button
-                    type="button"
-                    className={styles.label}
-                    aria-current={i === step ? "step" : undefined}
-                    onClick={() => goTo(i)}
-                  >
-                    <span className={styles.labelNum}>0{i + 1}</span> {s.label}
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </>
-        )}
+      )}
+
+      <div ref={optionsRef} className={styles.options}>
+        <p ref={eyebrowRef} className={styles.eyebrow}>
+          Прайс
+        </p>
+        <h2 className={styles.title}>Сколько стоит ваш проект</h2>
+        <p className={styles.lead}>Отметьте всё, что нужно, — цена пересчитается на глазах.</p>
+
+        <fieldset className={styles.group} aria-labelledby={`${ids}-type`}>
+          <p id={`${ids}-type`} className={styles.legend}>
+            Что строим
+          </p>
+          <div className={styles.cards}>
+            {TYPES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={styles.card}
+                aria-pressed={sel.type === t.id}
+                onClick={() => choose({ ...sel, type: t.id })}
+              >
+                <span className={styles.mark} aria-hidden="true" />
+                <span className={styles.cardTitle}>{t.title}</span>
+                <span className={styles.note}>{t.note}</span>
+                <span className={styles.cardPrice}>
+                  {formatFrom(estimate({ type: t.id, scale: "s", addons: [] }).lo)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className={styles.group} aria-labelledby={`${ids}-scale`}>
+          <p className={styles.legend}>
+            <span id={`${ids}-scale`}>Размер</span>
+            <span className={styles.legendNote}>не уверены — берите средний</span>
+          </p>
+          <div className={styles.sizes}>
+            {SCALES.map((s) =>
+              chip(
+                sel.scale === s.id,
+                () => choose({ ...sel, scale: s.id }),
+                s.title,
+                type ? type.hints[s.id] : scaleNote(s.k),
+              ),
+            )}
+          </div>
+        </fieldset>
+
+        <fieldset className={styles.group} aria-labelledby={`${ids}-addons`}>
+          <p className={styles.legend}>
+            <span id={`${ids}-addons`}>Дополнения</span>
+            <span className={styles.legendNote}>проценты — к работам, рубли — сверху</span>
+          </p>
+          <div className={styles.addons}>
+            {ADDONS.filter((a) => !a.monthly).map(addonChip)}
+            <span className={styles.sep} aria-hidden="true" />
+            {ADDONS.filter((a) => a.monthly).map(addonChip)}
+          </div>
+        </fieldset>
       </div>
 
-      <div className={styles.body}>
-        <div ref={stageRef} className={styles.stage}>
-          {stepPanel(
-            0,
-            <fieldset className={styles.cards} aria-label="Тип проекта">
-              {TYPES.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className={styles.card}
-                  aria-pressed={sel.type === t.id}
-                  onClick={() => choose({ ...sel, type: t.id })}
-                >
-                  <span className={styles.mark} aria-hidden="true" />
-                  <span className={styles.cardTitle}>{t.title}</span>
-                  <span className={styles.note}>{t.note}</span>
-                  <span className={styles.cardPrice}>
-                    {formatFrom(estimate({ type: t.id, scale: "s", addons: [] }).lo)}
-                  </span>
-                </button>
-              ))}
-            </fieldset>,
-          )}
-
-          {stepPanel(
-            1,
-            <>
-              <fieldset className={styles.chips} aria-label="Размер">
-                {SCALES.map((s) =>
-                  chip(
-                    sel.scale === s.id,
-                    () => choose({ ...sel, scale: s.id }),
-                    s.title,
-                    type.hints[s.id],
-                  ),
-                )}
-              </fieldset>
-              <p className={styles.hint}>Не уверены — берите средний, уточним на созвоне.</p>
-            </>,
-          )}
-
-          {stepPanel(
-            2,
-            <>
-              <fieldset className={styles.chips} aria-label="Дополнения">
-                {ADDONS.filter((a) => !a.monthly).map((a) =>
-                  chip(
-                    sel.addons.includes(a.id),
-                    () => toggleAddon(a.id),
-                    a.title,
-                    a.pct ? `+${a.pct}%` : `+${a.fixed} тыс.`,
-                  ),
-                )}
-              </fieldset>
-              <p className={styles.group}>После запуска — отдельно от ориентира</p>
-              <fieldset className={styles.chips} aria-label="После запуска">
-                {ADDONS.filter((a) => a.monthly).map((a) =>
-                  chip(sel.addons.includes(a.id), () => toggleAddon(a.id), a.title, "в месяц"),
-                )}
-              </fieldset>
-            </>,
-          )}
-
-          {stepPanel(
-            3,
-            <div className={styles.brief}>
-              <article
-                className={cx(styles.sheet, signed && styles.signed)}
-                aria-label="Лист брифа"
-              >
-                <header className={styles.sheetHead}>
-                  <span>Бриф · White Inks</span>
-                  <span>{today}</span>
-                </header>
-                <dl className={styles.rows}>
-                  <div>
-                    <dt>Что строим</dt>
-                    <dd>{type.title}</dd>
-                  </div>
-                  <div>
-                    <dt>Размер</dt>
-                    <dd>
-                      {scale.title}, {type.hints[sel.scale]}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Дополнения</dt>
-                    <dd>
-                      {extras.length ? extras.map((a) => a.title).join(", ") : "без дополнений"}
-                    </dd>
-                  </div>
-                  {support && (
-                    <div>
-                      <dt>Поддержка</dt>
-                      <dd>нужна, помесячно</dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt>Похожие кейсы</dt>
-                    <dd>{similar.map((c) => c.title).join(", ")}</dd>
-                  </div>
-                </dl>
-                <p className={styles.sheetTotal}>
-                  <span>{est.price}</span>
-                  <span>{est.term}</span>
-                </p>
-                <p className={styles.sheetNote}>
-                  Это ориентир, точную смету пришлём после разговора.
-                </p>
-                <footer className={styles.sign}>
-                  <span>Подпись</span>
-                  <svg
-                    className={styles.flourish}
-                    viewBox="0 0 240 64"
-                    preserveAspectRatio="xMinYMid meet"
-                    aria-hidden="true"
-                  >
-                    <path
-                      pathLength={1}
-                      d="M6 46C24 42 36 14 50 16C64 18 44 52 58 50C72 48 82 22 96 26C108 30 98 50 112 46C128 42 138 30 156 32C174 34 168 50 186 44C202 38 214 30 234 26"
-                    />
-                  </svg>
-                  <span className={styles.stamp}>Подписан</span>
-                </footer>
-              </article>
-
-              {signed ? (
-                <div className={styles.done} role="status">
-                  <p className={styles.doneTitle}>
-                    {status === "sent" ? "Бриф отправлен." : "Письмо с брифом готово."}
-                  </p>
-                  <p className={styles.doneText}>
-                    {status === "sent"
-                      ? `Ответим ${BRIEF_CONFIG.replyIn}.`
-                      : `Отправьте его из почты — ответим ${BRIEF_CONFIG.replyIn}.`}
-                  </p>
-                  <div className={styles.actions}>
-                    <button type="button" className={styles.primary} onClick={copyLink}>
-                      {copied === "ok" ? "Ссылка скопирована" : "Скопировать ссылку на бриф"}
-                    </button>
-                    <button type="button" className={styles.secondary} onClick={restart}>
-                      Начать заново
-                    </button>
-                  </div>
-                  {copied === "fail" && (
-                    <p className={styles.hint}>Не вышло — ссылка уже в адресной строке.</p>
-                  )}
-                </div>
-              ) : (
-                <form className={styles.form} noValidate onSubmit={submit}>
-                  <div className={styles.field}>
-                    <label htmlFor={`${ids}-contact`}>Telegram или почта</label>
-                    <input
-                      ref={contactRef}
-                      id={`${ids}-contact`}
-                      className={styles.input}
-                      name="contact"
-                      value={contact}
-                      onChange={(e) => {
-                        setContact(e.target.value);
-                        clearError("contact");
-                      }}
-                      placeholder="@name или name@mail.ru"
-                      autoComplete="email"
-                      required
-                      aria-invalid={Boolean(errors.contact)}
-                      aria-describedby={errors.contact ? `${ids}-contact-error` : undefined}
-                    />
-                    {errors.contact && (
-                      <p id={`${ids}-contact-error`} className={styles.error}>
-                        {errors.contact}
-                      </p>
-                    )}
-                  </div>
-                  <div className={styles.field}>
-                    <label htmlFor={`${ids}-comment`}>
-                      Комментарий <span className={styles.note}>— по желанию</span>
-                    </label>
-                    <input
-                      id={`${ids}-comment`}
-                      className={styles.input}
-                      name="comment"
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Пара слов о задаче или сроках"
-                      autoComplete="off"
-                    />
-                  </div>
-                  {/* Ловушка для ботов: людям не видна и недоступна с клавиатуры. */}
-                  <input
-                    className={styles.trap}
-                    name="website"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                  />
-                  <div>
-                    <div className={styles.consent}>
-                      <input
-                        ref={consentRef}
-                        id={`${ids}-consent`}
-                        type="checkbox"
-                        className={styles.check}
-                        checked={consent}
-                        onChange={(e) => {
-                          setConsent(e.target.checked);
-                          clearError("consent");
-                        }}
-                        required
-                        aria-invalid={Boolean(errors.consent)}
-                        aria-describedby={errors.consent ? `${ids}-consent-error` : undefined}
-                      />
-                      <label htmlFor={`${ids}-consent`}>
-                        Согласен на{" "}
-                        <Link href="/consent" target="_blank">
-                          обработку персональных данных
-                        </Link>
-                      </label>
-                    </div>
-                    {errors.consent && (
-                      <p id={`${ids}-consent-error`} className={styles.error}>
-                        {errors.consent}
-                      </p>
-                    )}
-                    <p className={styles.policy}>
-                      <Link href="/privacy" target="_blank">
-                        Политика конфиденциальности
-                      </Link>
-                    </p>
-                  </div>
-                  <div className={styles.actions}>
-                    <button
-                      type="submit"
-                      name="intent"
-                      value="estimate"
-                      className={styles.primary}
-                      disabled={status === "sending"}
-                    >
-                      Получить детальную смету
-                    </button>
-                    <button
-                      type="submit"
-                      name="intent"
-                      value="call"
-                      className={styles.secondary}
-                      disabled={status === "sending"}
-                    >
-                      15 минут созвона
-                    </button>
-                  </div>
-                  {errors.form && (
-                    <p className={styles.error} role="alert">
-                      {errors.form}
-                    </p>
-                  )}
-                  <div className={styles.reply}>
-                    <span className={styles.avatar} aria-hidden="true" />
-                    <p>
-                      Ответит {BRIEF_CONFIG.person} · обычно {BRIEF_CONFIG.replyIn} ·{" "}
-                      {BRIEF_CONFIG.nda}
-                    </p>
-                  </div>
-                  <p className={styles.promise}>{BRIEF_CONFIG.promise}</p>
-                </form>
-              )}
-            </div>,
-          )}
-        </div>
-
-        <aside className={styles.price} aria-label="Ориентир по цене">
-          <p className={styles.priceLabel}>Ориентир</p>
+      {/* Карточка: на десктопе — колонка справа; на телефоне её части встают в общий столбец
+          (display: contents) — цена полосой внизу экрана, форма — в конце сцены. */}
+      <div ref={cardRef} className={styles.panel}>
+        <div className={styles.head}>
+          <p className={styles.label}>Ориентир</p>
           <p className={styles.priceValue} aria-live="polite">
             <Ink text={est.price} />
           </p>
           <p className={styles.priceTerm} aria-live="polite">
             <Ink text={est.term} />
           </p>
-          <p className={styles.priceSummary}>
-            {[type.title, scale.title, ...extras.map((a) => a.title)].join(" · ")}
-            {support && " · Поддержка"}
+        </div>
+
+        <div ref={footRef} className={styles.foot}>
+          <p className={styles.summary}>
+            <span ref={restRef} className={styles.rest} aria-hidden="true" />
+            {summary}
           </p>
-          <p className={styles.priceNote}>Это ориентир, точную смету пришлём после разговора.</p>
-        </aside>
+
+          {signed ? (
+            <div className={styles.done} role="status">
+              <p className={styles.doneTitle}>
+                {status === "sent" ? "Бриф отправлен." : "Письмо с брифом готово."}
+              </p>
+              <p className={styles.doneText}>
+                {status === "sent"
+                  ? `Ответим ${BRIEF_CONFIG.replyIn}.`
+                  : `Отправьте его из почты — ответим ${BRIEF_CONFIG.replyIn}.`}{" "}
+                {BRIEF_CONFIG.promise}.
+              </p>
+              <button type="button" className={styles.more} onClick={copyLink}>
+                {copied === "ok" ? "Ссылка скопирована" : "Скопировать ссылку на бриф"}
+              </button>
+              {copied === "fail" && (
+                <p className={styles.fine}>Не вышло — ссылка уже в адресной строке.</p>
+              )}
+            </div>
+          ) : (
+            <form className={styles.form} noValidate onSubmit={submit}>
+              <div className={styles.field}>
+                <label htmlFor={`${ids}-contact`}>Telegram или почта</label>
+                <input
+                  ref={contactRef}
+                  id={`${ids}-contact`}
+                  className={styles.input}
+                  name="contact"
+                  value={contact}
+                  onChange={(e) => {
+                    setContact(e.target.value);
+                    clearError("contact");
+                  }}
+                  placeholder="@name или name@mail.ru"
+                  autoComplete="email"
+                  required
+                  aria-invalid={Boolean(errors.contact)}
+                  aria-describedby={errors.contact ? `${ids}-contact-error` : undefined}
+                />
+                {errors.contact && (
+                  <p id={`${ids}-contact-error`} className={styles.error}>
+                    {errors.contact}
+                  </p>
+                )}
+              </div>
+              {commentOpen ? (
+                <div className={styles.field}>
+                  <label htmlFor={`${ids}-comment`}>
+                    Комментарий <span className={styles.note}>— по желанию</span>
+                  </label>
+                  <input
+                    ref={commentRef}
+                    id={`${ids}-comment`}
+                    className={styles.input}
+                    name="comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Пара слов о задаче или сроках"
+                    autoComplete="off"
+                  />
+                </div>
+              ) : (
+                <button type="button" className={styles.more} onClick={() => setCommentOpen(true)}>
+                  + комментарий
+                </button>
+              )}
+              {/* Ловушка для ботов: людям не видна и недоступна с клавиатуры. */}
+              <input
+                className={styles.trap}
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
+              <div>
+                <div className={styles.consent}>
+                  <input
+                    ref={consentRef}
+                    id={`${ids}-consent`}
+                    type="checkbox"
+                    className={styles.check}
+                    checked={consent}
+                    onChange={(e) => {
+                      setConsent(e.target.checked);
+                      clearError("consent");
+                    }}
+                    required
+                    aria-invalid={Boolean(errors.consent)}
+                    aria-describedby={errors.consent ? `${ids}-consent-error` : undefined}
+                  />
+                  <label htmlFor={`${ids}-consent`}>
+                    Согласен на{" "}
+                    <Link href="/consent" target="_blank">
+                      обработку персональных данных
+                    </Link>
+                  </label>
+                </div>
+                {errors.consent && (
+                  <p id={`${ids}-consent-error`} className={styles.error}>
+                    {errors.consent}
+                  </p>
+                )}
+                <p className={styles.policy}>
+                  <Link href="/privacy" target="_blank">
+                    Политика конфиденциальности
+                  </Link>
+                </p>
+              </div>
+              <div className={styles.actions}>
+                <button
+                  type="submit"
+                  name="intent"
+                  value="estimate"
+                  className={styles.primary}
+                  disabled={status === "sending"}
+                >
+                  Получить детальную смету
+                </button>
+                <button
+                  type="submit"
+                  name="intent"
+                  value="call"
+                  className={styles.more}
+                  disabled={status === "sending"}
+                >
+                  или 15 минут созвона
+                </button>
+              </div>
+              {errors.form && (
+                <p className={styles.error} role="alert">
+                  {errors.form}
+                </p>
+              )}
+              <div className={styles.reply}>
+                <span className={styles.avatar} aria-hidden="true" />
+                <p>
+                  Ответит {BRIEF_CONFIG.person} · обычно {BRIEF_CONFIG.replyIn} · {BRIEF_CONFIG.nda}
+                </p>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
+
+      {/* Точка-герой: белая в карточке, чёрная на белом (difference). Едет по пути падения. */}
+      {route && (
+        <span
+          className={styles.dot}
+          style={{ offsetPath: `path('${route.fall}')` }}
+          aria-hidden="true"
+        />
+      )}
     </section>
   );
 }

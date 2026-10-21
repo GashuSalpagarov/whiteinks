@@ -40,8 +40,8 @@ function briefText(p: BriefPayload): string {
   return [
     "Бриф с сайта White Inks",
     "",
-    `Что строим: ${type?.title}`,
-    `Размер: ${scale?.title}, ${type?.hints[p.selection.scale]}`,
+    `Что строим: ${type?.title ?? "не выбрано"}`,
+    `Размер: ${scale?.title}${type ? `, ${type.hints[p.selection.scale]}` : ""}`,
     `Дополнения: ${extras.length ? extras.join(", ") : "без дополнений"}`,
     ...(picked.some((a) => a.monthly) ? ["Поддержка: нужна, помесячно"] : []),
     `Ориентир: ${p.estimate.price}, ${p.estimate.term}`,
@@ -61,7 +61,7 @@ export async function submitBrief(
   guard: { trap: string; startedAt: number },
 ): Promise<"sent" | "mail"> {
   if (!ENDPOINT) {
-    const subject = `Бриф: ${TYPES.find((t) => t.id === payload.selection.type)?.title}`;
+    const subject = `Бриф: ${TYPES.find((t) => t.id === payload.selection.type)?.title ?? "без типа"}`;
     window.location.href = `mailto:${BRIEF_CONFIG.email}?subject=${encodeURIComponent(
       subject,
     )}&body=${encodeURIComponent(briefText(payload))}`;

@@ -1,11 +1,12 @@
-// Калькулятор «Тропы проекта» (Сцена 5): данные и чистая функция estimate().
+// Прайс Сцены 5: данные и чистая функция estimate().
 // ЧЕРНОВЫЕ ЦИФРЫ — их выставит владелец студии. Деньги — в тыс. ₽, сроки — в неделях.
 
-export type TypeId = "landing" | "builder" | "corp" | "shop" | "unique";
+export type TypeId = "landing" | "builder" | "corp" | "shop" | "unique" | "ai";
 export type ScaleId = "s" | "m" | "l" | "xl";
 export type AddonId = "anim" | "3d" | "ds" | "en" | "copy" | "cms" | "seo" | "support";
 
-export type Selection = { type: TypeId; scale: ScaleId; addons: AddonId[] };
+// type: null — тип ещё не выбран (вход в сцену).
+export type Selection = { type: TypeId | null; scale: ScaleId; addons: AddonId[] };
 
 // base — цена среднего размера без дополнений; hints — что значит каждый размер для типа.
 export const TYPES: {
@@ -56,6 +57,15 @@ export const TYPES: {
     weeks: [16, 24],
     hints: { s: "≈ 10 экранов", m: "≈ 25 экранов", l: "≈ 50 экранов", xl: "80+ экранов" },
   },
+  // Заглушка: база, сроки и подсказки — правдоподобные, точные выставит владелец студии.
+  {
+    id: "ai",
+    title: "ИИ и автоматизация",
+    note: "Чат-боты, интеграции, CRM и 1С",
+    base: 600,
+    weeks: [4, 8],
+    hints: { s: "1 сценарий", m: "≈ 3 сценария", l: "≈ 6 сценариев", xl: "10+ сценариев" },
+  },
 ];
 
 // k — множитель цены; сроки растут медленнее, как √k.
@@ -86,7 +96,8 @@ export const ADDONS: {
   { id: "support", title: "Поддержка", monthly: true },
 ];
 
-export const DEFAULT_SELECTION: Selection = { type: "corp", scale: "m", addons: ["anim"] };
+// На входе тип не выбран: цена — нижняя граница по всем типам.
+export const DEFAULT_SELECTION: Selection = { type: null, scale: "m", addons: [] };
 
 // Вилка вокруг расчёта и шаг округления, тыс. ₽.
 const RANGE: [number, number] = [0.9, 1.3];
@@ -129,7 +140,16 @@ export function formatWeeks(lo: number, hi: number): string {
 }
 
 // Цена = база × k × (1 + Σ%) + Σ фикс.; вилка −10…+30%, округление до 50 тыс.
+// Тип не выбран — нижняя граница по всем типам с теми же размером и дополнениями:
+// «от 300 тыс. ₽», «от 3 недель».
 export function estimate({ type, scale, addons }: Selection): Estimate {
+  if (!type) {
+    const all = TYPES.map((x) => estimate({ type: x.id, scale, addons }));
+    const lo = Math.min(...all.map((e) => e.lo));
+    const wk = Math.min(...all.map((e) => e.weeks[0]));
+    const word = wk % 10 === 1 && wk % 100 !== 11 ? "недели" : "недель";
+    return { lo, hi: lo, weeks: [wk, wk], price: formatFrom(lo), term: `от ${wk}${NB}${word}` };
+  }
   const t = TYPES.find((x) => x.id === type) ?? TYPES[0];
   const k = SCALES.find((x) => x.id === scale)?.k ?? 1;
   const picked = ADDONS.filter((a) => addons.includes(a.id));
@@ -147,7 +167,7 @@ export function estimate({ type, scale, addons }: Selection): Estimate {
 // Выбор ⇄ строка в адресе: «corp.m.anim,3d». Неизвестное — null (тип и размер)
 // или выкидываем (дополнения).
 export function encodeSelection({ type, scale, addons }: Selection): string {
-  return `${type}.${scale}.${addons.join(",")}`;
+  return `${type ?? ""}.${scale}.${addons.join(",")}`;
 }
 
 export function decodeSelection(value: string): Selection | null {
