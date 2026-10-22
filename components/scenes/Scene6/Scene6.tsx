@@ -16,7 +16,8 @@ import { pathHandoff } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Scene6.module.css";
 
-const NEEDS = ["Сайт", "Магазин", "Приложение", "ИИ и автоматизация", "Другое"];
+const OTHER = "Другое";
+const NEEDS = ["Сайт", "Магазин", "Приложение", "ИИ и автоматизация", OTHER];
 
 type Errors = { phone?: string; consent?: string; form?: string };
 
@@ -100,6 +101,10 @@ export function Scene6() {
   const phoneFieldRef = useRef<HTMLDivElement>(null);
   const nameFieldRef = useRef<HTMLDivElement>(null);
   const needsRef = useRef<HTMLDivElement>(null);
+  const otherPillRef = useRef<HTMLLabelElement>(null);
+  const otherRowRef = useRef<HTMLDivElement>(null);
+  const otherRef = useRef<HTMLInputElement>(null);
+  const focusOther = useRef(false); // «Другое» выбрали мышью или касанием — курсор в строку
   const pocketRef = useRef<HTMLDivElement>(null);
   const cutRef = useRef<SVGSVGElement>(null);
   const actRef = useRef<HTMLDivElement>(null);
@@ -115,17 +120,19 @@ export function Scene6() {
 
   const [phone, setPhone] = useState(""); // 10 цифр после +7
   const [focused, setFocused] = useState(false); // поле телефона в фокусе — маска с «+7 (»
-  const [inside, setInside] = useState(false); // фокус где-то в форме
   const [name, setName] = useState("");
   const [need, setNeed] = useState("");
+  const [other, setOther] = useState(""); // своё к «Другое» — остаётся, и когда выбор снят
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "mail">("idle");
   const closed = status === "sent" || status === "mail";
+  const isOther = need === OTHER;
   const shown = phone ? formatPhone(phone) : focused ? "+7 (" : "";
   const phoneText = formatPhone(phone);
-  // Человек уже в форме — конверт раскрыт целиком, что бы ни делала прокрутка.
-  const engaged = inside || Boolean(phone || name || need || consent) || status !== "idle";
+  // Заявка уходит или ушла — конверт раскрыт целиком, что бы ни делала прокрутка. Введённое его
+  // не держит: конверт складывается и раскладывается, значения остаются в полях.
+  const engaged = status !== "idle";
   engagedRef.current = engaged;
 
   useEffect(() => {
@@ -214,6 +221,8 @@ export function Scene6() {
     let end = 0; // где точка на экране после стоянки (и без неё) — там она уходит в футер
     let edgeL = 0; // длина половины контура
     let slide = 0; // письмо до выезда — в кармане
+    let lift = 0; // на сколько письмо выдвинуто, когда открыта строка «Другое» (--lift)
+    let folded = true; // поля сложены (пока сцену не мерили — считаем, что да)
     let s5: HTMLElement | null = null;
     let s5Scene: Element | null = null;
 
@@ -239,6 +248,7 @@ export function Scene6() {
         edgeL = W + H - F - 3;
         edge.style.strokeDasharray = `${edgeL}`;
         slide = Math.max(0, H - pocket.offsetHeight - sheet.offsetTop + 12);
+        lift = Number.parseFloat(getComputedStyle(sheet).getPropertyValue("--lift")) || 0;
       }
       stageH = stage.offsetHeight;
       end = pinned
@@ -293,7 +303,9 @@ export function Scene6() {
       const out = seg(p, T.letter);
       put(sheet, "opacity", p >= T.letter[0] ? "1" : "0");
       put(sheet, "pointer-events", out < 0.6 ? "none" : "");
-      put(sheet, "transform", `translateY(${((1 - out) * slide).toFixed(1)}px)`);
+      // Выдвинутое письмо (translate −lift из CSS) уходит в карман на столько же глубже.
+      const deep = slide + (sheet.hasAttribute("data-other") ? lift : 0);
+      put(sheet, "transform", `translateY(${((1 - out) * deep).toFixed(1)}px)`);
       for (const [i, f] of fields.entries()) {
         rise(f, seg(p, [T.field[0] + 0.04 * i, T.field[1] + 0.04 * i]), 14);
       }
@@ -315,14 +327,18 @@ export function Scene6() {
       const at = reduced ? stageH : y - stageTop; // точка в координатах сцены
 
       // Сборка — по ходу точки от верхнего края конверта: со стоянкой — сквозь весь конверт,
-      // без неё — за SPAN экрана. Человек в форме или отправил — всё как в покое.
+      // без неё — за SPAN экрана. Отправил — всё как в покое.
       const final = reduced || engagedRef.current || section.classList.contains(styles.closed);
       const p = final ? 1 : (at - rim) / (pinned ? bottom + 8 - rim : SPAN * h);
       apply(p, (h - rect.top) / h);
+      // Поля сложились — фокус из них уходит: печать не попадёт в невидимое поле и не потянет к
+      // нему страницу. Введённое остаётся.
+      folded = p < T.field[0];
+      if (folded && env.contains(document.activeElement))
+        (document.activeElement as HTMLElement).blur();
       // Над конвертом точка — поверх подводки. В конверте — под бумагой, как и линия: поля и
-      // кнопку не пересекает. Только на стоянке, пока он собирается из неё, она над ним (поля и
-      // кнопка на её пути ещё не проявлены).
-      const drawing = at < apex - 6 || (pinned && !final && at < bottom + 8);
+      // кнопку не пересекает. Пока бумага не проявилась, точка видна сквозь неё и ведёт сборку.
+      const drawing = at < apex - 6;
       if (drawing !== section.hasAttribute("data-drawing"))
         section.toggleAttribute("data-drawing", drawing);
 
@@ -355,9 +371,16 @@ export function Scene6() {
     });
     ro.observe(head);
     ro.observe(letter);
+    // Tab в сложенный конверт — страница к собранному (scroll-margin-top, как «Связаться»): фокус
+    // попадает в видимое поле, а не снимается.
+    const onFocusIn = () => {
+      if (folded) section.scrollIntoView();
+    };
+    env.addEventListener("focusin", onFocusIn);
     const off = onScroll(section, update);
     return () => {
       off();
+      env.removeEventListener("focusin", onFocusIn);
       ro.disconnect();
       updateRef.current = () => {};
     };
@@ -368,10 +391,15 @@ export function Scene6() {
   useLayoutEffect(() => {
     const letter = letterRef.current;
     const env = envRef.current;
-    if (!letter || !env) return;
+    const sheet = sheetRef.current;
+    if (!letter || !env || !sheet) return;
     if (!closed) {
       letter.style.minHeight = "";
       env.style.height = "";
+      // Письмо на место сразу, как и всё остальное: переход translate — только для «Другое».
+      sheet.style.transition = "none";
+      void sheet.offsetHeight;
+      sheet.style.transition = "";
       return;
     }
     letter.style.minHeight = `${letter.offsetHeight}px`;
@@ -385,6 +413,21 @@ export function Scene6() {
     void env.offsetHeight;
     env.style.height = `${to}px`;
   }, [closed]);
+
+  // «Другое» выбрали или сняли: письмо выдвигается (CSS), на полпути сборки — пересчёт, насколько
+  // оно в кармане. Пунктир строки расходится из-под пилюли (--o); выбрали мышью или касанием —
+  // курсор в строку.
+  useLayoutEffect(() => {
+    updateRef.current();
+    const row = otherRowRef.current;
+    const pill = otherPillRef.current;
+    if (!isOther || !row || !pill) return;
+    const r = pill.getBoundingClientRect();
+    const o = r.left + r.width / 2 - row.getBoundingClientRect().left;
+    row.style.setProperty("--o", `${Math.round(o)}px`);
+    if (focusOther.current) otherRef.current?.focus({ preventScroll: true });
+    focusOther.current = false;
+  }, [isOther]);
 
   const clearError = (key: keyof Errors) =>
     setErrors((e) => (e[key] || e.form ? { ...e, [key]: undefined, form: undefined } : e));
@@ -438,7 +481,7 @@ export function Scene6() {
         {
           phone: `+7${phone}`,
           name: name.trim() || undefined,
-          need: need || undefined,
+          need: isOther && other.trim() ? `${OTHER}: ${other.trim()}` : need || undefined,
           time: new Date().toISOString(),
         },
         { trap, startedAt: shownAt.current },
@@ -458,6 +501,7 @@ export function Scene6() {
       setPhone("");
       setName("");
       setNeed("");
+      setOther("");
       setConsent(false);
     }
     setErrors({});
@@ -527,17 +571,7 @@ export function Scene6() {
           <div className={styles.plate}>
             {/* Сиреневый слой — отдельно: на втором круге он в своём цвете, а конверт — в общем. */}
             <span ref={tintRef} className={`${styles.tint} no-invert`} aria-hidden="true" />
-            <form
-              ref={envRef}
-              className={styles.env}
-              noValidate
-              onSubmit={submit}
-              inert={closed}
-              onFocus={() => setInside(true)}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setInside(false);
-              }}
-            >
+            <form ref={envRef} className={styles.env} noValidate onSubmit={submit} inert={closed}>
               <svg
                 ref={flapOpenRef}
                 className={styles.flapOpen}
@@ -549,7 +583,7 @@ export function Scene6() {
               </svg>
               <div ref={backRef} className={styles.back} aria-hidden="true" />
 
-              <div ref={sheetRef} className={styles.sheet}>
+              <div ref={sheetRef} className={styles.sheet} data-other={isOther || undefined}>
                 <div className={styles.row}>
                   <div ref={phoneFieldRef} className={styles.field}>
                     <label className={styles.label} htmlFor={`${ids}-phone`}>
@@ -618,7 +652,11 @@ export function Scene6() {
                   </span>
                   <div className={styles.pills}>
                     {NEEDS.map((v) => (
-                      <label key={v} className={styles.pill}>
+                      <label
+                        key={v}
+                        ref={v === OTHER ? otherPillRef : undefined}
+                        className={styles.pill}
+                      >
                         {/* Повторный щелчок по выбранной — снять выбор: поле необязательное. */}
                         <input
                           type="radio"
@@ -626,11 +664,34 @@ export function Scene6() {
                           value={v}
                           checked={need === v}
                           onChange={() => setNeed(v)}
-                          onClick={() => need === v && setNeed("")}
+                          onClick={(e) => {
+                            if (need === v) setNeed("");
+                            // У выбора стрелками клавиатуры detail = 0 — фокус остаётся в пилюлях.
+                            else if (v === OTHER && e.detail > 0) focusOther.current = true;
+                          }}
                         />
                         <span>{v}</span>
                       </label>
                     ))}
+                  </div>
+                  {/* Своё к «Другое» — строка пути: пунктир, под набранным — чернила. Место под
+                      неё — в кармане; выбрали «Другое» — письмо выдвигается и строка видна. */}
+                  <div ref={otherRowRef} className={styles.other} inert={!isOther}>
+                    <span className={styles.otherPath} aria-hidden="true" />
+                    <span className={styles.otherInk} aria-hidden="true">
+                      {other}
+                    </span>
+                    <input
+                      ref={otherRef}
+                      className={styles.otherInput}
+                      name="other"
+                      value={other}
+                      onChange={(e) => setOther(e.target.value)}
+                      maxLength={80}
+                      placeholder="что именно?"
+                      aria-label="Другое — что именно"
+                      autoComplete="off"
+                    />
                   </div>
                 </div>
               </div>

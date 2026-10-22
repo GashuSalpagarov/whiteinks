@@ -11,21 +11,23 @@ import styles from "./PathMap.module.css";
 // полосе x 4…20, змейка — 7…17: с точкой (радиус 5,5) карта не шире 22,5 единицы.
 const H = 450;
 const PATH =
-  "M12 16C12 26 16 28 16 34S12 44 12 50C12 56 17 58 17 66S7 82 7 90S17 106 17 114S12 128 12 134L12 440";
-// Метки на пути (y): начало (под кругом Hero) и стыки станций по порядку; последняя — центр петли.
+  "M12 16C12 34 16 38 16 49S12 64 12 82C12 86.5 17 88 17 93.5S7 105 7 110.5S17 122 17 127.5S12 137.5 12 142L12 440";
+// Метки на пути (y): начало (под кругом Hero) и стыки станций по порядку, шаг ~72; последняя —
+// центр петли. Точку на метку ставит стык — тот же, на котором SceneLabel меняет слово, — поэтому
+// на метке и значок станции, и её подпись (у Услуг значок — сама змейка, она с метки и начинается).
 // Между метками точка идёт непрерывно, по доле прокрутки от стыка до стыка (pathProgress).
-const MARKS = [16, 50, 134, 218, 302, 372, 440];
-// Зоны нажатия по высоте и где подпись: [от, до, подпись] — «Начало» (круг Hero) и станции.
-const ZONES: [number, number, number][] = [
-  [0, 30, 10],
-  [30, 134, 92],
-  [134, 218, 176],
-  [218, 302, 260],
-  [302, 372, 337],
-  [372, 422, 398],
-  [422, H, 440],
-];
+const MARKS = [16, 82, 154, 226, 297, 368, 440];
+// Подписи — на метках, «Начало» — у центра круга Hero. Зона нажатия — от середины до середины
+// между соседними подписями, без дыр и наложений: [от, до, подпись].
+const AT = [10, ...MARKS.slice(1)];
+const ZONES = AT.map((c, n) => [
+  n ? (AT[n - 1] + c) / 2 : 0,
+  n < AT.length - 1 ? (c + AT[n + 1]) / 2 : H,
+  c,
+]);
 const NAMES = ["Начало", ...STATIONS.map((s) => s.word)];
+// Значок станции i — на её метке: рисуется вокруг y = 0 и сдвигается на место.
+const mark = (i: number) => `translate(0 ${MARKS[i + 1]})`;
 
 // Карта пути слева: та же линия, что идёт по сайту, в миниатюре. Позади точки — чернила, впереди —
 // пунктир; значки сцен, до которых дошли, — чернилами. Наведение или Tab открывает лист с
@@ -122,28 +124,28 @@ export function PathMap() {
         {/* Круг Hero — начало пути, пройден всегда, когда карта видна. */}
         <circle className={`${styles.glyph} ${styles.done}`} cx={12} cy={10} r={6} />
         {/* Работы — точка туннеля и лучи потока. */}
-        <g className={styles.glyph} data-i={1}>
-          <path d="M16.5 176H20M7.5 176H4M15.2 179.2L17.7 181.7M8.8 179.2L6.3 181.7M8.8 172.8L6.3 170.3M15.2 172.8L17.7 170.3" />
-          <circle className={styles.fill} cx={12} cy={176} r={2.2} />
+        <g className={styles.glyph} data-i={1} transform={mark(1)}>
+          <path d="M16.5 0H20M7.5 0H4M15.2 3.2L17.7 5.7M8.8 3.2L6.3 5.7M8.8 -3.2L6.3 -5.7M15.2 -3.2L17.7 -5.7" />
+          <circle className={styles.fill} cx={12} cy={0} r={2.2} />
         </g>
         {/* Как мы работаем — веер карточек. */}
-        <g className={`${styles.glyph} ${styles.paper}`} data-i={2}>
-          <rect x={7.5} y={254} width={9} height={12} rx={1.5} transform="rotate(-18 12 266)" />
-          <rect x={7.5} y={254} width={9} height={12} rx={1.5} transform="rotate(18 12 266)" />
-          <rect x={7.5} y={254} width={9} height={12} rx={1.5} />
+        <g className={`${styles.glyph} ${styles.paper}`} data-i={2} transform={mark(2)}>
+          <rect x={7.5} y={-6} width={9} height={12} rx={1.5} transform="rotate(-18 12 6)" />
+          <rect x={7.5} y={-6} width={9} height={12} rx={1.5} transform="rotate(18 12 6)" />
+          <rect x={7.5} y={-6} width={9} height={12} rx={1.5} />
         </g>
         {/* Сколько стоит — мозаика, ось пути делит её пополам. */}
-        <g className={`${styles.glyph} ${styles.paper}`} data-i={3}>
-          <rect x={4} y={329} width={16} height={16} rx={1.5} />
-          <path d="M12 329V345M4 337H20" />
+        <g className={`${styles.glyph} ${styles.paper}`} data-i={3} transform={mark(3)}>
+          <rect x={4} y={-8} width={16} height={16} rx={1.5} />
+          <path d="M12 -8V8M4 0H20" />
         </g>
         {/* Заявка — письмо. */}
-        <g className={`${styles.glyph} ${styles.paper}`} data-i={4}>
-          <rect x={4} y={392} width={16} height={12} rx={1.5} />
-          <path d="M4.5 393L12 399L19.5 393" />
+        <g className={`${styles.glyph} ${styles.paper}`} data-i={4} transform={mark(4)}>
+          <rect x={4} y={-6} width={16} height={12} rx={1.5} />
+          <path d="M4.5 -5L12 1L19.5 -5" />
         </g>
         {/* Контакты — петля в конце пути (круг Hero следующего круга). */}
-        <circle className={styles.glyph} data-i={5} cx={12} cy={440} r={7} />
+        <circle className={styles.glyph} data-i={5} transform={mark(5)} cx={12} r={7} />
         <circle ref={dotRef} className={styles.dot} r={5.5} transform="translate(12 16)" />
       </svg>
       <ol className={styles.list}>

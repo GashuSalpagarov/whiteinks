@@ -53,7 +53,7 @@ export const STEPS = [
 export const N = STEPS.length;
 
 const corp = TYPES.find((t) => t.id === "corp") ?? TYPES[0];
-export const TOTAL_TERM = formatWeeks(...corp.weeks);
+export const TOTAL_TERM = corp.weeks ? formatWeeks(...corp.weeks) : "";
 
 // Раскладка прокрутки, в экранах: s = 0 — секция вошла снизу (Сцена 3 отпускает свой sticky,
 // и её сетка уезжает вверх со страницей), s = 1 — сцена встала на место. Пока она въезжает,
@@ -71,8 +71,9 @@ const OPEN: [number, number] = [0, 0.4];
 const GROW_FIRST: [number, number] = [0, 0.5];
 const CAP_IN: [number, number] = [0.1, 0.35];
 const CAP_OUT: [number, number] = [0.88, 1];
-// Доли выхода: капля падает с ускорением из центра первой карточки за нижний край кадра.
-const DROP: [number, number] = [0.05, 0.95];
+// Доли выхода: капля падает с ускорением из центра первой карточки к нижнему краю кадра и
+// касается его в конце выхода — когда кадр отпускает sticky и её подхватывает Сцена 5.
+const DROP: [number, number] = [0.05, 1];
 // Вход: точка плывёт в центр первой карточки (доли ENTRY).
 const GLIDE: [number, number] = [0.1, 1];
 // Блоки слева всплывают, пока растёт первая карточка, по очереди сверху вниз: каждый — за

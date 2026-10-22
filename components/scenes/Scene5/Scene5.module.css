@@ -63,53 +63,67 @@
 }
 
 
-/* Мозаика 4×2 без рамок. Верхний ряд — два дорогих типа во всю половину: «Уникальный» слева от
-   линии, «Магазин» справа; нижний — четыре по одной клетке, от дорогого к дешёвому. Колонки
-   равные, без зазоров: граница средних колонок — ровно линия пути. */
+/* Мозаика 4×3 без рамок. Верхний ряд — два дорогих типа во всю половину: «Уникальный» слева от
+   линии, «Магазин» справа; второй — четыре сайта по одной клетке, от дорогого к дешёвому;
+   третий — слева от линии приложения, справа помесячные услуги. Колонки равные, без зазоров:
+   граница средних колонок — ровно линия пути. */
 .tiles {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(
-    2,
+    3,
     minmax(clamp(130px, calc(var(--ih, 100svh) * 0.15), 170px), auto)
   );
   grid-template-areas:
     "unique unique shop shop"
-    "corp ai landing builder";
+    "corp ai landing builder"
+    "app tma support seo";
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* Поля плитки — до разделителей; у внешнего края мозаики и над первым рядом полей нет. */
+/* Поля плитки — до разделителей, по бокам у всех клеток одинаковые (у внешнего края мозаики
+   тоже: текст не прижат к краю страницы), над первым рядом полей нет. По бокам — 2,8vw (40px на
+   1440, не больше 48px), но на ноутбуке (1280–1440px) меньше: 12,5vw − 140px оставляет клетке
+   1×1 ровно 264px внутри полей — рисунку хватает места сбоку (порог 260px, ниже), каталог
+   ниже и встаёт под шапкой. Уже 1280px — 20px.
+   Плитка 1×1 — сетка: название и что входит во всю ширину, под ними слева у низа цена и срок,
+   справа рисунок в своей колонке — на текст он не наезжает при любой длине строк, плитка растёт
+   под него. top — место рисунка в узкой плитке (ниже). */
 .tile {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 26px;
+  display: grid;
+  grid-template:
+    "top top" auto
+    "name name" auto
+    "includes includes" auto
+    ". art" 1fr
+    "price art" auto
+    "term art" auto
+    / minmax(0, 1fr) auto;
+  padding: 20px clamp(20px, 12.5vw - 140px, min(2.8vw, 48px));
   container-type: inline-size;
 }
 
-/* Широкие клетки — обычный поток, не flex: рисунок справа (float), слева название, что входит
+/* Широкие клетки — обычный поток, не сетка: рисунок справа (float), слева название, что входит
    и сразу под ними цена со сроком; высота — по тому, что выше. */
 .unique,
 .shop {
   display: flow-root;
+  padding-top: 6px;
 }
 
 .unique {
   grid-area: unique;
-  padding: 6px 26px 20px 0;
 }
 
 .shop {
   grid-area: shop;
-  padding: 6px 0 20px 26px;
 }
 
 .corp {
   grid-area: corp;
-  padding-left: 0;
 }
 
 .ai {
@@ -122,7 +136,22 @@
 
 .builder {
   grid-area: builder;
-  padding-right: 0;
+}
+
+.app {
+  grid-area: app;
+}
+
+.tma {
+  grid-area: tma;
+}
+
+.support {
+  grid-area: support;
+}
+
+.seo {
+  grid-area: seo;
 }
 
 /* Разделители — линии 1,5 между клетками, внешней рамки нет; средний — сама линия пути.
@@ -149,26 +178,38 @@
   transform-origin: 50% 0;
 }
 
-/* Под верхним рядом — линия от линии пути к краям; в нижнем — между клетками каждой пары. */
+/* Под верхним и вторым рядом — линии от линии пути к краям; во втором и третьем — между
+   клетками каждой пары. Под третьим линий нет. */
 .unique::after,
-.shop::after {
+.shop::after,
+.corp::after,
+.ai::after,
+.landing::after,
+.builder::after {
   content: "";
 }
 
-.unique::after {
+.unique::after,
+.corp::after,
+.ai::after {
   transform-origin: 100% 50%;
 }
 
-.shop::after {
+.shop::after,
+.landing::after,
+.builder::after {
   transform-origin: 0 50%;
 }
 
 .corp::before,
-.landing::before {
+.landing::before,
+.app::before,
+.support::before {
   content: "";
 }
 
 .name {
+  grid-area: name;
   font-size: 1.0625rem;
   font-weight: 500;
   line-height: 1.25;
@@ -176,6 +217,7 @@
 }
 
 .includes {
+  grid-area: includes;
   margin-top: 4px;
   font-size: 0.8125rem;
   line-height: 1.4;
@@ -183,7 +225,7 @@
 }
 
 .price {
-  margin-top: auto;
+  grid-area: price;
   padding-top: 16px;
   /* В узкой плитке 1×1 (телефон боком) цена мельче — по ширине плитки. */
   font-size: clamp(19px, 11cqw, 26px);
@@ -194,6 +236,7 @@
 }
 
 .term {
+  grid-area: term;
   font-size: 0.875rem;
   color: var(--muted);
 }
@@ -202,9 +245,9 @@
    при 1440, Scene2.module.css), справа внизу, вровень с ценой; в широкой — от её ширины (cqw),
    справа вверху, рядом с текстом. */
 .art {
-  position: absolute;
-  right: 26px;
-  bottom: 20px;
+  grid-area: art;
+  align-self: end;
+  position: relative;
   width: calc(var(--w) * 0.1em);
   height: calc(var(--h) * 0.1em);
   font-size: calc(clamp(7px, 0.694vw, 13px) * 0.8);
@@ -219,10 +262,6 @@
 .art svg {
   max-width: none;
   overflow: visible;
-}
-
-.builder .art {
-  right: 0;
 }
 
 .unique .art,
@@ -257,13 +296,11 @@
   letter-spacing: -0.04em;
 }
 
-/* Узкая плитка 1×1 (экран уже ~1320px и телефон): справа от цены места нет — элементы встают
+/* Узкая плитка 1×1 (экран уже 1280px и телефон): справа от цены места нет — элементы встают
    сверху, над названием. Ширина — внутри полей плитки. */
 @container (width < 260px) {
   .art {
-    position: relative;
-    right: auto;
-    bottom: auto;
+    grid-area: top;
     margin-bottom: 12px;
   }
 }
@@ -390,7 +427,9 @@
       "unique unique"
       "shop shop"
       "corp ai"
-      "builder landing";
+      "builder landing"
+      "app tma"
+      "support seo";
   }
 
   .tile {
@@ -398,37 +437,25 @@
   }
 
   .unique {
-    padding: 0 0 16px;
+    padding-top: 0;
   }
 
-  .shop {
-    padding: 16px 0;
-  }
-
-  .corp,
-  .builder {
-    padding-left: 0;
-    padding-right: 14px;
-  }
-
-  .ai,
-  .landing {
-    padding-left: 14px;
-    padding-right: 0;
-  }
-
-  /* Линии под широкими клетками и под первой парой, между клетками пар. Растут от центра. */
+  /* Линии под широкими клетками и под парами, кроме последней, между клетками пар. Растут от
+     центра. */
   .unique::after,
   .shop::after {
     transform-origin: 50% 50%;
   }
 
-  .corp::after {
+  .corp::after,
+  .builder::after,
+  .app::after {
     content: "";
     transform-origin: 100% 50%;
   }
 
-  .ai::after {
+  .ai::after,
+  .tma::after {
     content: "";
     transform-origin: 0 50%;
   }
@@ -442,9 +469,14 @@
   }
 
   .art {
-    right: 0;
-    bottom: 16px;
     font-size: 8px;
+  }
+
+  /* Рисунок над названием поднят на поле плитки — к линии над ней. */
+  @container (width < 260px) {
+    .art {
+      bottom: 16px;
+    }
   }
 
   .unique .art,

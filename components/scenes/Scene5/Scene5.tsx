@@ -2,7 +2,7 @@
 
 import { type CSSProperties, useEffect, useRef } from "react";
 import { ART } from "@/components/scenes/Scene2";
-import { fromPrice, fromWeeks, TYPES, type TypeId } from "@/lib/pricing";
+import { formatFrom, fromPrice, fromWeeks, TYPES, type TypeId } from "@/lib/pricing";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Scene5.module.css";
 
@@ -10,7 +10,8 @@ import styles from "./Scene5.module.css";
 // плитки (единицы — px при ширине 1440), turn — поворот.
 type Piece = { from: [number, number]; at: [number, number]; turn?: number };
 
-// box — коробка элементов, color — пастель внутри них (в Сцене 2 — --accent пункта). Место и
+// box — коробка элементов (все элементы — внутри неё: место под рисунок в клетке — по коробке),
+// color — пастель внутри них (в Сцене 2 — --accent пункта). Место и
 // размер плитки (по цене: 2×2, 2×1, 1×1) — класс с id типа в Scene5.module.css.
 type Tile = { color: string; box: [number, number]; art: Piece[] };
 
@@ -57,11 +58,42 @@ const TILES: Record<TypeId, Tile> = {
   },
   ai: {
     color: "#d3ebdd",
-    box: [136, 96],
+    box: [140, 104],
     art: [
-      { from: [6, 0], at: [0, 6] }, // «Чем помочь?»
-      { from: [6, 1], at: [112, -8] }, // искра
-      { from: [6, 2], at: [18, 66] }, // схема из трёх узлов
+      { from: [6, 0], at: [0, 14] }, // «Чем помочь?»
+      { from: [6, 1], at: [112, 0] }, // искра
+      { from: [6, 2], at: [18, 74] }, // схема из трёх узлов
+    ],
+  },
+  app: {
+    color: "#d3ebdd",
+    box: [86, 92],
+    art: [
+      { from: [5, 0], at: [0, 8], turn: -8 }, // телефон
+      { from: [5, 0], at: [40, 0], turn: 6 }, // второй телефон
+    ],
+  },
+  tma: {
+    color: "#dddaf5",
+    box: [116, 80],
+    art: [
+      { from: [5, 1], at: [0, 36] }, // Telegram
+      { from: [5, 2], at: [24, 0] }, // облачко «Mini App»
+    ],
+  },
+  support: {
+    color: "#f7dccb",
+    box: [110, 76],
+    art: [
+      { from: [7, 1], at: [0, 14], turn: -3 }, // растущий график
+      { from: [7, 2], at: [66, 0] }, // шестерёнка
+    ],
+  },
+  seo: {
+    color: "#f4ebc3",
+    box: [132, 54],
+    art: [
+      { from: [7, 0], at: [0, 0], turn: -2 }, // результат поиска
     ],
   },
 };
@@ -69,9 +101,10 @@ const TILES: Record<TypeId, Tile> = {
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 const DOT_R = 6; // px, радиус точки (как .drop в Hero, 12px)
-// Капля Сцены 4 падает за нижний край своего кадра на 2 радиуса (stages.ts, dropAt): кадр
-// отпускает sticky — и ровно там, у верха этой секции, её подхватывает своя точка.
-const CATCH = 2 * DOT_R;
+// Капля Сцены 4 падает к нижнему краю своего кадра и касается его, вся в экране (stages.ts,
+// dropAt): кадр отпускает sticky — и ровно там, на радиус выше верха этой секции, её подхватывает
+// своя точка.
+const CATCH = -DOT_R;
 const FALL = 0.4; // экрана прокрутки: на выходе точка падает к точке письма Сцены 6
 // Вверх — обратно: что выше точки, складывается (порядок — в Scene5.module.css). false — только
 // вперёд: показанное больше не прячется.
@@ -90,8 +123,9 @@ const letterDot = () =>
     ...document.querySelectorAll<HTMLElement>('[data-scene="scene6"] span[aria-hidden="true"]'),
   ].find((el) => el.offsetWidth === 2 * DOT_R && el.offsetHeight === 2 * DOT_R) ?? null;
 
-// Сцена 5 — прайс мозаикой: в верхнем ряду два дорогих типа во всю половину, в нижнем — четыре
-// по одной клетке, от дорогого к дешёвому; на плитках — элементы услуг из Сцены 2. Рамок нет —
+// Сцена 5 — прайс мозаикой: в верхнем ряду два дорогих типа во всю половину, во втором — четыре
+// сайта по одной клетке, от дорогого к дешёвому, в третьем — слева от линии приложения, справа
+// помесячные услуги; на плитках — элементы услуг из Сцены 2. Рамок нет —
 // клетки делят линии 1,5, а средний разделитель — линия пути (продолжение Сцены 4). Выбирать
 // ничего не нужно — заявка дальше, в Сцене 6.
 export function Scene5() {
@@ -211,18 +245,19 @@ export function Scene5() {
       }
       const ft = inner.getBoundingClientRect().top; // верх каталога на экране
       const t = target?.isConnected ? target.getBoundingClientRect() : null;
-      const goal = t ? t.top + t.height / 2 : rect.bottom + CATCH; // куда точка падает на выходе
+      const goal = t ? t.top + t.height / 2 : rect.bottom + 2 * DOT_R; // куда падает на выходе
 
       // Точка, px от верха экрана (lead — без выхода): по каталогу — c0 + speed · прокрутка от
       // поимки, на экране — от его верха (до стоянки он едет, на стоянке стоит).
       const lead = ft + c0 + speed * (h - rect.top);
       // Выход: опускается к низу экрана, к краю, из-за которого поднимается точка письма, и ждёт
       // её там, не уходя за край (на странице идёт вместе с прокруткой); сливаются, когда та
-      // поднялась к ней.
+      // поднялась к ней. За край не уходит и каталог, вставший низом к низу экрана (почти
+      // помещается): путь по нему кончается у самого края.
       const span = FALL * h;
       const fall = clamp01((h + DOT_R + span - goal) / span);
       const to = Math.min(goal, h - DOT_R);
-      const y = lead + (to - lead) * fall * fall;
+      const y = Math.min(lead + (to - lead) * fall * fall, h - DOT_R);
       const merged = fall >= 1 && goal <= h - DOT_R;
       const d = y - rect.top; // точка в координатах секции
 
@@ -269,7 +304,7 @@ export function Scene5() {
                 >
                   {art.map(({ from: [i, j], at: [x, y], turn }) => (
                     <span
-                      key={`${i}-${j}`}
+                      key={`${i}-${j}-${x}`}
                       style={{
                         left: `${x / 10}em`,
                         top: `${y / 10}em`,
@@ -282,8 +317,9 @@ export function Scene5() {
                 </div>
                 <h3 className={styles.name}>{t.title}</h3>
                 <p className={styles.includes}>{t.includes}</p>
-                <p className={styles.price}>{fromPrice(t.base)}</p>
-                <p className={styles.term}>{fromWeeks(t.weeks)}</p>
+                {/* Помесячные (без срока) — цена как есть, под ней «в месяц». */}
+                <p className={styles.price}>{t.weeks ? fromPrice(t.base) : formatFrom(t.base)}</p>
+                <p className={styles.term}>{t.weeks ? fromWeeks(t.weeks) : "в месяц"}</p>
               </li>
             );
           })}

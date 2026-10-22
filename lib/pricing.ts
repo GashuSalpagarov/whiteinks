@@ -1,16 +1,27 @@
 // Прайс Сцены 5 — ориентиры «от» по типам работ; срок «Корпоративного» берёт и Сцена 4.
 // ЧЕРНОВЫЕ ЦИФРЫ — их выставит владелец студии. Деньги — в тыс. ₽, сроки — в неделях.
 
-export type TypeId = "landing" | "builder" | "corp" | "shop" | "unique" | "ai";
+export type TypeId =
+  | "landing"
+  | "builder"
+  | "corp"
+  | "shop"
+  | "unique"
+  | "ai"
+  | "app"
+  | "tma"
+  | "support"
+  | "seo";
 
-// base — цена среднего размера без дополнений, weeks — его срок.
+// base — цена среднего размера без дополнений, weeks — его срок. Помесячные услуги — без срока:
+// base у них — цена в месяц как есть.
 // includes — что входит: ЗАГЛУШКИ, тексты выставит владелец.
 export const TYPES: {
   id: TypeId;
   title: string;
   includes: string;
   base: number;
-  weeks: [number, number];
+  weeks?: [number, number];
 }[] = [
   {
     id: "landing",
@@ -55,6 +66,33 @@ export const TYPES: {
     base: 600,
     weeks: [4, 8],
   },
+  // Заглушки, как у «ИИ»: цифры выставит владелец студии.
+  {
+    id: "app",
+    title: "Приложение",
+    includes: "iOS и Android: от прототипа до публикации в сторах",
+    base: 1650,
+    weeks: [11, 16],
+  },
+  {
+    id: "tma",
+    title: "Telegram Mini App",
+    includes: "Магазин, запись или сервис прямо в Telegram",
+    base: 550,
+    weeks: [5, 8],
+  },
+  {
+    id: "support",
+    title: "Поддержка",
+    includes: "Доработки, обновления, мониторинг и резервные копии",
+    base: 40,
+  },
+  {
+    id: "seo",
+    title: "SEO и продвижение",
+    includes: "Аудит, семантика, тексты и отчёт о позициях",
+    base: 60,
+  },
 ];
 
 const NB = " ";
@@ -62,7 +100,7 @@ const NB = " ";
 const mln = (v: number) => String(Math.round(v / 10) / 100).replace(".", ",");
 
 // Нижняя граница одной строкой: «от 700 тыс. ₽», «от 1,3 млн ₽».
-function formatFrom(v: number): string {
+export function formatFrom(v: number): string {
   return `от ${v < 1000 ? `${v}${NB}тыс.` : `${mln(v)}${NB}млн`}${NB}₽`;
 }
 

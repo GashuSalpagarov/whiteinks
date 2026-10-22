@@ -24,6 +24,8 @@
   --dip: 58px; /* глубина галочки кармана */
   --pocket: 170px; /* карман с кнопкой */
   --tuck: 84px; /* сколько письма в кармане */
+  --other: 48px; /* строка «Другое» под пилюлями (с отступом) — место под неё в кармане */
+  --lift: 36px; /* на сколько выдвигается письмо, когда строка открыта */
   --ease: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   /* Пунктир пути — как в футере: точки 2px через 8px. */
@@ -73,7 +75,7 @@
 
 /* Точка пути. Её по размеру (12px) находит Сцена 5 и сливается с ней. Место — transform из
    Scene6.tsx; без JS её нет. Выше конверта она поверх подводки (data-drawing), в конверте — под
-   бумагой, как и линия; только на стоянке, пока конверт собирается из неё, она над ним. */
+   бумагой, как и линия; пока бумага не проявилась, видна сквозь неё. */
 .drop {
   position: absolute;
   top: 0;
@@ -229,18 +231,25 @@
   pointer-events: none;
 }
 
-/* Письмо: верх выше конверта, низ (--tuck) — в кармане. */
+/* Письмо: верх выше конверта, низ (--tuck) — в кармане, над ним там же — место строки «Другое»
+   (--other, конверт той же высоты). Выбрали «Другое» — письмо выдвигается из кармана на --lift;
+   при сборке Scene6.tsx уводит его в карман на столько же глубже. */
 .sheet {
   position: relative;
   z-index: 2;
   display: grid;
   gap: 26px;
   width: calc(100% - 72px);
-  margin: 62px auto calc(var(--pocket) - var(--tuck));
+  margin: 62px auto calc(var(--pocket) - var(--tuck) - var(--other));
   padding: 30px 36px calc(var(--tuck) + 20px);
   border: 1.5px solid var(--color-fg);
   border-radius: 6px 6px 0 0;
   background: var(--color-bg);
+  transition: translate 0.4s var(--ease);
+}
+
+.sheet[data-other] {
+  translate: 0 calc(-1 * var(--lift));
 }
 
 .row {
@@ -471,8 +480,83 @@
   }
 }
 
+/* Своё к «Другое» — строка пути: пунктир, под набранным — чернила (позади чернила, впереди
+   пунктир). Пока «Другое» не выбрана, строки не видно (она в кармане). Выбрали — проступает, а
+   пунктир расходится из-под пилюли (--o из Scene6.tsx), как контур конверта из точки. Чернила —
+   нижняя линия зеркала текста (.otherInk) под полем. */
+.other {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  height: var(--other);
+  padding-top: 14px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* Все слои — positioned: рисуются по порядку (пунктир с scale иначе лёг бы поверх чернил). */
+.other > * {
+  position: relative;
+  grid-area: 1 / 1;
+}
+
+.otherPath {
+  align-self: end;
+  height: 2px;
+  background: radial-gradient(circle, rgba(10, 10, 10, 0.34) 1px, transparent 1.4px) 0 0 / 8px
+    2px repeat-x;
+  transform-origin: var(--o, 50%) 0;
+  scale: 0 1;
+  transition: scale 0.3s var(--ease);
+}
+
+.other:focus-within .otherPath {
+  background-image: radial-gradient(circle, var(--color-fg) 1px, transparent 1.4px);
+}
+
+.otherInk,
+.otherInput {
+  font-size: 1.0625rem;
+  letter-spacing: -0.005em;
+}
+
+.otherInk {
+  justify-self: start;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: pre;
+  color: transparent;
+  background:
+    linear-gradient(var(--color-fg), var(--color-fg)) 0 100% / 100% 1.5px no-repeat,
+    var(--color-bg);
+}
+
+.otherInput {
+  width: 100%;
+  padding: 0 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  outline: none;
+}
+
+.otherInput::placeholder {
+  color: var(--dim);
+}
+
+.sheet[data-other] .other {
+  opacity: 1;
+  transition: opacity 0.3s 0.15s;
+}
+
+.sheet[data-other] .otherPath {
+  scale: 1;
+  transition: scale 0.45s var(--ease-out) 0.15s;
+}
+
 /* Поле в фокусе — ниже шапки (72px) и выше края экрана с клавиатурой. */
 .input,
+.otherInput,
 .check {
   scroll-margin: 96px 0 24px;
 }
@@ -661,6 +745,18 @@
     --dip: 34px;
     --pocket: 190px;
     --tuck: 80px;
+    /* Над письмом всего 34px — строка ниже и письмо выдвигается меньше. */
+    --other: 32px;
+    --lift: 20px;
+  }
+
+  .other {
+    padding-top: 6px;
+  }
+
+  .otherInk,
+  .otherInput {
+    font-size: 1rem;
   }
 
   .stage {
