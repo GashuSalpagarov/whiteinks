@@ -27,9 +27,9 @@
 
 .ready .pill {
   animation:
-    pillCompress 1.5s cubic-bezier(0.6, 0, 0.4, 1) 2.4s forwards,
-    pillBreath 0.45s ease-in-out 3.9s,
-    pillShrink 0.4s cubic-bezier(0.65, 0, 0.35, 1) 4.35s forwards;
+    pillCompress 1.1s cubic-bezier(0.6, 0, 0.4, 1) 0.9s forwards,
+    pillBreath 0.35s ease-in-out 2s,
+    pillShrink 0.35s cubic-bezier(0.65, 0, 0.35, 1) 2.35s forwards;
 }
 
 .studioLabel {
@@ -44,8 +44,8 @@
 
 .ready .studioLabel {
   animation:
-    studioFadeIn 0.75s ease-out 0.6s forwards,
-    studioFadeOut 0.6s ease-in 3s forwards;
+    studioFadeIn 0.6s ease-out 0.2s forwards,
+    studioFadeOut 0.5s ease-in 1.3s forwards;
 }
 
 /* Линия пути. Живёт в Hero и уезжает вверх вместе со страницей; её конец (50vw, 93vh) —
@@ -70,7 +70,7 @@
 }
 
 .ready .lineStroke {
-  animation: lineDraw 1.85s cubic-bezier(0.45, 0, 0.25, 1) 4.75s forwards;
+  animation: lineDraw 1.3s cubic-bezier(0.45, 0, 0.25, 1) 2.7s forwards;
 }
 
 /* Падающая точка. Едет по тому же пути (offset-path задаётся в Hero.tsx) с той же
@@ -92,15 +92,15 @@
 }
 
 .ready .fallDot {
-  animation: fallDot 1.85s cubic-bezier(0.45, 0, 0.25, 1) 4.75s;
+  animation: fallDot 1.3s cubic-bezier(0.45, 0, 0.25, 1) 2.7s;
 }
 
-/* CTA — обычная чёрная «таблетка» справа от линии, на высоте последнего слова. Это кнопка
+/* CTA — обычная чёрная «таблетка» под индикатором, по левому краю подводки. Это кнопка
    (ведёт к Сцене 6) — системные рамка, цвет и вид сброшены, выглядит как раньше. */
 .cta {
   position: absolute;
-  top: calc(74% - 26px);
-  left: calc(50% - 0.85 * var(--swing) + var(--gap));
+  top: calc(82% - 26px);
+  left: calc(50% + 0.6 * var(--swing) + var(--gap));
   z-index: 4;
   display: flex;
   align-items: center;
@@ -119,7 +119,7 @@
 }
 
 .ready .cta {
-  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+  animation: uiFadeIn 0.45s ease-out 4s forwards;
 }
 
 /* Подзаголовок — справа от линии на уровне «цифровые»: верх заглавных подзаголовка вровень
@@ -148,7 +148,7 @@
 }
 
 .ready .lead {
-  animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 4.35s forwards;
+  animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 2.35s forwards;
 }
 
 /* Точка. В Hero стоит у конца линии (50%, 93% общей высоты экрана --ih, как в buildFallPath)
@@ -184,8 +184,8 @@
 
 .ready .drop {
   animation:
-    dropAppear 0.001s 6.6s forwards,
-    dropPulse 2.4s ease-in-out 7.2s infinite;
+    dropAppear 0.001s 4s forwards,
+    dropPulse 2.4s ease-in-out 4.5s infinite;
 }
 
 /* Пока точка зафиксирована (Scene 2+), пульс гасим поверх анимации, а не снимаем её:
@@ -334,15 +334,15 @@
 }
 
 .ready .word1 {
-  animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 4.35s forwards;
+  animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 2.35s forwards;
 }
 
 .ready .word2 {
-  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.1s forwards;
+  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 2.95s forwards;
 }
 
 .ready .word3 {
-  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 5.5s forwards;
+  animation: wordIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 3.23s forwards;
 }
 
 /* Выход из круга: из центра круга, уменьшенным, — на своё место, как растекающиеся чернила. */
@@ -507,7 +507,7 @@
 
 .ready .slot {
   opacity: 1;
-  animation: mediaIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) calc(6.5s + var(--i) * 90ms) backwards;
+  animation: mediaIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) calc(3.9s + var(--i) * 90ms) backwards;
 }
 
 .slot img {
@@ -543,12 +543,12 @@
   }
 }
 
-/* Индикатор — под кнопкой, по левому краю подводки. Номер и полоска; у активного полоска
-   заполняется за 5 с, по её animationend HeroSlides.tsx листает дальше (.live — после интро,
-   .paused — Hero ушёл с экрана или вкладка скрыта). Зона нажатия — 44px. */
+/* Индикатор — над кнопкой, на высоте последнего слова, по левому краю подводки. Номер и полоска;
+   у активного полоска заполняется за 5 с, по её animationend HeroSlides.tsx листает дальше
+   (.live — после интро, .paused — Hero ушёл с экрана или вкладка скрыта). Зона нажатия — 44px. */
 .dots {
   position: absolute;
-  top: calc(82% - 22px);
+  top: calc(74% - 22px);
   left: calc(50% + 0.6 * var(--swing) + var(--gap));
   z-index: 4;
   display: flex;
@@ -557,7 +557,7 @@
 }
 
 .ready .dots {
-  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+  animation: uiFadeIn 0.45s ease-out 4s forwards;
 }
 
 .dot {
@@ -676,7 +676,7 @@
 .ready .logo,
 .ready .phone,
 .ready .nav {
-  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+  animation: uiFadeIn 0.45s ease-out 4s forwards;
 }
 
 /* ---------- Меню ----------
@@ -742,7 +742,7 @@
 }
 
 .header.ready + .menu {
-  animation: uiFadeIn 0.5s ease-out 6.6s forwards;
+  animation: uiFadeIn 0.45s ease-out 4s forwards;
 }
 
 /* Две тонкие линии, правый край — там, где кончается телефон вверху страницы. Появляются,
@@ -841,15 +841,45 @@
     translate 0.25s ease-out;
 }
 
+/* Станции — нитью, как карта пути слева (components/ui/PathMap): впереди пунктир, до текущей —
+   чернила (--k — её номер, HeaderMenu.tsx); пройденные — залитые точки, текущая — точка 12px. */
+.thread {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread::before,
+.thread::after {
+  content: '';
+  position: absolute;
+  top: 22px;
+  left: 21px;
+  width: 2px;
+}
+
+.thread::before {
+  bottom: 22px;
+  background: radial-gradient(circle at 50% 1px, rgba(10, 10, 10, 0.4) 0.9px, transparent 1.3px)
+    0 0 / 2px 5px repeat-y;
+}
+
+.thread::after {
+  height: calc(var(--k) * 44px);
+  background: var(--color-fg);
+}
+
 .panelItem {
+  position: relative;
   display: block;
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 12px 10px 40px;
   border: 0;
   border-radius: 4px;
   background: none;
-  color: var(--color-fg);
+  color: rgba(10, 10, 10, 0.55);
   font-size: 1rem;
   font-weight: 500;
   line-height: 1.5;
@@ -857,10 +887,41 @@
   cursor: pointer;
 }
 
+.panelItem::before {
+  content: '';
+  position: absolute;
+  top: calc(50% - 3.5px);
+  left: 18.5px;
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 50%;
+  background: var(--color-bg);
+}
+
+.panelItem[data-done]::before {
+  background: var(--color-fg);
+}
+
+.panelItem[aria-current] {
+  color: var(--color-fg);
+}
+
+.panelItem[aria-current]::before {
+  top: calc(50% - 6px);
+  left: 16px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-fg);
+}
+
 /* Только с мышью: на сенсорном экране :hover залипает на нажатом пункте. */
 @media (hover: hover) {
   .panelItem:hover {
     background: rgba(10, 10, 10, 0.06);
+    color: var(--color-fg);
   }
 }
 
@@ -948,11 +1009,11 @@
 
   /* Точка проходит мимо строк и подзаголовка быстрее, чем на десктопе. */
   .ready .word2 {
-    animation-delay: 5.05s;
+    animation-delay: 2.91s;
   }
 
   .ready .word3 {
-    animation-delay: 5.2s;
+    animation-delay: 3.02s;
   }
 
   /* Ширина — чтобы на низких экранах не задеть линию там, где она уже уходит к центру. */
@@ -964,7 +1025,7 @@
   }
 
   .ready .lead {
-    animation: uiFadeIn 0.6s ease-out 5.3s forwards;
+    animation: uiFadeIn 0.6s ease-out 3.09s forwards;
   }
 
   /* CTA — по левому краю, сразу под индикатором (тем же шагом, что подводка → индикатор).
@@ -1007,8 +1068,8 @@
     font-size: 14px;
   }
 
-  /* Строки здесь — с прежним шагом 20% (38 / 58 / 78%), кнопка — у третьей; линия в Hero.tsx —
-     так же. Плотнее не помещается по высоте. */
+  /* Строки здесь — с прежним шагом 20% (38 / 58 / 78%), кнопка — у третьей, справа от линии;
+     линия в Hero.tsx — так же. Плотнее не помещается по высоте. */
   .word1 {
     top: calc(38% - 0.77em);
     --emerge-from: translate(var(--gap), calc(12vh + 0.145em)) scale(0.2);
@@ -1020,6 +1081,7 @@
 
   .cta {
     top: calc(78% - 26px);
+    left: calc(50% - 0.85 * var(--swing) + var(--gap));
   }
 
   .dots {
@@ -1058,7 +1120,7 @@
   }
 
   .ready.header::before {
-    animation: fadeIn 0.5s ease-out 6.6s forwards;
+    animation: fadeIn 0.45s ease-out 4s forwards;
   }
 
   .logo {
@@ -1087,8 +1149,9 @@
     width: 20px;
   }
 
+  /* Ниже второй строки шапки — подписи сцены (до 61px, SceneLabel.module.css). */
   .panel {
-    top: 56px;
+    top: 66px;
     left: 20px;
     right: 20px;
     width: auto;

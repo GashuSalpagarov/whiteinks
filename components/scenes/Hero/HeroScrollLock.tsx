@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import { useLenis } from "@/app/providers";
 import { HOLD_EVENT, LOOP_EVENT } from "@/components/scenes/Footer";
 
-const INTRO_DURATION_MS = 7200;
+const INTRO_DURATION_MS = 4500;
 // Новый круг: интро продолжается с detail.from (LOOP_EVENT), и прокрутка открывается, как только
-// точка Hero приземлилась (dropAppear, 6,6 с в Hero.module.css): с «вдоха» круга это 2,7 с.
-const DROP_LANDS_MS = 6600;
+// точка Hero приземлилась (dropAppear, 4 с в Hero.module.css): с «вдоха» круга это 2 с.
+const DROP_LANDS_MS = 4000;
 // Страховка на время, пока футер доигрывает переход (HOLD_EVENT) до прыжка (LOOP_EVENT).
 const HOLD_MAX_MS = 4000;
 

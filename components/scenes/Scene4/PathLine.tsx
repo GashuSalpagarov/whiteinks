@@ -2,8 +2,8 @@ import type { Ref } from "react";
 import styles from "./PathLine.module.css";
 
 // Линия пути — отдельная часть сцены: разметка, стили (PathLine.module.css) и запись.
-// Место (от оси веера до низа кадра) задаёт layout() в Scene4.tsx через placeLine, долю
-// до падающей капли каждый проход — paintLine.
+// Место (от места покоя точки под сеткой Сцены 3 до низа кадра) задаёт layout() в Scene4.tsx
+// через placeLine, долю до точки каждый проход — paintLine.
 
 export function PathLine({ ref }: { ref: Ref<HTMLDivElement> }) {
   return <div ref={ref} className={styles.line} aria-hidden="true" />;

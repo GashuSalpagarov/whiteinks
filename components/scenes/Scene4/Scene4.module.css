@@ -1,5 +1,5 @@
-/* Сцена 4 «Веер» — в языке Сцены 3: белое поле, рамки 1.5px, пастельные картинки, номера
-   карточек в «пилюлях». Места элементов задаёт Scene4.tsx (при смене размера экрана), движение —
+/* Сцена 4 «Веер» — в языке Сцены 3: белое поле, пастельные картинки, номера карточек в
+   «пилюлях»; карточки веера — без рамок, как вырезанные наклейки. Места элементов задаёт Scene4.tsx (при смене размера экрана), движение —
    transform от прогресса прокрутки. */
 .scene4 {
   position: relative;
@@ -24,23 +24,20 @@
   margin: 0;
 }
 
-/* Заголовок — кеглем «Работы (06)» из финала Сцены 3, не крупнее. */
-.title {
-  font-size: clamp(36px, 3.4vw, 60px);
-  font-weight: 400;
-  letter-spacing: -0.045em;
-  line-height: 1;
+/* Портрет: подводка, чек-лист и подпись идут поперёк линии пути — под ними белая подложка,
+   линия уходит под текст. Место задаёт Scene4.tsx, прозрачность — вместе с подводкой. */
+.panel {
+  background: var(--color-bg);
+  opacity: 0;
+  visibility: hidden;
 }
 
-.title sup {
-  margin-left: 4px;
-  font-size: 0.3em;
-  letter-spacing: 0;
-  vertical-align: top;
+.sticky:not([data-mode="tall"]) .panel {
+  display: none;
 }
 
+/* Подводка — первая строка слева; название сцены — подписью в шапке (components/ui/SceneLabel). */
 .lead {
-  margin-top: 14px;
   font-size: 16px;
   line-height: 1.4;
 }
@@ -76,58 +73,44 @@
   color: var(--color-bg);
 }
 
-/* Карточка этапа, как в Сцене 3: белое паспарту в тонкой рамке, внутри картинка 4:3.
+/* Карточка этапа — пастельная картинка 4:3 без рамок. Кольцо 3px цвета страницы отделяет её
+   от карточек под ней, как край вырезанной наклейки (на втором круге — чёрное, как страница).
    Поворот — вокруг общей оси веера (transform-origin задаёт Scene4.tsx). */
 .card {
-  padding: 12px;
-  border: 1.5px solid var(--color-fg);
-  background: var(--color-bg);
+  box-shadow: 0 0 0 3px var(--color-bg);
   opacity: 0;
   visibility: hidden;
   will-change: transform, opacity;
 }
 
-.preview {
-  height: 100%;
-  border: 1.5px solid var(--color-fg);
-}
-
-.preview img {
+.card img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-/* Подпись этапа — как подпись кейса в Сцене 3: «03 / 05», название, делаем / получаете,
-   крупный срок. */
+/* Подпись этапа: крупный срок, «срок этапа», делаем / получаете. Номер и название этапа —
+   в чек-листе и на карточке, здесь они не повторяются. */
 .caption {
   opacity: 0;
   visibility: hidden;
 }
 
-.count {
-  font-size: 15px;
-}
-
-.count span,
 .meta dt {
   opacity: 0.45;
 }
 
+/* Название этапа — только на низком телефоне (ниже): там в чек-листе одни номера. */
 .capTitle {
-  margin-top: 10px;
-  font-size: clamp(30px, 2.9vw, 50px);
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  line-height: 1.04;
+  display: none;
 }
 
 .meta {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 6px 24px;
-  margin-top: 18px;
+  margin-top: 22px;
   font-size: 15px;
   line-height: 1.4;
 }
@@ -137,7 +120,6 @@
 }
 
 .term {
-  margin-top: 22px;
   font-size: clamp(40px, 4vw, 72px);
   letter-spacing: -0.05em;
   line-height: 0.95;
@@ -167,23 +149,8 @@
   will-change: transform;
 }
 
-/* Короткий ландшафт: всё мельче. */
-.sticky[data-mode="short"] .title {
-  font-size: 28px;
-}
-
-.sticky[data-mode="short"] .lead {
-  margin-top: 6px;
-  font-size: 13.5px;
-}
-
-/* Телефон и короткий ландшафт: подпись мельче. */
-.sticky[data-mode="tall"] .title {
-  font-size: 28px;
-}
-
-.sticky[data-mode="tall"] .lead {
-  margin-top: 6px;
+/* Короткий ландшафт, телефон и планшет в портрете: подводка мельче. */
+.sticky:is([data-mode="short"], [data-mode="tall"]) .lead {
   font-size: 13.5px;
 }
 
@@ -203,24 +170,13 @@
   font-size: 11px;
 }
 
-.sticky:is([data-mode="tall"], [data-mode="short"]) .count {
-  font-size: 13px;
-}
-
-.sticky:is([data-mode="tall"], [data-mode="short"]) .capTitle {
-  margin-top: 4px;
-  font-size: 24px;
-  line-height: 1.1;
-}
-
 .sticky:is([data-mode="tall"], [data-mode="short"]) .meta {
   gap: 2px 14px;
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 13.5px;
 }
 
 .sticky:is([data-mode="tall"], [data-mode="short"]) .term {
-  margin-top: 10px;
   font-size: min(40px, calc(var(--ih, 100vh) * 0.058));
 }
 
@@ -229,7 +185,15 @@
   font-size: 13px;
 }
 
-.sticky[data-low="true"] .count,
 .sticky[data-low="true"] .note {
   display: none;
+}
+
+.sticky[data-low="true"] .capTitle {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }

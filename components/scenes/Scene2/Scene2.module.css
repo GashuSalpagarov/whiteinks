@@ -1,8 +1,9 @@
 /* Высоты — от --ih (общая высота экрана, px, lib/scroll/onScroll): в тех же единицах, что
- * scroll и трасса в JS. На десктопе --ih = 100vh, на телефоне vh больше innerHeight. */
+ * scroll и трасса в JS. На десктопе --ih = 100vh, на телефоне vh больше innerHeight. Высоту
+ * секции (до входа в Сцену 3) задаёт раскладка в Scene2.tsx, здесь — примерно, до неё. */
 .scene2 {
   position: relative;
-  height: calc(var(--ih, 100vh) * 5);
+  height: calc(var(--ih, 100vh) * 2.9);
   /* Поверх Hero (z-index: 2), чтобы блоки и дорожка, попадающие в зону Hero,
    * были видны. */
   z-index: 3;
@@ -26,17 +27,26 @@
 
 .trail svg {
   width: 100%;
-  height: calc(var(--ih, 100vh) * 5 + 40px);
   max-width: none;
   overflow: visible;
   will-change: transform;
 }
 
-/* Упругая нить от конца трассы до точки (Scene2.tsx): 4px, как трасса, тончает, растягиваясь;
- * после разрыва .tail — верхний хвост у конца трассы. Всё — transform: scaleX — ширина, scaleY —
- * длина хвоста; низ нити обрезан слоем по центру точки. */
-.thread,
-.tail {
+/* Растворение линии над точкой в конце сцены (Scene2.tsx): у верха слоя маска — мягкий край
+ * в четверть экрана (EDGE), выше — пусто. Слой едет вниз (transform), трасса и нить в нём —
+ * на столько же вверх: маска не перерисовывается. Высота — до точки, когда край над экраном. */
+.fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(var(--ih, 100vh) * 0.75 + 20px);
+  mask-image: linear-gradient(transparent, #000 calc(var(--ih, 100vh) * 0.25));
+  will-change: transform;
+}
+
+/* Нить от конца трассы до точки (Scene2.tsx): 4px, как трасса; низ обрезан слоем по центру точки. */
+.thread {
   position: absolute;
   top: 0;
   left: calc(50% - 2px);
@@ -44,16 +54,8 @@
   height: 100%;
   border-radius: 2px;
   background: currentColor;
-  transform-origin: 50% 0;
-  will-change: transform;
-}
-
-.thread {
   transform: translateY(100%);
-}
-
-.tail {
-  transform: scaleY(0);
+  will-change: transform;
 }
 
 /* Начало трассы в слое страницы — отрезок на стыке с линией Hero (Scene2.tsx). */
@@ -69,7 +71,7 @@
   overflow: visible;
 }
 
-/* Прозрачность и сдвиг (параллакс) — из Scene2.tsx, прямо на блоке. */
+/* Место (top), прозрачность и подъём при появлении — из Scene2.tsx, прямо на блоке. */
 .block {
   position: absolute;
   width: 28vw;
@@ -127,8 +129,8 @@
 
 /* Элементы вокруг пункта (Scene2Art.tsx): слой размером с блок, места — вокруг текста. Размеры
  * в em: 10px при ширине 1440, дальше пропорционально экрану. Слева — зеркально (scale слоя),
- * сами элементы — не зеркальные. Появляются вместе с блоком, сдвигаются на свою долю его
- * параллакса (translate, ART_DEPTH), покачиваются ±3px за 5 с; невидимые — на паузе
+ * сами элементы — не зеркальные. Появляются вместе с блоком, поднимаются на свою долю его
+ * подъёма (translate, ART_DEPTH), покачиваются ±3px за 5 с; невидимые — на паузе
  * (--art-play на блоке): см. Scene2.tsx. */
 .art {
   position: absolute;
@@ -156,8 +158,7 @@
 
 /* Места: у верхнего блока пары — сверху снаружи, снаружи и сбоку у трассы; у нижнего —
  * снаружи, снизу и сбоку у трассы. «Снаружи» — к краю экрана, от трассы. В просвете пары
- * ничего нет: блоки с разным параллаксом там сходятся. Скорость у каждого места своя
- * (ART_DEPTH в Scene2.tsx). */
+ * ничего нет: он узкий. Скорость у каждого места своя (ART_DEPTH в Scene2.tsx). */
 .topOut {
   right: 0;
   bottom: calc(100% + max(2.6em, 24px));
@@ -195,63 +196,39 @@
   left: 7vw;
 }
 
-/* Два блока на каждом колене.
- * Блок «при подходе точки»: top = scroll(trigger) - 65vh in Scene2
- * Колено 0 (peak 100, точка идёт влево) — блоки справа:
- *   - 0A trigger ~75   → top 10vh
- *   - 0B trigger ~120  → top 55vh
- * Колено 1 (peak 200, точка вправо) — блоки слева:
- *   - 1A trigger ~175  → top 110vh
- *   - 1B trigger ~220  → top 155vh
- * Колено 2 (peak 300, влево) — справа:
- *   - 2A trigger ~275  → top 210vh
- *   - 2B trigger ~320  → top 255vh
- * Колено 3 (peak 400, вправо) — слева:
- *   - 3A trigger ~375  → top 310vh
- *   - 3B trigger ~420  → top 355vh */
+/* Пара блоков на каждом колене, нижний — ближе к трассе. */
 .block1 {
-  top: calc(var(--ih, 100vh) * 0.1);
   --accent: #f7dccb;
 }
 .block2 {
-  top: calc(var(--ih, 100vh) * 0.55);
   right: 18vw;
   --accent: #d3ebdd;
 }
 .block3 {
-  top: calc(var(--ih, 100vh) * 1.1);
   --accent: #dddaf5;
 }
 .block4 {
-  top: calc(var(--ih, 100vh) * 1.55);
   left: 18vw;
   --accent: #f4ebc3;
 }
 .block5 {
-  top: calc(var(--ih, 100vh) * 2.1);
   --accent: #f7dccb;
 }
 .block6 {
-  top: calc(var(--ih, 100vh) * 2.55);
   right: 18vw;
   --accent: #d3ebdd;
 }
 .block7 {
-  top: calc(var(--ih, 100vh) * 3.1);
   --accent: #dddaf5;
 }
 .block8 {
-  top: calc(var(--ih, 100vh) * 3.55);
   left: 18vw;
   --accent: #f4ebc3;
 }
 
 /* ---------- Телефон (< 768px; тот же порог — в Scene2.tsx) ----------
- * Блок — от поля 20px до 26vw с другой стороны; там, в 13vw от края, идёт точка
- * (PHONE_PATH): пара блоков колена — напротив неё, между парами она переходит на другую
- * сторону. Пара стоит по центру своего колена с просветом 8% экрана: верхний блок привязан
- * низом (bottom), нижний — верхом, и высота текста их не сводит. Числа — доли --ih от верха
- * секции (у верхнего блока — где его низ), +20px — сдвиг трассы вниз (--drop-offset). */
+ * Блок — от поля 20px до 26vw с другой стороны; там, в 13vw от края, идёт точка: пара блоков
+ * колена — напротив неё, между парами она переходит на другую сторону (Scene2.tsx). */
 @media (max-width: 767px) {
   .block {
     width: calc(74vw - 20px);
@@ -309,86 +286,21 @@
   .block8 {
     left: 20px;
   }
-
-  /* Колено 0 — центр пары 0.52 */
-  .block1 {
-    top: auto;
-    bottom: calc(var(--ih, 100vh) * (5 - 0.48) - 20px);
-  }
-  .block2 {
-    top: calc(var(--ih, 100vh) * 0.56 + 20px);
-  }
-  /* Колено 1 — 1.485 */
-  .block3 {
-    top: auto;
-    bottom: calc(var(--ih, 100vh) * (5 - 1.445) - 20px);
-  }
-  .block4 {
-    top: calc(var(--ih, 100vh) * 1.525 + 20px);
-  }
-  /* Колено 2 — 2.45 */
-  .block5 {
-    top: auto;
-    bottom: calc(var(--ih, 100vh) * (5 - 2.41) - 20px);
-  }
-  .block6 {
-    top: calc(var(--ih, 100vh) * 2.49 + 20px);
-  }
-  /* Колено 3 — 3.41 */
-  .block7 {
-    top: auto;
-    bottom: calc(var(--ih, 100vh) * (5 - 3.37) - 20px);
-  }
-  .block8 {
-    top: calc(var(--ih, 100vh) * 3.45 + 20px);
-  }
 }
 
-/* Короткий ландшафт: раскладка десктопа без параллакса (Scene2.tsx), но блок в 4–5 строк
- * выше 40% экрана — пары колена чуть раздвинуты, чтобы не сходились. Слева тексты длиннее
- * (блок до 68% экрана) — верхний блок пары выше: ниже нижнего проходит точка. */
+/* Короткий ландшафт (места — Scene2.tsx): слева нижний блок пары стоит под верхним — элементу
+ * сбоку от него места нет. */
 @media (min-width: 768px) and (max-height: 500px) {
-  /* Слева нижний блок пары стоит под верхним: элементу сбоку от него места нет. */
   .block4 .out,
   .block8 .out {
     display: none;
   }
-
-  .block1 {
-    top: calc(var(--ih, 100vh) * 0.06);
-  }
-  .block2 {
-    top: calc(var(--ih, 100vh) * 0.58);
-  }
-  .block3 {
-    top: calc(var(--ih, 100vh) * 0.9);
-  }
-  .block4 {
-    top: calc(var(--ih, 100vh) * 1.58);
-  }
-  .block5 {
-    top: calc(var(--ih, 100vh) * 2.06);
-  }
-  .block6 {
-    top: calc(var(--ih, 100vh) * 2.58);
-  }
-  .block7 {
-    top: calc(var(--ih, 100vh) * 2.84);
-  }
-  .block8 {
-    top: calc(var(--ih, 100vh) * 3.58);
-  }
 }
 
+/* Без движения блоки видны сразу и не поднимаются при появлении (сдвиг — в стиле блока). */
 @media (prefers-reduced-motion: reduce) {
   .block {
     opacity: 1 !important;
-  }
-}
-
-/* Без движения на телефоне блоки и не поднимаются при появлении (сдвиг — в стиле блока). */
-@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
-  .block {
     transform: none !important;
   }
 }

@@ -17,7 +17,7 @@ import { SLIDES } from "./slides";
 // animationend полоски активного номера (5 с в CSS), поэтому пауза — это просто пауза анимации
 // (Hero ушёл с экрана, вкладка скрыта), а без анимаций (reduced motion) автопрокрутки нет.
 // Отсчёт первого слайда — после интро; новый круг пути — сразу слайд 1 и отсчёт заново.
-const INTRO_MS = 7200; // как в HeroScrollLock
+const INTRO_MS = 4500; // как в HeroScrollLock
 const ROWS = [styles.word1, styles.word2, styles.word3];
 
 // Место картинки: положение, размер, поворот в градусах и слой (кто кого перекрывает).
@@ -225,7 +225,7 @@ function arrange(rs: Box[], as: number[], blocks: Box[], k: Box, gap: number): P
 
 // Десктоп: россыпь слайда (центр — в долях экрана, ширина — от меньшего из масштабов по
 // ширине и высоте), затем без наложений: не ближе 16px к кнопке, номерам индикатора, подводке
-// и друг к другу, ниже шапки (88px), не ниже линии индикатора, не за край и не левее подводки
+// и друг к другу, ниже шапки (88px), не ниже середины кнопки, не за край и не левее подводки
 // (там линия и заголовок) — мешающая картинка чуть сдвигается или уменьшается. Запас 8px — на
 // углы при повороте.
 // Подводке можно уступить, только если иначе картинки не помещаются.
@@ -236,7 +236,7 @@ function desktop(W: number, H: number, lead: Box, cta: Box, dots: Box, { desk }:
     return { l: cx * W - hw, r: cx * W + hw, t: cy * H - hw / a, b: cy * H + hw / a };
   });
   const as = desk.map((d) => d[3]);
-  const k = { l: lead.l, t: 96, r: W - 24, b: dots.b - 21 };
+  const k = { l: lead.l, t: 96, r: W - 24, b: cta.b - 25 };
   const ui = [grow(cta, 24), grow({ ...dots, t: dots.t + 13, b: dots.b - 13 }, 24)];
   let { list } = arrange(rs, as, [...ui, grow(lead, 24)], k, 32);
   if (list.includes(null)) list = arrange(rs, as, ui, k, 32).list;
@@ -480,8 +480,6 @@ export function HeroSlides({
         ))}
       </p>
 
-      {children}
-
       <div
         className={`${styles.dots}${live ? ` ${styles.live}` : ""}${away || hidden ? ` ${styles.paused}` : ""}`}
       >
@@ -499,6 +497,8 @@ export function HeroSlides({
           </button>
         ))}
       </div>
+
+      {children}
     </>
   );
 }

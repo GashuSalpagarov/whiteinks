@@ -57,25 +57,28 @@ export const TOTAL_TERM = formatWeeks(...corp.weeks);
 
 // Раскладка прокрутки, в экранах: s = 0 — секция вошла снизу (Сцена 3 отпускает свой sticky,
 // и её сетка уезжает вверх со страницей), s = 1 — сцена встала на место. Пока она въезжает,
-// точка плывёт из точки входа (entryPoint в Scene4.tsx) в центр первой карточки, а заголовок и
-// строки чек-листа всплывают по очереди. Встала — из точки сразу растёт первая карточка.
+// точка плывёт из точки входа (entryPoint в Scene4.tsx) в центр первой карточки, слева пусто.
+// Встала — из точки сразу растёт первая карточка, а подводка и строки чек-листа всплывают.
 const ENTRY = 1;
-const STAGE = 0.75; // этап: карточка встаёт (первая — растёт из точки), веер раскрывается
-const OUTRO = 0.75; // веер раскрыт; капля выходит из-под веера и падает вниз, в Сцену 5
+const STAGE = 0.4; // этап: карточка встаёт (первая — растёт из точки), веер раскрывается
+const OUTRO = 0.4; // веер раскрыт; капля выходит из-под веера и падает вниз, в Сцену 5
 export const TOTAL_SCREENS = ENTRY + N * STAGE + OUTRO;
 
-// Доли этапа: карточка встаёт (первая растёт из точки за GROW_FIRST — четверть экрана, как
-// вылет карточки туннеля Сцены 3); подпись этапа проявляется и (кроме последнего) гаснет.
-const OPEN: [number, number] = [0, 0.24];
-const GROW_FIRST: [number, number] = [0, 0.33];
-const CAP_IN: [number, number] = [0.06, 0.18];
-const CAP_OUT: [number, number] = [0.9, 1];
-// Доли выхода: капля стоит под веером, потом падает с ускорением за нижний край.
-const DROP: [number, number] = [0.15, 0.95];
-// Вход: точка плывёт в центр первой карточки (доли ENTRY); каждый блок слева всплывает за
-// APPEAR экрана.
+// Доли этапа. Первая половина — движение: карточка встаёт (первая растёт из точки за GROW_FIRST —
+// 0,2 экрана, как вылет карточки туннеля Сцены 3), подпись этапа проявляется. Дальше — пауза; в
+// конце подпись (кроме последней) гаснет.
+const OPEN: [number, number] = [0, 0.4];
+const GROW_FIRST: [number, number] = [0, 0.5];
+const CAP_IN: [number, number] = [0.1, 0.35];
+const CAP_OUT: [number, number] = [0.88, 1];
+// Доли выхода: капля падает с ускорением из центра первой карточки за нижний край кадра.
+const DROP: [number, number] = [0.05, 0.95];
+// Вход: точка плывёт в центр первой карточки (доли ENTRY).
 const GLIDE: [number, number] = [0.1, 1];
-const APPEAR = 0.25;
+// Блоки слева всплывают, пока растёт первая карточка, по очереди сверху вниз: каждый — за
+// APPEAR доли этапа, следующий — на APPEAR_STEP позже; все семь — к концу её роста.
+const APPEAR = 0.26;
+const APPEAR_STEP = 0.04;
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const seg = (v: number, [a, b]: [number, number]) => clamp01((v - a) / (b - a));
@@ -120,9 +123,9 @@ export function captionAt(i: number, { stage, u, out }: Scene, still: boolean): 
 // текущая крупнее (растёт, пока встаёт её карточка; прошлая так же сжимается); strike — доля
 // зачёркивания: прошлая зачёркивается, пока начинается следующий этап, «Запуск» — на выходе.
 // Без движения — сразу итог: пройденные зачёркнуты, текущая крупная.
-const GROW: [number, number] = [0, 0.16];
-const STRIKE: [number, number] = [0, 0.14];
-const STRIKE_LAST: [number, number] = [0, 0.2];
+const GROW: [number, number] = [0, 0.3];
+const STRIKE: [number, number] = [0, 0.3];
+const STRIKE_LAST: [number, number] = [0, 0.3];
 export function stageProgress(i: number, { stage, u, out }: Scene, still: boolean) {
   const state = i > stage ? "off" : i === stage ? "on" : "done";
   if (still) {
@@ -147,10 +150,10 @@ export function dropAt({ lead, out }: Scene) {
   return { glide: smooth(seg(lead, GLIDE)), fall: seg(out, DROP) };
 }
 
-// Вход блока слева (заголовок, подпись под ним, строка чек-листа), y — его верх в кадре, px:
-// с какого s он всплывает — когда со страницей поднимается до линии line (px экрана); но так,
-// чтобы к тому, как сцена встала, проявился весь. Тогда блоки идут по очереди сверху вниз.
-export const appearFrom = (y: number, line: number, h: number) =>
-  Math.max(0, Math.min(ENTRY - APPEAR, 1 - (line - y) / h));
-export const appearAt = (s: number, from: number, still: boolean) =>
-  still ? 1 : smooth(seg(s, [from, from + APPEAR]));
+// Блок слева i (по порядку сверху: подводка, строки чек-листа): доля
+// всплытия. Пока точка плывёт — не виден; показанный дальше не гаснет.
+export function appearAt(i: number, { stage, u }: Scene, still: boolean): number {
+  if (still || stage > 0) return 1;
+  if (stage < 0) return 0;
+  return smooth(seg(u - i * APPEAR_STEP, [0, APPEAR]));
+}

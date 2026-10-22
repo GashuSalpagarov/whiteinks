@@ -13,6 +13,7 @@
       "**/*.jsx",
       "**/*.json",
       "!**/.next",
+      "!**/out",
       "!**/node_modules",
       "!**/docs",
       "!next-env.d.ts"

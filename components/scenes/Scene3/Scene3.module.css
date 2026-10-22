@@ -2,7 +2,7 @@
    раньше своего места: на последнем экране Сцены 2, где трасса уже кончилась и к точке
    тянется только нить. Так sticky встаёт ровно тогда, когда точка входит в сцену, — без
    пустого разгона.
-   Экран — общая высота --ih (lib/scroll/onScroll). Клики ловит только кнопка финала. */
+   Экран — общая высота --ih (lib/scroll/onScroll). Клики ловят только ссылки: плитка «Все проекты» и «Смотреть кейс». */
 .scene3 {
   position: relative;
   margin-top: calc(var(--ih, 100vh) * -1);
@@ -139,6 +139,93 @@
   opacity: 0;
 }
 
+/* Кейсы, которых нет в сетке этой раскладки (06–07 в портрете), — hidden из Scene3.tsx. */
+.label[hidden] {
+  display: none;
+}
+
+/* Плитка «Все проекты» — ссылка на последнем месте сетки: та же карточка, внутри белое поле со
+   стопкой рамок («+17» — сколько ещё) и стрелкой. Видна и ловит клики и фокус только в сетке
+   (visibility пишет Scene3.tsx). Размеры внутри — от ширины поля (cqw). */
+.all {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  visibility: hidden;
+  pointer-events: auto;
+}
+
+.all:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 4px;
+}
+
+.allField {
+  position: relative;
+  container-type: inline-size;
+}
+
+.stack {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44%;
+  aspect-ratio: 4 / 3;
+  translate: -58% -42%;
+}
+
+.stack span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--color-fg);
+  background: var(--color-bg);
+  font-size: max(13px, 7cqw);
+  letter-spacing: -0.03em;
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.stack span:nth-child(1) {
+  transform: translate(18%, -18%);
+}
+
+.stack span:nth-child(2) {
+  transform: translate(9%, -9%);
+}
+
+.arrow {
+  position: absolute;
+  right: 7cqw;
+  bottom: 5cqw;
+  font-size: max(14px, 9cqw);
+  line-height: 1;
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Наведение и фокус: стопка раздвигается, стрелка уходит вправо. */
+.all:hover .stack span:nth-child(1),
+.all:focus-visible .stack span:nth-child(1) {
+  transform: translate(30%, -30%);
+}
+
+.all:hover .stack span:nth-child(2),
+.all:focus-visible .stack span:nth-child(2) {
+  transform: translate(15%, -15%);
+}
+
+.all:hover .arrow,
+.all:focus-visible .arrow {
+  transform: translateX(28%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stack span,
+  .arrow {
+    transition: none;
+  }
+}
+
 /* Своя точка финала — на месте общей (.drop в Hero, 12px): скатывается под сетку и ждёт там
    с лёгким пульсом; место (transform) и прозрачность пишет Scene3.tsx. Пульс — у круга внутри:
    scale на самой точке умножал бы и её сдвиг. */
@@ -182,56 +269,6 @@
   }
 }
 
-.finale {
-  position: absolute;
-  opacity: 0;
-  visibility: hidden;
-}
-
-/* Справа от сетки — по центру точки; в портрете — под сеткой, кнопка на всю ширину блока. */
-.finale[data-side="right"] {
-  translate: 0 -50%;
-}
-
-.finale[data-side="below"] .button {
-  width: 100%;
-}
-
-.finaleTitle {
-  font-size: clamp(36px, 3.4vw, 60px);
-  letter-spacing: -0.045em;
-  line-height: 1;
-}
-
-.finaleTitle sup {
-  margin-left: 4px;
-  font-size: 0.3em;
-  letter-spacing: 0;
-  vertical-align: top;
-}
-
-.finaleLine {
-  margin-top: 16px;
-  font-size: 16px;
-  line-height: 1.4;
-}
-
-.button {
-  margin-top: 24px;
-  height: 52px;
-  padding: 0 28px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--color-fg);
-  color: var(--color-bg);
-  font-size: 1rem;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  pointer-events: auto;
-  appearance: none;
-}
-
 /* Телефон и короткий экран: подпись плотнее — клиент, тип и год в одну строку, цифра от высоты
    экрана; у плиток — только название. Тот же порог — compact в Scene3.tsx. */
 @media (max-width: 767px), (max-height: 500px) {
@@ -267,8 +304,7 @@
     font-size: min(44px, calc(var(--ih, 100vh) * 0.07));
   }
 
-  .resultNote,
-  .finaleLine {
+  .resultNote {
     margin-top: 6px;
     font-size: 13.5px;
     line-height: 1.4;
@@ -281,16 +317,5 @@
   .label > span:last-child,
   .labelNum {
     display: none;
-  }
-
-  .finaleTitle {
-    font-size: 28px;
-  }
-
-  .button {
-    margin-top: 14px;
-    height: 48px;
-    padding: 0 20px;
-    font-size: 15px;
   }
 }

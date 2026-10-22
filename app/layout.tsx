@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Cursor } from "@/components/ui/Cursor";
 import { GlobalCanvas } from "@/r3f/GlobalCanvas";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default function RootLayout({
           <GlobalCanvas />
           {children}
         </Providers>
+        <Cursor />
       </body>
     </html>
   );

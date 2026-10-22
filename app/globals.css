@@ -93,6 +93,17 @@ h6 {
   }
 }
 
+/* ---------- Курсор мыши ----------
+   Рисует components/ui/Cursor (стрелка с инверсией); свой курсор браузера прячем, только когда
+   тот ожил. В полях ввода — обычный текстовый. */
+html[data-cursor] * {
+  cursor: none !important;
+}
+
+html[data-cursor] :is(input:not([type="checkbox"], [type="radio"], [type="submit"]), textarea) {
+  cursor: text !important;
+}
+
 /* ---------- Инверсия палитры ----------
    Каждый круг бесконечного пути (Footer) меняет палитру: html[data-palette="inverted"].
    Сайт строго монохромный, поэтому один invert(1) на корне точно переворачивает всё сразу:

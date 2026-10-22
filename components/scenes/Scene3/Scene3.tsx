@@ -3,11 +3,10 @@
 import { invalidate } from "@react-three/fiber";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { useLenis } from "@/app/providers";
 import heroStyles from "@/components/scenes/Hero/Hero.module.css";
 import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
 import { r3fTunnel } from "@/r3f/tunnel";
-import { CARDS_CONTENT, FINALE_LINE } from "./cardsData";
+import { CARDS_CONTENT, PROJECTS_TOTAL, WORKS_HREF } from "./cardsData";
 import styles from "./Scene3.module.css";
 import { Scene3R3F } from "./Scene3R3F";
 
@@ -18,8 +17,9 @@ const ENTRY = 0.1; // вход: из точки уже идёт поток ча�
 const REVEAL = 0.2; // за столько поток расходится от точки до камеры — пока летит первая карточка
 const STEP = 0.7; // отрезок одной карточки
 const FINALE = 0.5; // сборка сетки и пауза
-const N = CARDS_CONTENT.length; // сетка финала — 3×2, в портрете 2×3: под шесть кейсов
-const FINALE_AT = ENTRY + STEP * N;
+const N = CARDS_CONTENT.length; // кейсов всего — все в сетке широкого экрана
+const TUNNEL = 5; // в туннеле — первые пять; они же в сетке портрета, остальные — только в сетке
+const FINALE_AT = ENTRY + STEP * TUNNEL;
 const TOTAL = FINALE_AT + FINALE;
 
 // Отрезок карточки: вылетает из точки (на 0.1 раньше начала отрезка — пока гаснет прошлая;
@@ -34,7 +34,7 @@ const ASSEMBLE = 0.25; // карточки вылетают из точки по
 const STAGGER = 0.02; // вразнобой, по очереди
 
 const DOT_Y = 20; // --drop-offset: точка на 20px ниже центра экрана, как в Сцене 2
-const DROP_GAP = 26; // в портрете точка ждёт между сеткой и «Работы (06)»: зазор под неё
+const DROP_GAP = 26; // в портрете точка ждёт под сеткой: зазор под неё
 const ROLL = 0.4; // за столько, пока собирается сетка, точка скатывается к месту покоя
 const GAP = 48; // от точки до карточки в окне чтения
 const CAPTION_GAP = 80; // от точки до подписи: у точки гуще всего частицы
@@ -43,9 +43,6 @@ const LABEL_H = 40; // подпись под плиткой сетки (с от�
 const LABEL_H_COMPACT = 38; // она же на телефоне: только название, до двух строк
 const TOP = 84; // ниже полосы шапки (72px)
 const GRID_TOP = 76; // сетка финала в портрете — сразу под полосой шапки
-// Блок под сеткой в портрете: «Работы (06)», строка и кнопка (Scene3.module.css).
-const FINALE_H = 118;
-const FINALE_H_WIDE = 152; // то же с текстом широкого экрана (планшет)
 const LIFT = 56; // px, на телефоне карточка улетает вверх, не вырастая
 const TILT = 8; // град, поворот карточки в туннеле
 
@@ -55,18 +52,25 @@ const easeOut = (t: number) => t * (2 - t);
 const easeInOut = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const num = (i: number) => String(i + 1).padStart(2, "0");
+// «21 проект», «24 проекта», «19 проектов».
+const projects = (n: number) => {
+  const d = n % 10;
+  const dd = n % 100;
+  if (d === 1 && dd !== 11) return `${n} проект`;
+  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return `${n} проекта`;
+  return `${n} проектов`;
+};
 // Карточка: поля 12px и рамки 1.5px вокруг картинки 4:3 (Scene3.module.css).
 const cardH = (w: number) => 27 + 0.75 * (w - 27);
 const fitW = (maxH: number) => (maxH - 27) / 0.75 + 27;
 
 type Box = { x: number; y: number; w: number; h: number };
 
-// Раскладка экрана: окно чтения каждой карточки и её подписи, плитки сетки, блок финала.
+// Раскладка экрана: окно чтения каждой карточки и её подписи, плитки сетки.
 // Широкий экран: карточки по очереди слева и справа от точки, подпись — с другой стороны; сетка
-// 3×2 вокруг центра экрана (две колонки слева, одна справа), справа от сетки — заголовок и
-// кнопка. Портрет (телефон, планшет): карточка над точкой, подпись под ней; сетка 2×3 (центр —
-// между вторым и третьим рядом), заголовок и кнопка под сеткой. Точка в финале — не в сетке, а
-// под ней (rest).
+// 4×2 на всю ширину между полями шапки — все кейсы и «Все проекты». Портрет (телефон, планшет):
+// карточка над точкой, подпись под ней; сетка 2×3 (центр — между вторым и третьим рядом) —
+// первые пять и «Все проекты». Точка в финале — не в сетке, а под ней (rest).
 // Сверху — полоса шапки (72px), снизу — 16px поля: если тесно, меньше становятся карточки и
 // плитки, а не текст.
 function layout(w: number, h: number) {
@@ -78,7 +82,7 @@ function layout(w: number, h: number) {
   const read: Box[] = [];
   const caption: Box[] = [];
   const tilt: number[] = [];
-  for (let i = 0; i < N; i++) {
+  for (let i = 0; i < TUNNEL; i++) {
     if (portrait) {
       const cw = Math.min(w - 40, fitW(dy - 24 - TOP));
       const ch = cardH(cw);
@@ -100,52 +104,37 @@ function layout(w: number, h: number) {
     tilt.push(left ? TILT : -TILT);
   }
 
-  // Сетка: cols × rows, слева от центра — leftCols колонок, над ним — upRows рядов.
+  // Сетка: cols × rows по центру — колонки поровну слева и справа от точки, над ней — upRows рядов.
+  // Широкий экран — 4×2: все кейсы и «Все проекты»; портрет — 2×3: первые пять и «Все проекты».
+  const shown = portrait ? TUNNEL : N; // кейсов в сетке; за ними — «Все проекты»
   const gap = portrait ? (compact ? 10 : 12) : compact ? 16 : GRID_GAP;
   const labelH = compact ? LABEL_H_COMPACT : LABEL_H;
-  const cols = portrait ? 2 : 3;
-  const leftCols = portrait ? 1 : 2;
+  const cols = portrait ? 2 : 4;
   const upRows = portrait ? 2 : 1;
-  // Справа от сетки: заголовок, строка и кнопка (на коротком экране — всё, что осталось до края).
-  const textGap = compact ? 16 : 48;
-  const margin = compact ? 12 : 32;
-  const textW = compact ? 200 : Math.max(200, Math.min(320, 0.17 * w));
-  // Ширина плитки — по самому тесному: колонки слева и справа от точки, ряды над ней и под ней.
-  const room = portrait
-    ? [dx - gap / 2 - 20, w - dx - gap / 2 - 20]
-    : [(dx - margin - 1.5 * gap) / 2, w - dx - gap / 2 - textGap - textW - margin];
+  // Ширина плитки — по самому тесному: колонки на всю ширину между полями шапки (32px, на
+  // телефоне и в коротком ландшафте — 20px), ряды над точкой и под ней.
+  const margin = portrait || compact ? 20 : 32;
+  const room = (w - 2 * margin - (cols - 1) * gap) / cols;
   const rowH = portrait
-    ? Math.min(
-        (dy - GRID_TOP - 1.5 * gap) / 2 - labelH,
-        h - 16 - (compact ? FINALE_H : FINALE_H_WIDE) - DROP_GAP - gap / 2 - labelH - dy,
-      )
+    ? Math.min((dy - GRID_TOP - 1.5 * gap) / 2 - labelH, h - 16 - DROP_GAP - gap / 2 - labelH - dy)
     : Math.min(dy - gap / 2 - TOP - labelH, h - dy - gap / 2 - 16 - labelH);
-  const tw = Math.min(room[0], room[1], fitW(rowH));
+  const tw = Math.min(room, fitW(rowH));
   const th = cardH(tw);
-  const tile: Box[] = CARDS_CONTENT.map((_, i) => ({
-    x: dx + gap / 2 + ((i % cols) - leftCols) * (tw + gap),
+  const tile: Box[] = Array.from({ length: shown + 1 }, (_, i) => ({
+    x: dx + gap / 2 + ((i % cols) - cols / 2) * (tw + gap),
     y: dy + gap / 2 + (Math.floor(i / cols) - upRows) * (th + labelH + gap),
     w: tw,
     h: th,
   }));
-  const bottom = tile[N - 1].y + th + labelH;
-  // Портрет: блок финала — под сеткой, шириной с неё (но не уже 335px); иначе — справа от сетки.
-  const blockW = Math.max(2 * tw + gap, Math.min(w - 40, 335));
-  const finale = portrait
-    ? { x: dx - blockW / 2, y: bottom + DROP_GAP, w: blockW }
-    : {
-        x: dx + gap / 2 + tw + textGap,
-        y: dy,
-        w: compact ? w - margin - (dx + gap / 2 + tw + textGap) : textW,
-      };
+  const bottom = tile[shown].y + th + labelH;
   const labelGap = compact ? 6 : 8;
-  // Место покоя точки в финале: по центру — в портрете между сеткой и блоком финала, иначе
-  // у низа экрана (на 52px выше края, но не на подписях плиток).
+  // Место покоя точки в финале: по центру под сеткой — в портрете сразу под ней, иначе у низа
+  // экрана (на 52px выше края, но не на подписях плиток).
   const rest = {
     x: dx,
     y: portrait ? bottom + DROP_GAP / 2 : Math.min(h - 24, Math.max(h - 52, bottom + 16)),
   };
-  return { dx, dy, portrait, compact, read, caption, tilt, tile, finale, labelGap, rest };
+  return { dx, dy, portrait, compact, read, caption, tilt, shown, tile, labelGap, rest };
 }
 
 // Где Сцена 3 оставляет точку, когда отпускает свой sticky: отсюда её ведёт Сцена 4.
@@ -154,8 +143,10 @@ export const dropRest = (w: number, h: number) => layout(w, h).rest;
 type Layout = ReturnType<typeof layout>;
 
 // Место карточки в вёрстке: в туннеле — окно чтения, в финале — плитка сетки (там она стоит
-// без масштаба, рамки остаются чёткими).
-const boxOf = (L: Layout, i: number, u: number) => (u >= FINALE_AT ? L.tile[i] : L.read[i]);
+// без масштаба, рамки остаются чёткими). У плиток после туннельных (кейсы 06–07 и «Все проекты»)
+// места в туннеле нет.
+const boxOf = (L: Layout, i: number, u: number) =>
+  u >= FINALE_AT || i >= TUNNEL ? L.tile[i] : L.read[i];
 
 // Карточка i при u: transform от её места в вёрстке и прозрачность; null — не видна. Как в
 // перспективе, смещение от точки растёт вместе с размером: карточка летит по лучу из точки.
@@ -172,6 +163,7 @@ function cardAt(L: Layout, i: number, u: number) {
     s = START_SCALE + (1 - START_SCALE) * easeOut(clamp01((u - f0) / ASSEMBLE));
     o = clamp01((u - f0) / 0.06);
   } else {
+    if (i >= TUNNEL) return null; // только в сетке: вылетают из точки при сборке
     const t0 = launchAt(i);
     const t1 = t0 + APPROACH;
     const t2 = t1 + HOLD;
@@ -212,26 +204,12 @@ export function Scene3() {
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
   const captionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const labelRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+  const allRef = useRef<HTMLAnchorElement>(null); // плитка «Все проекты»
+  const allLabelRef = useRef<HTMLParagraphElement>(null);
+  const moreRef = useRef<HTMLSpanElement>(null); // «+17» на ней — сколько ещё
   const dropRef = useRef<HTMLSpanElement>(null);
-  const finaleRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
   const streamRef = useRef({ opacity: 0, reveal: 0 });
-  const lenis = useLenis();
-
-  // Пока страниц кейсов нет — к письму-заявке (Сцена 6), как «Связаться» в Hero.
-  const toBrief = () => {
-    const brief = document.querySelector<HTMLElement>('[data-scene="scene6"]');
-    if (!brief) return;
-    if (!lenis) {
-      brief.scrollIntoView();
-      return;
-    }
-    lenis.scrollTo(brief, {
-      duration: 2.8,
-      easing: (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2),
-    });
-  };
-
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -239,6 +217,9 @@ export function Scene3() {
     let L: Layout | null = null;
     let shared: HTMLElement | null = null; // общая точка (.drop в Hero)
     let viewport = "";
+    // Плитки сетки и их подписи по местам раскладки: кейсы, сколько их в ней, и «Все проекты».
+    let tiles: (HTMLElement | null)[] = [];
+    let labels: (HTMLElement | null)[] = [];
     // Последние записанные стили: пишем только изменившиеся.
     const written = new Map<HTMLElement, string>();
     const put = (el: HTMLElement | null, opacity: number, transform = "") => {
@@ -271,25 +252,40 @@ export function Scene3() {
         viewport = vp;
         L = layout(w, h);
         written.clear();
-        for (let i = 0; i < N; i++) {
-          place(captionRefs.current[i], L.caption[i]);
-          const t = L.tile[i];
-          place(labelRefs.current[i], { x: t.x, y: t.y + t.h + L.labelGap, w: t.w });
+        tiles = [...cardRefs.current.slice(0, L.shown), allRef.current];
+        labels = [...labelRefs.current.slice(0, L.shown), allLabelRef.current];
+        // Кейсов, которых нет в сетке этой раскладки (06–07 в портрете), нет и на странице.
+        for (let i = TUNNEL; i < N; i++) {
+          const card = cardRefs.current[i];
+          const label = labelRefs.current[i];
+          if (card) card.hidden = i >= L.shown;
+          if (label) label.hidden = i >= L.shown;
         }
-        place(finaleRef.current, L.finale);
-        if (finaleRef.current) {
-          finaleRef.current.dataset.side = L.portrait ? "below" : "right";
+        if (moreRef.current) moreRef.current.textContent = `+${PROJECTS_TOTAL - L.shown}`;
+        for (let i = 0; i < TUNNEL; i++) place(captionRefs.current[i], L.caption[i]);
+        for (let i = 0; i <= L.shown; i++) {
+          const t = L.tile[i];
+          place(labels[i], { x: t.x, y: t.y + t.h + L.labelGap, w: t.w });
         }
       }
       // Номер на карточке — только в туннеле; карточки — на своих местах этапа.
       const sticky = stickyRef.current;
       if (sticky && (sticky.dataset.stage !== stage || written.size === 0)) {
         sticky.dataset.stage = stage;
-        for (let i = 0; i < N; i++) place(cardRefs.current[i], boxOf(L, i, u));
+        for (let i = 0; i <= L.shown; i++) place(tiles[i], boxOf(L, i, u));
       }
-      for (let i = 0; i < N; i++) {
+      for (let i = 0; i <= L.shown; i++) {
         const c = cardAt(L, i, u);
-        put(cardRefs.current[i], c ? c.o : 0, c ? c.transform : "");
+        put(tiles[i], c ? c.o : 0, c ? c.transform : "");
+        const f1 = FINALE_AT + i * STAGGER + ASSEMBLE;
+        put(labels[i], clamp01((u - f1 + 0.08) / 0.1));
+        if (i === L.shown) {
+          // «Все проекты» — ссылка: в фокусе и под курсором, только пока плитка видна.
+          const all = allRef.current;
+          const vis = c && c.o > 0 ? "visible" : "hidden";
+          if (all && all.style.visibility !== vis) all.style.visibility = vis;
+        }
+        if (i >= TUNNEL) continue; // подпись в окне чтения — только у кейсов туннеля
         // Подпись — пока карточка стоит в окне чтения.
         const t1 = launchAt(i) + APPROACH;
         const t2 = t1 + HOLD;
@@ -298,8 +294,6 @@ export function Scene3() {
             ? 0
             : Math.min(clamp01((u - t1 + 0.1) / 0.1), 1 - clamp01((u - t2) / 0.08));
         put(captionRefs.current[i], co, `translateY(${(1 - co) * 12}px)`);
-        const f1 = FINALE_AT + i * STAGGER + ASSEMBLE;
-        put(labelRefs.current[i], clamp01((u - f1 + 0.08) / 0.1));
       }
       // Поток частиц: уже идёт и с первого кадра сцены расходится из точки — пока летит первая
       // карточка, становится виден целиком, до камеры. Тексту не мешает: под строками подписей —
@@ -315,14 +309,6 @@ export function Scene3() {
       progressRef.current = p;
       stream.opacity = opacity;
       stream.reveal = reveal;
-
-      const fo = clamp01((u - FINALE_AT - 0.15) / 0.15);
-      put(finaleRef.current, fo);
-      // Кнопка в фокусе и под курсором — только пока финал виден.
-      const vis = fo > 0 ? "visible" : "hidden";
-      if (finaleRef.current && finaleRef.current.style.visibility !== vis) {
-        finaleRef.current.style.visibility = vis;
-      }
 
       // Точка: в туннеле — общая (.drop) в центре, из неё вылетают карточки. С финала общую гасим,
       // а ровно на её месте встаёт своя: пока собирается сетка, она скатывается к месту покоя и
@@ -379,7 +365,25 @@ export function Scene3() {
             <span className={styles.badge}>{num(i)}</span>
           </figure>
         ))}
-        {cases.map((c, i) => (
+        {/* Последняя плитка сетки — вход на страницу всех проектов: стопка рамок («+17» — сколько
+            ещё, без показанных в сетке; пишет update) и стрелка. Видна и ловит клики только в
+            сетке (visibility пишет update). */}
+        <a
+          ref={allRef}
+          href={WORKS_HREF}
+          className={`${styles.card} ${styles.all}`}
+          aria-label={`Все проекты: ${projects(PROJECTS_TOTAL)}`}
+        >
+          <div className={`${styles.preview} ${styles.allField}`}>
+            <div className={styles.stack}>
+              <span />
+              <span />
+              <span ref={moreRef}>+{PROJECTS_TOTAL - N}</span>
+            </div>
+            <span className={styles.arrow}>→</span>
+          </div>
+        </a>
+        {cases.slice(0, TUNNEL).map((c, i) => (
           <div
             key={c.title}
             ref={(el) => {
@@ -388,7 +392,7 @@ export function Scene3() {
             className={styles.caption}
           >
             <p className={styles.count}>
-              {num(i)} <span>/ {num(N - 1)}</span>
+              {num(i)} <span>/ {num(TUNNEL - 1)}</span>
             </p>
             <h3 className={styles.title}>{c.title}</h3>
             <dl className={styles.meta}>
@@ -425,15 +429,10 @@ export function Scene3() {
             </span>
           </p>
         ))}
-        <div ref={finaleRef} className={styles.finale}>
-          <p className={styles.finaleTitle}>
-            Работы <sup>({num(N - 1)})</sup>
-          </p>
-          <p className={styles.finaleLine}>{FINALE_LINE}</p>
-          <button type="button" className={styles.button} onClick={toBrief}>
-            Запросить портфолио
-          </button>
-        </div>
+        <p ref={allLabelRef} className={styles.label}>
+          <span>Все проекты</span>
+          <span>{projects(PROJECTS_TOTAL)}</span>
+        </p>
       </div>
       <span ref={dropRef} className={styles.drop} aria-hidden="true" />
       <r3fTunnel.In>

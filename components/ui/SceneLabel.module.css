@@ -1,0 +1,48 @@
+/* Подпись сцены (SceneLabel.tsx) — в строке шапки справа от линии пути (ось экрана): базовая
+   линия, кегль и насыщенность — как у телефона и пунктов меню. Окно — строка и по 4px сверху и
+   снизу под выносные («б», «р», «у»), лишнее обрезано: слова перекатываются за его край. Под футером: он позже в DOM и
+   закрывает шапку. Клики не ловит. */
+.label {
+  position: fixed;
+  top: 35px;
+  left: calc(50% + 16px);
+  z-index: 5;
+  width: 12em;
+  height: calc(1em + 8px);
+  margin-top: -4px;
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-fg);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.label > span {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  transform: translateY(1.5em);
+  will-change: transform;
+}
+
+/* Телефон боком: шапка мельче — вровень с телефоном (13px, Hero.module.css). */
+@media (max-height: 500px) {
+  .label {
+    top: 23px;
+    left: calc(50% + 12px);
+    font-size: 0.8125rem;
+  }
+}
+
+/* Телефон: в строке шапки места нет (справа телефон и бургер) — второй строкой под логотипом,
+   внутри белой полосы шапки. */
+@media (max-width: 767px) {
+  .label {
+    top: 42px;
+    left: 20px;
+    font-size: 0.9375rem;
+    font-weight: 400;
+  }
+}

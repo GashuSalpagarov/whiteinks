@@ -1,24 +1,29 @@
 "use client";
 
 import { type CSSProperties, type RefObject, useEffect, useId, useRef, useState } from "react";
+import { useLenis } from "@/app/providers";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
+import { goToStation, pathProgress, STATIONS } from "@/lib/stations";
 import styles from "./Hero.module.css";
 
-// Пункты меню. Пока кнопки без перехода: куда их вести, решим позже.
-const MENU = ["Услуги", "Наши работы", "О нас", "Контакты"];
+// Пункты — станции пути (lib/stations.ts), переход — пролётом к станции. В строке шапки — четыре
+// главные: все шесть в неё не помещаются на 1024px; все — в панели бургера и на карте пути слева.
+const NAV = STATIONS.flatMap((s, i) => (s.scene === "scene4" || s.scene === "scene6" ? [] : [i]));
 
 // Пункты в шапке — вверху страницы на широком экране. --i — порядок для очереди ухода и возврата.
 export function HeaderNav() {
+  const lenis = useLenis();
   return (
     <nav className={styles.nav} aria-label="Меню">
-      {MENU.map((item, i) => (
+      {NAV.map((station, i) => (
         <button
-          key={item}
+          key={station}
           type="button"
           className={styles.navItem}
           style={{ "--i": i } as CSSProperties}
+          onClick={() => goToStation(station, lenis)}
         >
-          {item}
+          {STATIONS[station].word}
         </button>
       ))}
     </nav>
@@ -33,7 +38,10 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
   const burgerRef = useRef<HTMLButtonElement>(null);
   const openedAt = useRef<number | null>(null);
   const [open, setOpen] = useState(false);
+  // Текущая станция — для нити в панели; считается, только пока панель открыта.
+  const [station, setStation] = useState(-1);
   const panelId = useId();
+  const lenis = useLenis();
 
   useEffect(() => {
     const root = rootRef.current;
@@ -70,6 +78,7 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
         openedAt.current = null;
         setOpen(false);
       }
+      if (openedAt.current !== null) setStation(Math.floor(pathProgress(h) + 1e-6));
     });
   }, [header]);
 
@@ -77,6 +86,7 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
   useEffect(() => {
     if (!open) return;
     openedAt.current = window.scrollY;
+    setStation(Math.floor(pathProgress(viewportH()) + 1e-6));
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setOpen(false);
@@ -105,17 +115,28 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
         aria-controls={panelId}
         onClick={() => setOpen(!open)}
       />
+      {/* Панель — те же станции, что на карте пути: слева нить, пройденные — чернилами, текущая —
+          точкой 12px. Выбор — закрыть панель и лететь; фокус — обратно на бургер. */}
       <nav id={panelId} className={styles.panel} aria-label="Меню">
-        {MENU.map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={styles.panelItem}
-            onClick={() => setOpen(false)}
-          >
-            {item}
-          </button>
-        ))}
+        <ol className={styles.thread} style={{ "--k": Math.max(0, station) } as CSSProperties}>
+          {STATIONS.map((s, i) => (
+            <li key={s.scene}>
+              <button
+                type="button"
+                className={styles.panelItem}
+                aria-current={i === station ? "step" : undefined}
+                data-done={i < station ? "" : undefined}
+                onClick={() => {
+                  setOpen(false);
+                  burgerRef.current?.focus({ preventScroll: true });
+                  goToStation(i, lenis);
+                }}
+              >
+                {s.word}
+              </button>
+            </li>
+          ))}
+        </ol>
       </nav>
     </div>
   );

@@ -1,0 +1,207 @@
+/* Карта пути (PathMap.tsx) — у левого края, по высоте посередине. Поле слева у сцен — 32px на всех
+   ширинах (сетка Работ, чек-лист Сцены 4, прайс, футер; замер на 1024–1920), у арта Сцены 2 —
+   26px на 1024 и 33px на 1280: карта 24×450 от 3px (уже 1280px и на низких экранах — ×0,76 от
+   1px), зазор до содержимого — не меньше 7px. Над сценами и футером (слой 6, как бургер). Видна
+   только с классом .on (Hero позади, зона петли не началась). */
+.map {
+  --s: 1;
+  --x: 3px;
+  position: fixed;
+  top: 50%;
+  left: var(--x);
+  z-index: 6;
+  width: calc(24px * var(--s));
+  height: calc(450px * var(--s));
+  translate: 0 -50%;
+  color: var(--color-fg);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.45s ease,
+    visibility 0s linear 0.45s;
+}
+
+.map.on {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s ease;
+}
+
+@media (max-width: 1279px), (max-height: 719px) {
+  .map {
+    --s: 0.76;
+    --x: 1px;
+  }
+}
+
+@media (max-width: 1023px), (max-height: 599px) {
+  .map {
+    display: none;
+  }
+}
+
+/* Лист под названиями — по наведению и по Tab, как панель бургера: белый, рамка 1px, скругление;
+   прижат к краю экрана. */
+.map::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  bottom: -14px;
+  left: calc(-1px - var(--x));
+  width: 166px;
+  border: 1px solid var(--color-fg);
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+  background: var(--color-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.map:hover::before,
+.map:has(:focus-visible)::before {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Миниатюра: появляется вслед за уходом пунктов шапки — прорисовывается сверху вниз. */
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  clip-path: inset(-12px -12px 100% -12px);
+  transition: clip-path 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.1s;
+}
+
+.on .svg {
+  clip-path: inset(-12px);
+}
+
+/* Впереди — пунктир, как у линии пути в Сцене 6 и футере. */
+.ghost {
+  fill: none;
+  stroke: rgba(10, 10, 10, 0.4);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 0 4.5;
+}
+
+/* Позади — чернила: длину открывает stroke-dashoffset (PathMap.tsx). */
+.ink {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.glyph {
+  fill: none;
+  stroke: rgba(10, 10, 10, 0.4);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.25s ease;
+}
+
+/* Карточки, мозаика, письмо — на белом: линия пути уходит под них. */
+.paper rect {
+  fill: var(--color-bg);
+}
+
+.fill {
+  fill: rgba(10, 10, 10, 0.4);
+  stroke: none;
+}
+
+.glyph.done {
+  stroke: currentColor;
+}
+
+.done .fill {
+  fill: currentColor;
+}
+
+.dot {
+  fill: currentColor;
+}
+
+/* Станции — кнопки поверх миниатюры, от края экрана; по наведению — во всю ширину листа. */
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.station {
+  position: absolute;
+  top: calc(var(--a) * 100%);
+  left: calc(-1 * var(--x));
+  width: calc(var(--x) + 100%);
+  height: calc((var(--b) - var(--a)) * 100%);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.map:hover .station,
+.map:has(:focus-visible) .station {
+  width: 166px;
+}
+
+.station:focus-visible {
+  outline: none;
+}
+
+.name {
+  position: absolute;
+  top: calc(var(--c) * 100%);
+  left: calc(var(--x) + 24px * var(--s) + 12px);
+  padding: 4px 0;
+  translate: -4px -50%;
+  color: rgba(10, 10, 10, 0.45);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    translate 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.map:hover .name,
+.map:has(:focus-visible) .name {
+  opacity: 1;
+  translate: 0 -50%;
+}
+
+.station[aria-current] .name,
+.station:hover .name,
+.station:focus-visible .name {
+  color: var(--color-fg);
+}
+
+.station:hover .name {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.station:focus-visible .name {
+  border-radius: 3px;
+  outline: 1.5px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map,
+  .map::before,
+  .svg,
+  .glyph,
+  .name {
+    transition: none;
+  }
+}
