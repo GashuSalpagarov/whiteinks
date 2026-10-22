@@ -1,7 +1,7 @@
 # 05. Производительность и mobile-версия
 
 ## TL;DR
-Цели: 60 FPS на 4K-десктопе при DPR cap=2; LCP < 2.5s, INP < 200ms, CLS < 0.1. На мобильных 3D отключается — но **сценарий и анимации сохраняются** в упрощённом виде: Lenis + GSAP + SVG-линия + CSS-инверсия + infinite loop. Триггеры отключения Three.js: `(max-width: 768px)`, `Save-Data`, GPU tier ≤ 1. `prefers-reduced-motion: reduce` — отдельный жёсткий выключатель: статичная версия, без loop'а, без линии. Бюджеты ассетов жёсткие: GLB < 5 MB total, KTX2 текстуры < 2 MB total. Draw calls < 150.
+Цели: 60 FPS на 4K-десктопе при DPR cap=2; LCP < 2.5s, INP < 200ms, CLS < 0.1. Деления устройств на «слабые» и «сильные» нет: телефоны получают ту же полную версию, что десктоп (см. «Телефоны» ниже). `prefers-reduced-motion: reduce` — отдельный жёсткий выключатель: статичная версия, без loop'а, без линии. Бюджеты ассетов жёсткие: GLB < 5 MB total, KTX2 текстуры < 2 MB total. Draw calls < 150.
 
 ## Десктоп-цели
 
@@ -18,51 +18,11 @@
 | CLS | < 0.1 |
 | TBT | < 200ms |
 
-R3F: `<Canvas dpr={[1, 2]} performance={{ min: 0.5 }}>` + `<PerformanceMonitor>` для adaptive DPR.
+R3F: `<Canvas dpr={[1, 2]} frameloop="demand">` (`r3f/GlobalCanvas.tsx`) — общий потолок DPR для всех устройств, без адаптивного понижения. Кадры канваса — по запросу: во время прокрутки рисуется каждый кадр экрана, в покое канвас спит.
 
-```tsx
-<PerformanceMonitor
-  onIncline={() => setDpr(Math.min(window.devicePixelRatio, 2))}
-  onDecline={() => setDpr(1)}
-  flipflops={3}
-  onFallback={() => setEffectsEnabled(false)}
-/>
-```
+## Телефоны — полная версия
 
-При трёх флипфлопах — отключаем Bloom/CA/локальные post-effects и оставляем базовый рендер.
-
-## Мобильная версия (упрощённая, не статичный poster)
-
-Главное отличие от прежнего плана: **на мобиле сценарий не отключается**. Сохраняются:
-
-- Lenis (smooth scroll + `infinite: true` для loop'а);
-- GSAP + ScrollTrigger (master timeline по 5 сценам);
-- SVG-линия с `stroke-dashoffset` вместо WebGL-линии;
-- CSS-инверсия на CTA через clip-path overlay + `@property` tokens;
-- Кольцо прогресса (SVG, идентичный десктопу);
-- Per-scene route transitions (упрощённые, на DOM/CSS).
-
-Отключается / заменяется только:
-
-- Three.js / WebGL сцена линии — заменяется SVG-вариантом;
-- Опциональные wormhole-wipe эффекты — заменяются CSS-tween'ами (clip-path, mask);
-- Post-FX — отсутствуют;
-- Тяжёлые декорации (particle streaks вокруг точки) — отсутствуют либо упрощены до CSS-pseudo-элементов.
-
-### Триггеры детекта (отключение Three.js)
-
-`<Canvas>` не монтируется, если выполнено хотя бы одно условие:
-
-| Условие | Проверка |
-|---|---|
-| Малый viewport | `window.matchMedia('(max-width: 768px)').matches` |
-| Mobile UA | `navigator.userAgentData?.mobile === true` (с UA-detect фолбэком) |
-| Save-Data | `navigator.connection?.saveData === true` |
-| Низкий GPU | `detect-gpu` → `tier <= 1` или `gpu === undefined` |
-
-Решение принимается **до** монтирования `<Canvas>`. SVG-вариант линии и DOM-сценарий рендерятся всегда (на любых устройствах) и являются единым источником истины для разметки сцен.
-
-Это значит: на десктопе SVG-линия всё равно сэмплируется и присутствует в DOM (хотя и невидима под WebGL-canvas) — даёт SEO, доступность и «no-JS» поведение.
+С 2026-10-22 уровня устройства нет: `detect-gpu` и `lib/perf.ts` удалены. Телефоны получают ту же сцену, что десктоп: в туннеле Сцены 3 — 330 точек и 70 штрихов, канвас `dpr={[1, 2]}`, монтируется сразу, без ожидания детекта. От размера экрана зависит только раскладка (сетки, поля, конверт), а от `prefers-reduced-motion` — анимации.
 
 ## Reduced motion (жёсткий выключатель)
 

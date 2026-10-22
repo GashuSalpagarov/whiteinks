@@ -43,7 +43,7 @@ Astro 5 — fallback, если в течение проекта концепт �
 | Постпроцессинг | `@react-three/postprocessing` | удалён 2026-10-18 | Bloom, ChromaticAberration, Vignette, EffectComposer |
 | DOM↔WebGL bridge | `@14islands/r3f-scroll-rig` | удалён 2026-10-18 | GlobalCanvas, `<UseCanvas>`, scroll-tracker |
 | Текст в 3D | troika-three-text (через drei `<Text>`) | удалён вместе с drei | SDF-шрифты, anti-alias на любом z |
-| GPU detect | `detect-gpu` | 5.0.x | Tier-разбивка |
+| GPU detect | `detect-gpu` | удалён 2026-10-22 | Tier-разбивка: все устройства получают полную версию |
 | Метрики | `web-vitals` | удалён 2026-10-18 | INP/LCP/CLS в prod |
 | Dev FPS overlay | `stats-gl` | удалён 2026-10-18 | FPS, memory, draw calls |
 | Стили | CSS Modules + design tokens | — | Без Tailwind, см. ниже |

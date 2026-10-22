@@ -41,6 +41,8 @@
 - Приёмка: лейблы доступны через `tl.labels`, тестовый tween идёт строго по scrub'у.
 
 ### 1.4 R3F GlobalCanvas — desktop-only mount, GPU detect
+> Отменено 2026-10-22: канвас монтируется на всех устройствах, `detect-gpu` удалён (см. [05-performance.md](./05-performance.md)).
+
 - В `r3f/GlobalCanvas.tsx` добавить логику pre-mount детекта (см. [05-performance.md](./05-performance.md)): viewport, mobile UA, Save-Data, GPU tier через `detect-gpu`.
 - Если триггер сработал — `<Canvas>` не рендерится, остаётся только DOM/SVG-разметка.
 - DPR cap, `performance={{ min: 0.5 }}`, `<PerformanceMonitor>` подключён, но с пустыми обработчиками.

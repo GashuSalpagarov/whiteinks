@@ -4,15 +4,11 @@ import { invalidate, useFrame, useThree } from "@react-three/fiber";
 import { type RefObject, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useLenis } from "@/app/providers";
-import { getTier } from "@/lib/perf";
 
 // Поток частиц из точки: точки и штрихи летят из ядра к камере и за спину. Карточки кейсов —
 // HTML поверх канваса (Scene3.tsx), здесь только поток.
 const PARTICLE_COUNT = 330;
 const STREAK_COUNT = 70;
-// На слабых устройствах (lib/perf) — меньше. Уровень известен до монтирования канваса.
-const PARTICLE_COUNT_LOW = 130;
-const STREAK_COUNT_LOW = 27;
 const STREAK_LENGTH = 0.3;
 const SCROLL_DRIVE_FACTOR = 10; // путь частицы за всю сцену (p 0 → 1)
 // Поток уже идёт, когда сцена началась: сдвиг больше самого длинного пути — каждая частица на своём
@@ -104,14 +100,8 @@ export function Scene3R3F({ progressRef, streamRef }: Props) {
   }, [camera]);
 
   const particleTexture = useMemo(() => createCircleTexture(), []);
-  const pointsData = useMemo(
-    () => createStream(getTier() === "low" ? PARTICLE_COUNT_LOW : PARTICLE_COUNT, 1),
-    [],
-  );
-  const streaksData = useMemo(
-    () => createStream(getTier() === "low" ? STREAK_COUNT_LOW : STREAK_COUNT, 2),
-    [],
-  );
+  const pointsData = useMemo(() => createStream(PARTICLE_COUNT, 1), []);
+  const streaksData = useMemo(() => createStream(STREAK_COUNT, 2), []);
 
   useFrame((_, delta) => {
     if (!pointsRef.current || !linesRef.current) return;

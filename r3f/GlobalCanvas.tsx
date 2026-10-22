@@ -1,23 +1,14 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useState } from "react";
-import { tierReady } from "@/lib/perf";
 import { r3fTunnel } from "./tunnel";
 
 // Содержимое сцен подаётся через r3fTunnel из соответствующих DOM-компонентов.
-// Канвас монтируется, когда известен уровень устройства (lib/perf): сцены внутри читают его
-// при монтировании. На слабых — DPR не выше 1.5: частицы и штрихи на телефонах остаются чёткими.
+// Одна версия для всех устройств. DPR не выше 2 — общий потолок ради частоты кадров на экранах 3x.
 // Кадры — только по запросу (frameloop="demand"): сцены зовут invalidate(), когда сдвинулся
 // их прогресс, а Scene3R3F — пока доводит пружину скорости. Пока 3D не видно
 // (Hero, Сцена 2) или всё стоит, канвас не рисует.
 export function GlobalCanvas() {
-  const [dpr, setDpr] = useState<number | [number, number] | null>(null);
-  useEffect(() => {
-    tierReady.then((tier) => setDpr(tier === "low" ? [1, 1.5] : [1, 2]));
-  }, []);
-
-  if (!dpr) return null;
   return (
     <Canvas
       style={{
@@ -35,7 +26,7 @@ export function GlobalCanvas() {
         transform: "translateY(var(--canvas-y, 0px))",
       }}
       gl={{ alpha: true, antialias: true }}
-      dpr={dpr}
+      dpr={[1, 2]}
       frameloop="demand"
     >
       <r3fTunnel.Out />
