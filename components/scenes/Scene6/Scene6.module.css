@@ -24,8 +24,14 @@
   --dip: 58px; /* глубина галочки кармана */
   --pocket: 170px; /* карман с кнопкой */
   --tuck: 84px; /* сколько письма в кармане */
-  --other: 48px; /* строка «Другое» под пилюлями (с отступом) — место под неё в кармане */
-  --lift: 36px; /* на сколько выдвигается письмо, когда строка открыта */
+  /* Строки «Другое» под пилюлями: отступ, высота строки, до скольких строк растёт поле. Письмо
+     выдвигается на --lift (одна строка) и на строку за каждую следующую (--absorb: 1 — вверх;
+     0 — вниз, конверт удлиняется). */
+  --gap: 12px;
+  --line: 26px;
+  --max: 2;
+  --lift: 25px;
+  --absorb: 1;
   --ease: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   /* Пунктир пути — как в футере: точки 2px через 8px. */
@@ -231,16 +237,18 @@
   pointer-events: none;
 }
 
-/* Письмо: верх выше конверта, низ (--tuck) — в кармане, над ним там же — место строки «Другое»
-   (--other, конверт той же высоты). Выбрали «Другое» — письмо выдвигается из кармана на --lift;
-   при сборке Scene6.tsx уводит его в карман на столько же глубже. */
+/* Письмо: верх выше конверта, низ (--tuck) — в кармане, над ним там же — место первой строки
+   «Другое» (конверт той же высоты). Выбрали «Другое» — письмо выдвигается из кармана на --lift и
+   на --k за следующие строки (--n — строк в поле, из Scene6.tsx); при сборке Scene6.tsx уводит
+   его в карман на столько же глубже. */
 .sheet {
+  --k: calc(var(--absorb) * (min(var(--n, 1), var(--max)) - 1) * var(--line));
   position: relative;
   z-index: 2;
   display: grid;
   gap: 26px;
   width: calc(100% - 72px);
-  margin: 62px auto calc(var(--pocket) - var(--tuck) - var(--other));
+  margin: 62px auto calc(var(--pocket) - var(--tuck) - var(--gap) - var(--line) - var(--k));
   padding: 30px 36px calc(var(--tuck) + 20px);
   border: 1.5px solid var(--color-fg);
   border-radius: 6px 6px 0 0;
@@ -249,7 +257,7 @@
 }
 
 .sheet[data-other] {
-  translate: 0 calc(-1 * var(--lift));
+  translate: 0 calc(-1 * (var(--lift) + var(--k)));
 }
 
 .row {
@@ -421,6 +429,8 @@
   white-space: pre;
   color: var(--dim);
   pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .ghostMask i {
@@ -480,64 +490,86 @@
   }
 }
 
-/* Своё к «Другое» — строка пути: пунктир, под набранным — чернила (позади чернила, впереди
-   пунктир). Пока «Другое» не выбрана, строки не видно (она в кармане). Выбрали — проступает, а
-   пунктир расходится из-под пилюли (--o из Scene6.tsx), как контур конверта из точки. Чернила —
-   нижняя линия зеркала текста (.otherInk) под полем. */
+/* Своё к «Другое» — строки пути: на каждой пунктир, под набранным — чернила (позади чернила,
+   впереди пунктир). Поле растёт по строкам (rows из Scene6.tsx), дальше --max — прокрутка в нём;
+   Enter — новая строка. Пока «Другое» не выбрана, строк не видно (первая — в кармане). Выбрали —
+   проступают, а пунктир расходится из-под пилюли (--o из Scene6.tsx), как контур конверта из
+   точки. Пунктир и чернила рисует зеркало текста под полем (.otherInk): строки — его фон, под
+   словами — белый фон с нижней линией; прокрутку поля оно повторяет. */
 .other {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  height: var(--other);
-  padding-top: 14px;
+  padding-top: var(--gap);
   opacity: 0;
   transition: opacity 0.2s;
 }
 
-/* Все слои — positioned: рисуются по порядку (пунктир с scale иначе лёг бы поверх чернил). */
+/* Слои по порядку: зеркало (с scale) — под полем. */
 .other > * {
   position: relative;
   grid-area: 1 / 1;
 }
 
-.otherPath {
-  align-self: end;
-  height: 2px;
-  background: radial-gradient(circle, rgba(10, 10, 10, 0.34) 1px, transparent 1.4px) 0 0 / 8px
-    2px repeat-x;
+.otherInk,
+.otherInput {
+  max-height: calc(var(--max) * var(--line));
+  overflow: hidden;
+  font-size: 1.0625rem;
+  line-height: var(--line);
+  letter-spacing: -0.005em;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Высоту строки задаёт поле, зеркало только повторяет её (contain: size). */
+.otherInk {
+  contain: size;
+  color: transparent;
+  background: radial-gradient(
+      circle at 50% calc(100% - 1px),
+      rgba(10, 10, 10, 0.34) 1px,
+      transparent 1.4px
+    )
+    0 0 / 8px var(--line) local;
   transform-origin: var(--o, 50%) 0;
   scale: 0 1;
   transition: scale 0.3s var(--ease);
+  pointer-events: none;
 }
 
-.other:focus-within .otherPath {
-  background-image: radial-gradient(circle, var(--color-fg) 1px, transparent 1.4px);
+.other:focus-within .otherInk {
+  background-image: radial-gradient(
+    circle at 50% calc(100% - 1px),
+    var(--color-fg) 1px,
+    transparent 1.4px
+  );
 }
 
-.otherInk,
-.otherInput {
-  font-size: 1.0625rem;
-  letter-spacing: -0.005em;
-}
-
-.otherInk {
-  justify-self: start;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: pre;
-  color: transparent;
+.otherInk span {
+  padding-bottom: 2px;
   background:
     linear-gradient(var(--color-fg), var(--color-fg)) 0 100% / 100% 1.5px no-repeat,
     var(--color-bg);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .otherInput {
+  display: block;
   width: 100%;
-  padding: 0 0 4px;
+  padding: 0;
   border: 0;
   border-radius: 0;
   background: none;
   color: inherit;
   outline: none;
+  resize: none;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.otherInput::-webkit-scrollbar {
+  display: none;
 }
 
 .otherInput::placeholder {
@@ -549,7 +581,7 @@
   transition: opacity 0.3s 0.15s;
 }
 
-.sheet[data-other] .otherPath {
+.sheet[data-other] .otherInk {
   scale: 1;
   transition: scale 0.45s var(--ease-out) 0.15s;
 }
@@ -745,13 +777,13 @@
     --dip: 34px;
     --pocket: 190px;
     --tuck: 80px;
-    /* Над письмом всего 34px — строка ниже и письмо выдвигается меньше. */
-    --other: 32px;
-    --lift: 20px;
-  }
-
-  .other {
-    padding-top: 6px;
+    /* Над письмом всего 34px: письмо выдвигается на первую строку, вторая и третья удлиняют
+       конверт вниз (сцена здесь не стоит — сборке и стыкам это не мешает). */
+    --gap: 6px;
+    --line: 24px;
+    --max: 3;
+    --lift: 19px;
+    --absorb: 0;
   }
 
   .otherInk,

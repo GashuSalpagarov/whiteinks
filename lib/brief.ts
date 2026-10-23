@@ -17,7 +17,7 @@ const SUBJECT = "Заявка с сайта";
 export type BriefPayload = {
   phone: string; // +7XXXXXXXXXX
   name?: string;
-  need?: string; // «Сайт», «Магазин», …
+  need?: string; // «Сайт», «Магазин», … или «Другое: своими словами»
   time: string; // ISO
 };
 

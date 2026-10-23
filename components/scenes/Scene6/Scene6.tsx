@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   type ChangeEvent,
   type FormEvent,
+  type UIEvent,
   useEffect,
   useId,
   useLayoutEffect,
@@ -103,7 +104,8 @@ export function Scene6() {
   const needsRef = useRef<HTMLDivElement>(null);
   const otherPillRef = useRef<HTMLLabelElement>(null);
   const otherRowRef = useRef<HTMLDivElement>(null);
-  const otherRef = useRef<HTMLInputElement>(null);
+  const otherRef = useRef<HTMLTextAreaElement>(null);
+  const otherInkRef = useRef<HTMLDivElement>(null);
   const focusOther = useRef(false); // «Другое» выбрали мышью или касанием — курсор в строку
   const pocketRef = useRef<HTMLDivElement>(null);
   const cutRef = useRef<SVGSVGElement>(null);
@@ -123,11 +125,13 @@ export function Scene6() {
   const [name, setName] = useState("");
   const [need, setNeed] = useState("");
   const [other, setOther] = useState(""); // своё к «Другое» — остаётся, и когда выбор снят
+  const [rows, setRows] = useState(1); // строк в нём
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "mail">("idle");
   const closed = status === "sent" || status === "mail";
   const isOther = need === OTHER;
+  const lines = isOther ? rows : 1;
   const shown = phone ? formatPhone(phone) : focused ? "+7 (" : "";
   const phoneText = formatPhone(phone);
   // Заявка уходит или ушла — конверт раскрыт целиком, что бы ни делала прокрутка. Введённое его
@@ -221,7 +225,12 @@ export function Scene6() {
     let end = 0; // где точка на экране после стоянки (и без неё) — там она уходит в футер
     let edgeL = 0; // длина половины контура
     let slide = 0; // письмо до выезда — в кармане
-    let lift = 0; // на сколько письмо выдвинуто, когда открыта строка «Другое» (--lift)
+    // Строка «Другое» открыта — письмо выдвинуто на lift (одна строка) и ещё на line за каждую
+    // следующую, если они идут вверх (absorb), до max строк; как в CSS у .sheet[data-other].
+    let lift = 0;
+    let line = 0;
+    let absorb = 0;
+    let max = 1;
     let folded = true; // поля сложены (пока сцену не мерили — считаем, что да)
     let s5: HTMLElement | null = null;
     let s5Scene: Element | null = null;
@@ -248,7 +257,12 @@ export function Scene6() {
         edgeL = W + H - F - 3;
         edge.style.strokeDasharray = `${edgeL}`;
         slide = Math.max(0, H - pocket.offsetHeight - sheet.offsetTop + 12);
-        lift = Number.parseFloat(getComputedStyle(sheet).getPropertyValue("--lift")) || 0;
+        const cs = getComputedStyle(sheet);
+        const num = (name: string) => Number.parseFloat(cs.getPropertyValue(name)) || 0;
+        lift = num("--lift");
+        line = num("--line");
+        absorb = num("--absorb");
+        max = num("--max") || 1;
       }
       stageH = stage.offsetHeight;
       end = pinned
@@ -303,8 +317,9 @@ export function Scene6() {
       const out = seg(p, T.letter);
       put(sheet, "opacity", p >= T.letter[0] ? "1" : "0");
       put(sheet, "pointer-events", out < 0.6 ? "none" : "");
-      // Выдвинутое письмо (translate −lift из CSS) уходит в карман на столько же глубже.
-      const deep = slide + (sheet.hasAttribute("data-other") ? lift : 0);
+      // Выдвинутое письмо (translate из CSS) уходит в карман на столько же глубже.
+      const n = Math.min(Number(sheet.style.getPropertyValue("--n")) || 1, max);
+      const deep = slide + (sheet.hasAttribute("data-other") ? lift + absorb * (n - 1) * line : 0);
       put(sheet, "transform", `translateY(${((1 - out) * deep).toFixed(1)}px)`);
       for (const [i, f] of fields.entries()) {
         rise(f, seg(p, [T.field[0] + 0.04 * i, T.field[1] + 0.04 * i]), 14);
@@ -414,10 +429,11 @@ export function Scene6() {
     env.style.height = `${to}px`;
   }, [closed]);
 
-  // «Другое» выбрали или сняли: письмо выдвигается (CSS), на полпути сборки — пересчёт, насколько
-  // оно в кармане. Пунктир строки расходится из-под пилюли (--o); выбрали мышью или касанием —
-  // курсор в строку.
+  // «Другое» выбрали или сняли, строк стало больше или меньше: письмо выдвигается (CSS, --n — строк),
+  // на полпути сборки — пересчёт, насколько оно в кармане. Пунктир расходится из-под пилюли (--o);
+  // выбрали мышью или касанием — курсор в строку.
   useLayoutEffect(() => {
+    sheetRef.current?.style.setProperty("--n", String(lines));
     updateRef.current();
     const row = otherRowRef.current;
     const pill = otherPillRef.current;
@@ -427,7 +443,26 @@ export function Scene6() {
     row.style.setProperty("--o", `${Math.round(o)}px`);
     if (focusOther.current) otherRef.current?.focus({ preventScroll: true });
     focusOther.current = false;
-  }, [isOther]);
+  }, [isOther, lines]);
+
+  // Строк — сколько занял текст (замер при нулевой высоте); больше --max — прокрутка в поле.
+  const onOther = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const ta = e.currentTarget;
+    setOther(ta.value);
+    ta.style.height = "0";
+    const lh = Number.parseFloat(getComputedStyle(ta).lineHeight);
+    setRows(Math.max(1, Math.round(ta.scrollHeight / lh)));
+    ta.style.height = "";
+  };
+
+  // Прокрутка поля — целыми строками (линии не режутся краем), зеркало с линиями — за ней.
+  const onOtherScroll = (e: UIEvent<HTMLTextAreaElement>) => {
+    const ta = e.currentTarget;
+    const lh = Number.parseFloat(getComputedStyle(ta).lineHeight);
+    const top = Math.round(ta.scrollTop / lh) * lh;
+    if (Math.abs(top - ta.scrollTop) > 0.5) ta.scrollTop = top;
+    if (otherInkRef.current) otherInkRef.current.scrollTop = ta.scrollTop;
+  };
 
   const clearError = (key: keyof Errors) =>
     setErrors((e) => (e[key] || e.form ? { ...e, [key]: undefined, form: undefined } : e));
@@ -502,6 +537,7 @@ export function Scene6() {
       setName("");
       setNeed("");
       setOther("");
+      setRows(1);
       setConsent(false);
     }
     setErrors({});
@@ -674,23 +710,25 @@ export function Scene6() {
                       </label>
                     ))}
                   </div>
-                  {/* Своё к «Другое» — строка пути: пунктир, под набранным — чернила. Место под
-                      неё — в кармане; выбрали «Другое» — письмо выдвигается и строка видна. */}
+                  {/* Своё к «Другое» — строки пути: пунктир, под набранным — чернила (их рисует
+                      зеркало текста под полем). Место под первую — в кармане; выбрали «Другое» —
+                      письмо выдвигается, и строки видны. */}
                   <div ref={otherRowRef} className={styles.other} inert={!isOther}>
-                    <span className={styles.otherPath} aria-hidden="true" />
-                    <span className={styles.otherInk} aria-hidden="true">
-                      {other}
-                    </span>
-                    <input
+                    <div ref={otherInkRef} className={styles.otherInk} aria-hidden="true">
+                      <span>{other}</span>
+                      {"\u200b"}
+                    </div>
+                    <textarea
                       ref={otherRef}
                       className={styles.otherInput}
                       name="other"
+                      rows={lines}
                       value={other}
-                      onChange={(e) => setOther(e.target.value)}
-                      maxLength={80}
+                      onChange={onOther}
+                      onScroll={onOtherScroll}
+                      maxLength={300}
                       placeholder="что именно?"
                       aria-label="Другое — что именно"
-                      autoComplete="off"
                     />
                   </div>
                 </div>
