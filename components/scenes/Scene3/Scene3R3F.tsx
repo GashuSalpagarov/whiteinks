@@ -16,6 +16,17 @@ const SCROLL_DRIVE_FACTOR = 10; // путь частицы за всю сцен�
 const PREWARM = 8;
 const CONE_HALF_ANGLE = Math.PI / 3;
 const RESPAWN_PAST_CAMERA = 0.5;
+// Частица растёт к камере, но не больше 6px экрана — вдвое меньше точки пути (12px), чтобы глаз
+// их не путал. В шейдере size — размер материала × DPR, в px экрана — size × (высота / 2) / глубина.
+const PARTICLE_SIZE = 0.015;
+const PARTICLE_MAX_PX = 6;
+function capParticle(shader: THREE.WebGLProgramParametersWithUniforms) {
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <logdepthbuf_vertex>",
+    `gl_PointSize = min(gl_PointSize, size * ${(PARTICLE_MAX_PX / PARTICLE_SIZE).toFixed(1)});
+#include <logdepthbuf_vertex>`,
+  );
+}
 
 // Камера стоит: летят только частицы.
 const CAMERA_Z = 3.5;
@@ -192,11 +203,12 @@ export function Scene3R3F({ progressRef, streamRef }: Props) {
       <points ref={pointsRef} geometry={pointsData.geometry} frustumCulled={false}>
         <pointsMaterial
           color="#0a0a0a"
-          size={0.015}
+          size={PARTICLE_SIZE}
           sizeAttenuation
           transparent
           map={particleTexture}
           alphaTest={0.5}
+          onBeforeCompile={capParticle}
         />
       </points>
       <lineSegments ref={linesRef} geometry={streaksData.geometry} frustumCulled={false}>

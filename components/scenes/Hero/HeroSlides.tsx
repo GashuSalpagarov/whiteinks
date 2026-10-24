@@ -9,8 +9,11 @@ import {
   useState,
 } from "react";
 import { LOOP_EVENT } from "@/components/scenes/Footer";
+import { phoneLayout } from "@/lib/phoneLayout";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
+import { SITE_H1 } from "@/lib/site";
 import styles from "./Hero.module.css";
+import { SKIP_EVENT } from "./HeroScrollLock";
 import { SLIDES } from "./slides";
 
 // Слайды Hero: заголовок (по буквам), подводка и три картинки. Листаются сами каждые 5 с — по
@@ -19,7 +22,6 @@ import { SLIDES } from "./slides";
 // Отсчёт первого слайда — после интро; новый круг пути — сразу слайд 1 и отсчёт заново.
 const INTRO_MS = 4500; // как в HeroScrollLock
 const ROWS = [styles.word1, styles.word2, styles.word3];
-
 // Место картинки: положение, размер, поворот в градусах и слой (кто кого перекрывает).
 type Rect =
   | readonly [x: number, y: number, w: number, h: number, turn: number, layer: number]
@@ -284,7 +286,7 @@ export function HeroSlides({
   hero: RefObject<HTMLElement | null>;
   children: ReactNode;
 }) {
-  const h1Ref = useRef<HTMLHeadingElement>(null);
+  const h1Ref = useRef<HTMLDivElement>(null);
   const leadRef = useRef<HTMLParagraphElement>(null);
   // Активный слайд и только что ушедший (он уезжает вверх, остальные ждут снизу).
   const [[slide, prev], setPair] = useState<[number, number]>([0, -1]);
@@ -308,7 +310,7 @@ export function HeroSlides({
       const em = widths;
       if (!em) return;
       const W = root.clientWidth;
-      const mobile = matchMedia("(max-width: 767px)").matches;
+      const mobile = phoneLayout();
       // Слово — правым краем у линии, левее поля 32px не заходит; на телефоне — от поля 20px
       // до линии (она не левее 74% ширины на высоте заголовка) с зазором 24px.
       const size = Number.parseFloat(getComputedStyle(h1).fontSize);
@@ -390,11 +392,22 @@ export function HeroSlides({
       const from = (e as CustomEvent<{ from?: number }> | undefined)?.detail?.from ?? 0;
       if (!reduced) timer = window.setTimeout(() => setLive(true), INTRO_MS - from);
     };
+    // «Пропустить»: заставка доиграет за detail.in мс — отсчёт слайда с этого момента.
+    const skip = (e: Event) => {
+      if (reduced) return;
+      clearTimeout(timer);
+      timer = window.setTimeout(
+        () => setLive(true),
+        (e as CustomEvent<{ in?: number }>).detail?.in ?? 0,
+      );
+    };
     start();
     window.addEventListener(LOOP_EVENT, start);
+    window.addEventListener(SKIP_EVENT, skip);
     return () => {
       clearTimeout(timer);
       window.removeEventListener(LOOP_EVENT, start);
+      window.removeEventListener(SKIP_EVENT, skip);
     };
   }, []);
 
@@ -445,7 +458,10 @@ export function HeroSlides({
         )),
       )}
 
-      <h1 ref={h1Ref} className={styles.title}>
+      {/* Заголовок страницы для поиска и скринридеров — один и тот же на всех слайдах. Буквы
+          слайдов ниже — анимация: вне h1, иначе робот читает их слитно («СоздаёмСоздаём…»). */}
+      <h1 className={styles.srOnly}>{SITE_H1}</h1>
+      <div ref={h1Ref} className={styles.title} data-nosnippet>
         <span className={styles.srOnly}>{SLIDES[slide].title.join(" ")}</span>
         {ROWS.map((row, r) => (
           <span key={row} className={`${styles.word} ${row}`} aria-hidden="true">
@@ -471,7 +487,7 @@ export function HeroSlides({
             })}
           </span>
         ))}
-      </h1>
+      </div>
       <p ref={leadRef} className={styles.lead}>
         {SLIDES.map((s, i) => (
           <span key={s.title[0]} className={`${styles.leadText}${on(i)}`}>

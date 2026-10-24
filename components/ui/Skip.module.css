@@ -1,0 +1,67 @@
+/* «пропустить» — тихая пилюля внизу по центру, пока идёт долгая анимация: заставка Hero
+   (Hero.tsx) и туннель Сцены 3 (Scene3.tsx). Нажатие ускоряет анимацию, а не обрывает её.
+   Цвет — разницей с тем, что под ней: на чёрном круге заставки белая, на белом — чёрная; на втором
+   круге её переворачивает вместе со всем фильтр палитры. Поэтому она — отдельным слоем страницы,
+   вне слоёв сцен: внутри них разнице не с чем смешиваться. Пилюля 30px, нажатие — 46px. */
+.skip {
+  position: fixed;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 7;
+  height: 30px;
+  padding: 0 14px;
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  background: none;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  mix-blend-mode: difference;
+  translate: -50% 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease-in,
+    visibility 0s linear 0.3s;
+}
+
+.skip::after {
+  content: '';
+  position: absolute;
+  inset: -8px -4px;
+}
+
+.skip:focus-visible {
+  outline: 1.5px solid #fff;
+  outline-offset: 3px;
+}
+
+/* Видна (туннель — по прокрутке, Scene3.tsx). */
+.on {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease-out;
+}
+
+/* Туннель на низком телефоне: внизу её задела бы подпись карточки — пилюля справа в строке
+   номера «01 / 05» (высоту строки --skip-top ставит Scene3.tsx). */
+.inRow {
+  top: var(--skip-top);
+  right: 20px;
+  bottom: auto;
+  left: auto;
+  translate: 0 -50%;
+}
+
+/* Телефон боком: под карточками туннеля место — до 40px; пилюля ниже и тоньше. */
+@media (max-height: 500px) {
+  .skip {
+    bottom: max(6px, env(safe-area-inset-bottom, 0px));
+    height: 26px;
+  }
+}

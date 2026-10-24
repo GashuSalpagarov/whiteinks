@@ -120,8 +120,13 @@ export function formatWeeks(lo: number, hi: number): string {
 // (−10%) с шагом 50 тыс. — «от 300 тыс. ₽»; срок растёт медленнее цены, как √k, — «от 4 недель».
 const SMALL = 0.8;
 
+// Та же граница числом, в тыс. ₽, — для прайса и микроразметки (lib/site.ts).
+export function fromBase(base: number): number {
+  return Math.round((base * SMALL * 0.9) / 50) * 50;
+}
+
 export function fromPrice(base: number): string {
-  return formatFrom(Math.round((base * SMALL * 0.9) / 50) * 50);
+  return formatFrom(fromBase(base));
 }
 
 export function fromWeeks([lo]: [number, number]): string {

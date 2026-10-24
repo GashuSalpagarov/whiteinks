@@ -20,7 +20,16 @@
 }
 
 .row[data-state="off"] {
-  color: rgba(10, 10, 10, 0.35);
+  color: rgba(10, 10, 10, 0.5);
+}
+
+/* Всплытие строки — по порогу, переходом (Scene4.tsx); рост — по прокрутке. */
+@media (prefers-reduced-motion: no-preference) {
+  .row {
+    transition:
+      opacity 0.3s,
+      translate 0.3s;
+  }
 }
 
 .n {
@@ -39,8 +48,8 @@
 .strike {
   position: absolute;
   top: 54%;
-  right: -2px;
-  left: -2px;
+  right: 0;
+  left: 0;
   height: 1.5px;
   background: var(--color-fg);
   transform-origin: 0 50%;
@@ -60,7 +69,7 @@
 
 :is([data-mode="tall"], [data-mode="short"]) .n {
   width: 28px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 :is([data-mode="tall"], [data-mode="short"]) .w {

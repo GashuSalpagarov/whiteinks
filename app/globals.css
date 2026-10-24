@@ -9,6 +9,15 @@
   --drop-x: 0px;
 }
 
+/* Пульс точки пути в покое (Hero, место покоя Сцены 3): ход — анимацией этого числа, размах —
+   --breath на самой точке, по прокрутке; размер — scale от обоих. Число зарегистрировано, иначе
+   оно не анимируется плавно. */
+@property --pulse {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
 /* ---------- Modern minimal reset ---------- */
 *,
 *::before,
@@ -104,17 +113,6 @@ h6 {
   }
 }
 
-/* ---------- Курсор мыши ----------
-   Рисует components/ui/Cursor (стрелка с инверсией); свой курсор браузера прячем, только когда
-   тот ожил. В полях ввода — обычный текстовый. */
-html[data-cursor] * {
-  cursor: none !important;
-}
-
-html[data-cursor] :is(input:not([type="checkbox"], [type="radio"], [type="submit"]), textarea) {
-  cursor: text !important;
-}
-
 /* ---------- Инверсия палитры ----------
    Каждый круг бесконечного пути (Footer) меняет палитру: html[data-palette="inverted"].
    Сайт строго монохромный, поэтому один invert(1) на корне точно переворачивает всё сразу:
@@ -126,4 +124,9 @@ html[data-palette="inverted"],
 html[data-palette="inverted"] img,
 html[data-palette="inverted"] .no-invert {
   filter: invert(1);
+}
+
+/* Открыто окно заявки (components/ui/BriefModal): страница под ним стоит — и Lenis, и касания. */
+html[data-brief] {
+  overflow: hidden;
 }

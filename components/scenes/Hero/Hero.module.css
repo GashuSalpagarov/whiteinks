@@ -32,11 +32,12 @@
     pillShrink 0.35s cubic-bezier(0.65, 0, 0.35, 1) 2.35s forwards;
 }
 
+/* Знак «white inks.» белым на чёрном — тем же шрифтом и начертанием, что в шапке. */
 .studioLabel {
   position: relative;
   z-index: 1;
   font-size: 3rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.03em;
   opacity: 0;
   transform: translateY(8px);
@@ -137,6 +138,8 @@
   font-size: clamp(15px, 1.25vw, 22px);
   line-height: 1.5;
   color: rgba(10, 10, 10, 0.72);
+  /* Без одного слова в последней строке. */
+  text-wrap: pretty;
   opacity: 0;
   /* Старт выхода: левый верхний угол — в центре круга (50%, 50%). */
   transform-origin: 0 0;
@@ -151,14 +154,15 @@
   animation: emerge 0.75s cubic-bezier(0.16, 1, 0.3, 1) 2.35s forwards;
 }
 
-/* Точка. В Hero стоит у конца линии (50%, 93% общей высоты экрана --ih, как в buildFallPath)
-   и едет вместе со страницей — прокрутку двигает композитор, в одном кадре с линией, без JS
-   и без отставания при прокрутке пальцем. С 43vh прокрутки (.dropPinned, Hero.tsx) закреплена
-   в центре экрана — тоже от --ih: на телефоне точка не прыгает, когда прячется панель
-   браузера. На десктопе --ih = innerHeight. */
+/* Точка 12px — всегда на экране. Её место — центр экрана + 20px (половина общей высоты --ih
+   и --drop-offset), сдвиги --drop-x и --drop-y пишет Scene2.tsx прямо на ней. В покое она
+   у конца линии (50%, 93% экрана, как в buildFallPath), с первого пикселя прокрутки идёт по пути
+   к своему месту (dropLift в Scene2.tsx). От --ih: на телефоне точка не прыгает, когда прячется
+   панель браузера; на десктопе --ih = innerHeight. До первого прохода --drop-offset — 43vh
+   (globals.css): тоже у конца линии. */
 .drop {
-  position: absolute;
-  top: calc(var(--ih, 100%) * 0.93);
+  position: fixed;
+  top: calc(var(--ih, 100%) / 2);
   left: 50%;
   /* z-index 5 — над заголовком, подводкой, кнопкой и картинками Hero (z-index 1–4). */
   z-index: 5;
@@ -166,34 +170,21 @@
   height: 12px;
   background: var(--color-fg);
   border-radius: 50%;
-  /* Положение — отдельным свойством translate, пульс — свойством scale (dropPulse). Так var()
-     не попадает в keyframes: Firefox/Safari запоминают его значение на старте анимации,
-     и после возврата наверх пульс уводил точку туда, где она была в момент старта. */
-  translate: calc(-50% + var(--drop-x, 0px)) -50%;
+  translate: calc(-50% + var(--drop-x, 0px)) calc(-50% + var(--drop-offset) + var(--drop-y, 0px));
+  /* В покое дышит (dropPulse ведёт --pulse, globals.css). Размах — --breath (Scene2.tsx): на
+     первых 48px прокрутки он плавно сходит на нет — дальше точка ровно 12px, пульс на паузе;
+     наверху — так же плавно возвращается. */
+  scale: calc(1 + (var(--pulse) - 1) * var(--breath, 1));
   opacity: var(--drop-opacity, 1);
   /* Скрыта, пока .fallDot не приземлится ровно в эту точку. */
   visibility: hidden;
   pointer-events: none;
 }
 
-.drop.dropPinned {
-  position: fixed;
-  top: calc(var(--ih, 100%) / 2);
-  translate: calc(-50% + var(--drop-x, 0px)) calc(-50% + var(--drop-offset));
-}
-
 .ready .drop {
   animation:
     dropAppear 0.001s 4s forwards,
     dropPulse 2.4s ease-in-out 4.5s infinite;
-}
-
-/* Пока точка зафиксирована (Scene 2+), пульс гасим поверх анимации, а не снимаем её:
-   смена списка анимаций перезапускала бы пульс с задержкой при каждом возврате в Hero.
-   Паузой анимация не тикает — без неё стиль точки пересчитывался каждый кадр. */
-.ready .drop.dropPinned {
-  scale: 1 !important;
-  animation-play-state: paused;
 }
 
 @keyframes pillCompress {
@@ -272,20 +263,47 @@
 @keyframes dropPulse {
   0%,
   100% {
-    scale: 1;
+    --pulse: 1;
     animation-timing-function: ease-in-out;
   }
   18% {
-    scale: 0.85;
+    --pulse: 0.85;
     animation-timing-function: ease-out;
   }
   50% {
-    scale: 1.55;
+    --pulse: 1.55;
     animation-timing-function: ease-in;
   }
   78% {
-    scale: 1.05;
+    --pulse: 1.05;
     animation-timing-function: ease-in-out;
+  }
+}
+
+/* «Пропустить» на заставке (components/ui/Skip.module.css): проявляется в начале и уходит
+   к 3,5 с — раньше, чем линия и точка дойдут до низа экрана (на низких экранах место пилюли
+   рядом с точкой покоя). Ход — вместе со всей заставкой (.ready), нажатие ускоряет и его. */
+.ready.introSkip {
+  animation: introSkip 3.5s linear forwards;
+}
+
+@keyframes introSkip {
+  0%,
+  11% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  12% {
+    opacity: 0;
+    visibility: visible;
+  }
+  23%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
   }
 }
 
@@ -569,7 +587,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: rgba(10, 10, 10, 0.35);
+  color: rgba(10, 10, 10, 0.62);
   font-size: 0.8125rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -641,14 +659,16 @@
   pointer-events: none;
 }
 
+/* Знак — «white inks.» строчными шрифтом сайта: полужирный и плотнее пунктов меню, точка — своя
+   точка шрифта. Так же в шапке кейса (Case.module.css) и на юридических страницах (legal.module.css). */
 .logo {
   position: fixed;
   top: 32px;
   left: 32px;
   z-index: 10;
   font-size: 1.25rem;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.03em;
   line-height: 1;
   color: var(--color-fg);
   opacity: 0;
@@ -670,13 +690,76 @@
   pointer-events: auto;
   /* Сдвиг влево — место для бургера справа. */
   translate: var(--phone-shift, 0px) 0;
-  transition: translate 0.6s cubic-bezier(0.65, 0, 0.35, 1) 0.1s;
+  transition:
+    translate 0.6s cubic-bezier(0.65, 0, 0.35, 1) 0.1s,
+    opacity 0.3s ease-out 0.25s;
 }
 
 .ready .logo,
 .ready .phone,
 .ready .nav {
   animation: uiFadeIn 0.45s ease-out 4s forwards;
+}
+
+/* Кнопка к письму — на месте телефона. «Связаться» Hero ушла с экрана (.asking на шапке,
+   HeaderMenu.tsx): телефон уходит вверх и гаснет, снизу встаёт чёрная пилюля. В письме —
+   обратно телефон; он же — последней строкой в панели бургера. Пилюля 36px, нажатие — 44px. */
+.headerCta {
+  position: fixed;
+  top: 26px;
+  right: 76px;
+  z-index: 10;
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  appearance: none;
+  opacity: 0;
+  translate: 0 10px;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease-in,
+    translate 0.3s ease-in,
+    visibility 0s linear 0.3s;
+}
+
+.headerCta::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+
+.headerCta:focus-visible {
+  outline: 1.5px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+.asking .headerCta {
+  opacity: 1;
+  translate: none;
+  visibility: visible;
+  transition:
+    opacity 0.35s ease-out 0.2s,
+    translate 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+
+/* !important — сильнее uiFadeIn: его forwards держит телефону opacity 1. */
+.asking .phone {
+  opacity: 0 !important;
+  translate: var(--phone-shift, 0px) -10px;
+  visibility: hidden;
+  transition:
+    translate 0.3s ease-in,
+    opacity 0.25s ease-in,
+    visibility 0s linear 0.3s;
 }
 
 /* ---------- Меню ----------
@@ -802,6 +885,11 @@
   transition-delay: 0.3s, 0s, 0s;
 }
 
+/* Над футером бургер не виден — и не нажимается; открытую панель это закрывает (HeaderMenu.tsx). */
+.menu.onDark .burger {
+  pointer-events: none;
+}
+
 .burger[aria-expanded='true']::before,
 .burger[aria-expanded='true']::after {
   translate: 0 0;
@@ -879,7 +967,7 @@
   border: 0;
   border-radius: 4px;
   background: none;
-  color: rgba(10, 10, 10, 0.55);
+  color: rgba(10, 10, 10, 0.62);
   font-size: 1rem;
   font-weight: 500;
   line-height: 1.5;
@@ -917,6 +1005,16 @@
   background: var(--color-fg);
 }
 
+/* Телефон — после станций, без точки: не станция. */
+.panelPhone {
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.panelPhone::before {
+  content: none;
+}
+
 /* Только с мышью: на сенсорном экране :hover залипает на нажатом пункте. */
 @media (hover: hover) {
   .panelItem:hover {
@@ -937,6 +1035,19 @@
     display: none;
   }
 
+  /* Кнопка мельче — между бургером и подписью сцены (с 50% + 16px) на 768px запас 29px.
+     Так же и на телефоне, там своё место (ниже). */
+  .headerCta {
+    top: 28px;
+    height: 32px;
+    padding: 0 14px;
+    font-size: 0.8125rem;
+  }
+
+  .headerCta::after {
+    inset: -6px 0;
+  }
+
   .burger {
     visibility: visible;
     pointer-events: auto;
@@ -948,18 +1059,27 @@
   }
 }
 
+/* Сенсорный экран с шапкой десктопа (планшет): номер — 44px по высоте за счёт отступов, текст
+   на прежней высоте. */
+@media (pointer: coarse) and (min-width: 768px) and (min-height: 501px) {
+  .phone {
+    top: 21px;
+    padding-block: 14px;
+  }
+}
+
 @keyframes fadeIn {
   to {
     opacity: 1;
   }
 }
 
-/* ---------- Телефон (< 768px; тот же порог — в buildFallPath) ----------
+/* ---------- Телефон и планшет в портрете (lib/phoneLayout.ts — тот же запрос) ----------
    Своя композиция, а не сжатый десктоп: слова крупно, по левому краю (20px), линия справа —
    от круга (74vw, --y1) к пику 79vw на 60% и к точке покоя (50vw, 93%), как на десктопе:
    стык с трассой Scene 2 тот же. Под словами — подзаголовок, у точки покоя — CTA. Вертикаль —
    от --ih (общая высота экрана, как у пути), а не от процентов Hero (100svh). */
-@media (max-width: 767px) {
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
   .hero {
     /* 11.2vw: «цифровые» в 24px+ от линии и со шрифтом на 10% шире Segoe (SF Pro, Roboto). */
     --title-size: min(11.2vw, 9vh);
@@ -1016,12 +1136,13 @@
     animation-delay: 3.02s;
   }
 
-  /* Ширина — чтобы на низких экранах не задеть линию там, где она уже уходит к центру. */
+  /* Ширина — чтобы на низких экранах не задеть линию там, где она уже уходит к центру. На
+     планшете — крупнее, по ширине экрана. */
   .lead {
     top: calc(var(--y1) + 3.05 * var(--title-size));
     left: 20px;
     width: min(32ch, calc(66vw - 20px));
-    font-size: 16px;
+    font-size: clamp(16px, 2.6vw, 22px);
   }
 
   .ready .lead {
@@ -1100,14 +1221,10 @@
   }
 }
 
-/* ---------- Шапка на телефоне и в коротком ландшафте ----------
-   Под ней — полоса цвета фона, тающая книзу: контент уходит под шапку, а не сквозь неё. На
-   инверсии полосу переворачивает тот же фильтр. Проявляется вместе с логотипом. */
-@media (max-width: 767px), (max-height: 500px) {
-  .header {
-    --phone-shift: -36px;
-  }
-
+/* ---------- Полоса под шапкой: телефонная раскладка (lib/phoneLayout.ts) и короткий ландшафт ----------
+   Полоса цвета фона, тающая книзу: контент уходит под шапку, а не сквозь неё. На инверсии полосу
+   переворачивает тот же фильтр. Проявляется вместе с логотипом. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
   .header::before {
     content: '';
     position: absolute;
@@ -1121,6 +1238,21 @@
 
   .ready.header::before {
     animation: fadeIn 0.45s ease-out 4s forwards;
+  }
+}
+
+/* Планшет в портрете: шапка своя, крупнее телефонной — сплошная часть полосы до низа логотипа
+   (32 + 20px), граница та же, 72px. */
+@media (orientation: portrait) and (min-width: 768px) and (max-width: 1024px) {
+  .header::before {
+    background: linear-gradient(var(--color-bg) 52px, transparent);
+  }
+}
+
+/* ---------- Шапка на телефоне и в коротком ландшафте ---------- */
+@media (max-width: 767px), (max-height: 500px) {
+  .header {
+    --phone-shift: -36px;
   }
 
   .logo {
@@ -1137,6 +1269,11 @@
     font-size: 0.8125rem;
   }
 
+  .headerCta {
+    top: 14px;
+    right: 56px;
+  }
+
   /* Бургер — справа от номера, линии короче, под мелкий номер; панель — во всю ширину. */
   .burger {
     top: 8px;
@@ -1149,12 +1286,32 @@
     width: 20px;
   }
 
-  /* Ниже второй строки шапки — подписи сцены (до 61px, SceneLabel.module.css). */
+  /* Ниже второй строки шапки — подписи сцены (до 61px, SceneLabel.module.css). Под панелью —
+     белое поле во всю ширину (тенью: от 74px сверху до 64px ниже панели), а полоса шапки,
+     пока панель открыта, сплошная: крупный заголовок Hero и сцены не торчат между шапкой
+     и панелью и по её краям. */
   .panel {
     top: 66px;
     left: 20px;
     right: 20px;
     width: auto;
+    box-shadow: 0 36px 8px 28px var(--color-bg);
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 80px;
+    background: var(--color-bg);
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+  }
+
+  .header:has(+ .menu .burger[aria-expanded='true'])::after {
+    opacity: 1;
   }
 }
 
@@ -1171,7 +1328,6 @@
   .ready .cta,
   .ready .lead,
   .ready .drop,
-  .ready .drop.dropPinned,
   .ready .logo,
   .ready .phone,
   .ready .nav,

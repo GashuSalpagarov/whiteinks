@@ -10,6 +10,8 @@ const INTRO_DURATION_MS = 4500;
 const DROP_LANDS_MS = 4000;
 // Страховка на время, пока футер доигрывает переход (HOLD_EVENT) до прыжка (LOOP_EVENT).
 const HOLD_MAX_MS = 4000;
+// «Пропустить» на заставке (Hero.tsx): она доиграет за detail.in мс — тогда и открываем прокрутку.
+export const SKIP_EVENT = "whiteinks:intro-skip";
 
 const SCROLL_KEYS = new Set([
   "ArrowUp",
@@ -32,8 +34,9 @@ export function HeroScrollLock() {
 
     // Дополнительная блокировка нативных событий — клавиатура, плюс fallback если Lenis не подключился (reduced-motion и т.п.)
     const preventScroll = (e: Event) => e.preventDefault();
+    // Пробел на кнопке («пропустить») — нажатие, а не прокрутка.
     const preventScrollKeys = (e: KeyboardEvent) => {
-      if (SCROLL_KEYS.has(e.key)) e.preventDefault();
+      if (SCROLL_KEYS.has(e.key) && !(e.target instanceof HTMLButtonElement)) e.preventDefault();
     };
 
     let locked = false;
@@ -85,14 +88,21 @@ export function HeroScrollLock() {
       lock(from ? Math.max(0, DROP_LANDS_MS - from) : INTRO_DURATION_MS);
     };
     const onHold = () => lock(HOLD_MAX_MS, false);
+    const onSkip = (e: Event) => {
+      if (!locked) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(release, (e as CustomEvent<{ in?: number }>).detail?.in ?? 0);
+    };
 
     lock(INTRO_DURATION_MS);
     window.addEventListener(LOOP_EVENT, onLoop);
     window.addEventListener(HOLD_EVENT, onHold);
+    window.addEventListener(SKIP_EVENT, onSkip);
 
     return () => {
       window.removeEventListener(LOOP_EVENT, onLoop);
       window.removeEventListener(HOLD_EVENT, onHold);
+      window.removeEventListener(SKIP_EVENT, onSkip);
       release();
     };
   }, [lenis]);

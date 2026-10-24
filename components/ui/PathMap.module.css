@@ -34,7 +34,9 @@
   }
 }
 
-@media (max-width: 1023px), (max-height: 599px) {
+/* В телефонной раскладке (lib/phoneLayout.ts) — тоже нет: поле у сцен там 20px, карта легла бы
+   на текст. */
+@media (max-width: 1023px), (max-height: 599px), (orientation: portrait) and (max-width: 1024px) {
   .map {
     display: none;
   }
@@ -162,7 +164,7 @@
   left: calc(var(--x) + 24px * var(--s) + 12px);
   padding: 4px 0;
   translate: -4px -50%;
-  color: rgba(10, 10, 10, 0.45);
+  color: rgba(10, 10, 10, 0.62);
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1;

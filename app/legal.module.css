@@ -1,36 +1,152 @@
-/* Заглушки юридических страниц (/consent, /privacy): текст пришлёт владелец. */
+/* Юридические страницы (/consent, /privacy): тихий документ — одна колонка, мелкие заголовки. */
 .page {
   max-width: 720px;
   margin: 0 auto;
-  padding: 120px 32px 80px;
+  padding: 96px 32px 120px;
 }
 
+/* Ссылка на главную — знаком, как в шапке сайта. */
 .back {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
   color: inherit;
   text-decoration: none;
 }
 
 .title {
   margin-top: 40px;
-  font-size: clamp(32px, 4vw, 52px);
+  font-size: clamp(26px, 2.4vw, 34px);
   font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-.text {
-  margin-top: 20px;
-  font-size: 1.0625rem;
-  line-height: 1.6;
-  color: rgba(10, 10, 10, 0.72);
-}
-
-.note {
-  margin-top: 32px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(10, 10, 10, 0.12);
+.meta {
+  margin-top: 12px;
   font-size: 0.875rem;
-  color: #888;
+  color: rgba(10, 10, 10, 0.55);
+}
+
+.text,
+.list,
+.terms {
+  margin-top: 14px;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: rgba(10, 10, 10, 0.78);
+}
+
+.text a,
+.list a,
+.terms a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.list {
+  padding-left: 1.2em;
+}
+
+.list li + li {
+  margin-top: 4px;
+}
+
+/* Цель, основание, срок: подпись слева, текст справа; на телефоне — друг под другом. */
+.terms {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 10px 24px;
+}
+
+.terms dt {
+  color: var(--color-fg);
+  font-weight: 500;
+}
+
+.terms dd {
+  margin: 0;
+}
+
+/* Несколько целей подряд — каждая своим блоком, тонкая черта между ними. */
+.terms + .terms {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(10, 10, 10, 0.08);
+}
+
+/* Оглавление — тихий нумерованный список ссылок. */
+.toc {
+  margin-top: 40px;
+  padding: 20px 0;
+  border-top: 1px solid rgba(10, 10, 10, 0.12);
+  border-bottom: 1px solid rgba(10, 10, 10, 0.12);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.toc ol {
+  padding-left: 1.6em;
+  columns: 2;
+  column-gap: 32px;
+}
+
+.toc li {
+  break-inside: avoid;
+  padding: 2px 0;
+  color: rgba(10, 10, 10, 0.45);
+}
+
+.toc a {
+  color: var(--color-fg);
+  text-decoration: none;
+}
+
+.toc a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.section {
+  margin-top: 44px;
+  scroll-margin-top: 32px;
+}
+
+.h2 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* Заглушка реквизита — видна сразу, пока владелец не впишет своё. */
+.ph {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(10, 10, 10, 0.08);
+  color: var(--color-fg);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 56px 20px 88px;
+  }
+
+  .title {
+    margin-top: 32px;
+  }
+
+  .toc ol {
+    columns: 1;
+  }
+
+  .terms {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .terms dd + dt {
+    margin-top: 12px;
+  }
 }

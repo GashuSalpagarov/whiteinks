@@ -1,0 +1,982 @@
+/* Слой кейса (CaseLayer.tsx) — поверх главной, на весь экран, со своей прокруткой. Порядок
+   слоёв: сцена (фон, линия, прокрутка, точка) → летящая карточка → шапка.
+   Окно чтения первого экрана и блока «Дальше» — те же формулы, что layout() в Scene3.tsx
+   (карточка 4:3 в паспарту: высота 0,75 ширины + 6,75px), поэтому кадр совпадает с туннелем
+   на любом экране. Экран — общая высота --ih (lib/scroll/onScroll), точка — на 20px ниже его
+   середины, как в туннеле. */
+.layer {
+  --h: var(--ih, 100vh);
+  --dy: calc(var(--h) / 2 + 20px);
+  --gap: 48px;
+  --capgap: 80px;
+  --cw: min(50vw - 112px, var(--h) * 4 / 3 - 329px);
+  --capw: min(max(440px, 29vw), 50vw - 144px);
+  --ch: calc(var(--cw) * 0.75 + 6.75px);
+  --ctop: calc(var(--dy) - var(--ch) / 2);
+  --text2: rgb(10 10 10 / 0.72);
+  --muted: rgb(10 10 10 / 0.62);
+
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  color: var(--color-fg);
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Слой есть всегда (в нём летит карточка), клики ловит только открытый кейс. */
+.stage,
+.header {
+  pointer-events: auto;
+}
+
+/* Телефон боком и тесный ландшафт: поля и зазоры меньше (compact в Scene3.tsx). */
+@media (orientation: landscape) and (max-height: 500px),
+  (orientation: landscape) and (max-width: 767px) {
+  .layer {
+    --gap: 32px;
+    --capgap: 48px;
+    --cw: min(50vw - 56px, var(--h) * 4 / 3 - 179.67px);
+    --capw: min(max(440px, 29vw), 50vw - 72px);
+  }
+}
+
+/* Портрет: карточка над точкой во всю ширину между полями 20px, текст — под точкой. */
+@media (orientation: portrait) {
+  .layer {
+    --cw: min(100vw - 40px, var(--h) * 2 / 3 - 126.33px);
+    --ctop: calc(var(--dy) - 24px - var(--ch));
+  }
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  isolation: isolate;
+}
+
+.bg {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg);
+}
+
+/* Ось — прямая через центр экрана: позади точки чернила (4px, от шапки до точки), впереди —
+   пунктир до конца пути. Точка стоит на своей высоте, страница идёт сквозь неё. */
+.ink {
+  position: absolute;
+  top: 0;
+  left: calc(50% - 2px);
+  width: 4px;
+  height: var(--dy);
+  background: var(--color-fg);
+  transform-origin: 50% 100%;
+}
+
+.ghost {
+  position: absolute;
+  top: var(--dy);
+  left: calc(50% - 1px);
+  width: 2px;
+  height: calc(var(--h) - var(--dy));
+  background: radial-gradient(circle at 50% 1px, rgb(10 10 10 / 0.4) 0.9px, transparent 1.3px) 0 0 /
+    2px 5px repeat-y;
+  transform-origin: 50% 0;
+}
+
+.scroll {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  outline: none;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.content {
+  position: relative;
+}
+
+.dot {
+  position: absolute;
+  top: var(--dy);
+  left: 50%;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  pointer-events: none;
+}
+
+.dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-fg);
+}
+
+/* В конце пути точка ждёт с пульсом. */
+.dot[data-wait="true"]::before {
+  animation: wait 2.4s ease-in-out infinite;
+}
+
+@keyframes wait {
+  50% {
+    scale: 1.3;
+  }
+}
+
+.flyer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---------- шапка: как на главной у Сцены 3 — логотип, подпись главы у оси, «Обсудить проект»,
+   на месте бургера — «закрыть». Под ней белая полоса: страница уезжает под шапку. ---------- */
+.header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 72px;
+  background: var(--color-bg);
+}
+
+/* Знак — как в шапке Hero. */
+.logo {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.label {
+  position: absolute;
+  top: 35px;
+  left: calc(50% + 16px);
+  width: 12em;
+  height: calc(1em + 8px);
+  margin-top: -4px;
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.label > span {
+  position: absolute;
+  top: 4px;
+  left: 0;
+}
+
+.cta {
+  position: absolute;
+  top: 26px;
+  right: 76px;
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.close {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.close::before,
+.close::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 0.75px);
+  left: 10px;
+  width: 24px;
+  height: 1.5px;
+  background: currentColor;
+  rotate: 45deg;
+}
+
+.close::after {
+  rotate: -45deg;
+}
+
+.cta:focus-visible,
+.close:focus-visible,
+.logo:focus-visible {
+  outline: 1.5px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+/* ---------- текст ---------- */
+.count {
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.count > span:first-child {
+  color: var(--muted);
+}
+
+.ex {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  margin-left: 10px;
+  padding: 0 8px;
+  border: 1.5px solid rgb(10 10 10 / 0.22);
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--muted);
+  vertical-align: 2px;
+}
+
+.title,
+.ntitle {
+  font-size: clamp(32px, 3.35vw, 48px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+}
+
+.lead {
+  max-width: 30em;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 24px;
+  font-size: 15px;
+}
+
+.meta dt {
+  color: var(--muted);
+}
+
+.meta dd {
+  margin: 0;
+}
+
+/* Цифра результата — как в подписи туннеля (до 104px); цифры фактов — не крупнее «Работы (06)». */
+.result {
+  font-size: clamp(56px, 5.6vw, 104px);
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.fig {
+  font-size: clamp(36px, 3.35vw, 60px);
+  letter-spacing: -0.045em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.small {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.big,
+.quote {
+  font-size: clamp(20px, 1.6vw, 26px);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.h2 {
+  font-size: clamp(28px, 2.6vw, 44px);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.h3 {
+  font-size: clamp(19px, 1.4vw, 22px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text2);
+}
+
+.chap,
+.step {
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.chap b {
+  margin-right: 10px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.step,
+.who {
+  color: var(--muted);
+}
+
+.who {
+  font-size: 15px;
+}
+
+.back {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 500;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ulink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 15px;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: center;
+}
+
+.pill,
+.pillDark {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 20px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: inherit;
+  font-size: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pillDark {
+  height: 52px;
+  padding: 0 28px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-weight: 500;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.back:focus-visible,
+.ulink:focus-visible,
+.pill:focus-visible,
+.pillDark:focus-visible {
+  outline: 1.5px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+/* ---------- карточка-паспарту, как в Сцене 3 ---------- */
+.card {
+  position: relative;
+  margin: 0;
+  padding: 12px;
+  border: 1.5px solid var(--color-fg);
+  background: var(--color-bg);
+}
+
+.pv {
+  aspect-ratio: var(--ar, 4 / 3);
+  overflow: hidden;
+  border: 1.5px solid var(--color-fg);
+}
+
+.pv img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.badge {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  padding: 5px 11px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  background: var(--color-bg);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.cap {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text2);
+}
+
+/* ---------- первый экран: окно чтения туннеля, но без наклона ---------- */
+.hero {
+  position: relative;
+  min-height: var(--h);
+  padding-top: max(96px, calc(var(--ctop) + 8px));
+  padding-bottom: 12vh;
+}
+
+.cover {
+  position: absolute;
+  top: var(--ctop);
+  left: calc(50vw + var(--gap));
+  width: var(--cw);
+}
+
+.hero[data-side="l"] .cover {
+  left: calc(50vw - var(--gap) - var(--cw));
+}
+
+.htext {
+  width: var(--capw);
+  margin-left: calc(50vw - var(--capgap) - var(--capw));
+}
+
+.hero[data-side="l"] .htext {
+  margin-left: calc(50vw + var(--capgap));
+}
+
+.htext > * + * {
+  margin-top: 18px;
+}
+
+.htext .count {
+  margin-top: 22px;
+}
+
+.htext .title {
+  margin-top: 12px;
+}
+
+.htext .meta {
+  margin-top: 22px;
+}
+
+.htext .meta + * {
+  margin-top: 26px;
+}
+
+/* ---------- главы: картинка с одной стороны от оси, текст — с другой ---------- */
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding-top: 20vh;
+}
+
+.row > * {
+  grid-row: 1;
+}
+
+.L {
+  grid-column: 1;
+  justify-self: end;
+}
+
+.R {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.media {
+  width: min(38vw, 620px);
+}
+
+.media.L {
+  margin-right: 48px;
+}
+
+.media.R {
+  margin-left: 48px;
+}
+
+.media.port {
+  width: min(24vw, 380px);
+}
+
+.txt {
+  width: min(29vw, 440px);
+}
+
+.txt.L {
+  margin-right: 80px;
+}
+
+.txt.R {
+  margin-left: 80px;
+}
+
+.txt > * + * {
+  margin-top: 8px;
+}
+
+.txt .chap {
+  margin-bottom: 10px;
+}
+
+.txt .big {
+  margin: 10px 0 24px;
+}
+
+.facts > div {
+  padding: 14px 0;
+  border-top: 1.5px solid var(--color-fg);
+}
+
+.facts > div:last-child {
+  border-bottom: 1.5px solid var(--color-fg);
+}
+
+.facts b {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.content [data-fly],
+.content [data-rise] {
+  will-change: transform, opacity;
+}
+
+/* ---------- результат: цифры вылетают из точки по обе стороны оси ---------- */
+.res {
+  padding-top: 24vh;
+}
+
+.res > .chap {
+  width: 50%;
+  padding-right: 80px;
+  text-align: right;
+}
+
+.figs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 9vh;
+  margin-top: 6vh;
+}
+
+.f {
+  width: min(29vw, 420px);
+}
+
+.f.L {
+  margin-right: 80px;
+  text-align: right;
+}
+
+.f.R {
+  margin-left: 80px;
+}
+
+.src {
+  width: 50%;
+  margin-top: 5vh;
+  padding-right: 80px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: right;
+  color: var(--muted);
+}
+
+.rev .quote {
+  margin: 10px 0 6px;
+}
+
+.rev .tags {
+  margin-top: 18px;
+}
+
+.rev .h2 + .p {
+  margin-top: 14px;
+}
+
+.rev .acts {
+  margin-top: 26px;
+}
+
+/* ---------- дальше: следующий кейс в окне чтения, сквозь него — в его первый экран ---------- */
+.next {
+  position: relative;
+  height: calc(var(--h) * 2.9);
+  margin-top: 16vh;
+}
+
+.stick {
+  position: sticky;
+  top: 0;
+  height: var(--h);
+  overflow: hidden;
+}
+
+.ncard {
+  position: absolute;
+  top: var(--ctop);
+  left: calc(50vw + var(--gap));
+  width: var(--cw);
+  opacity: 0;
+}
+
+.next[data-side="l"] .ncard {
+  left: calc(50vw - var(--gap) - var(--cw));
+}
+
+.ncap {
+  position: absolute;
+  top: calc(var(--ctop) + 8px);
+  left: calc(50vw - var(--capgap) - var(--capw));
+  width: var(--capw);
+  opacity: 0;
+}
+
+.next[data-side="l"] .ncap {
+  left: calc(50vw + var(--capgap));
+}
+
+.ncap .ntitle {
+  margin-top: 12px;
+}
+
+.ncap .meta {
+  margin-top: 22px;
+}
+
+.ncap .result {
+  margin-top: 28px;
+}
+
+.ncap .acts {
+  margin-top: 26px;
+}
+
+.n3 {
+  position: absolute;
+  inset: 0 0 auto;
+}
+
+/* Части первого экрана следующего кейса проявляются по ходу (CaseLayer.tsx). */
+.n3 [data-cover],
+.n3 [data-hr] > * {
+  opacity: 0;
+}
+
+/* ---------- портрет и телефон ---------- */
+@media (orientation: portrait) {
+  .cover,
+  .hero[data-side="l"] .cover,
+  .ncard,
+  .next[data-side="l"] .ncard {
+    left: calc((100vw - var(--cw)) / 2);
+  }
+
+  .hero {
+    padding: calc(var(--dy) + 28px) 0 8vh;
+  }
+
+  .htext,
+  .hero[data-side="l"] .htext {
+    width: auto;
+    margin: 0 20px;
+  }
+
+  .ncap,
+  .next[data-side="l"] .ncap {
+    top: calc(var(--dy) + 28px);
+    left: 20px;
+    width: calc(100vw - 40px);
+  }
+}
+
+/* Телефон: шапка, как на главной (logo 16px, подпись главы второй строкой), ось — под
+   картинками и текстом, точка видна в просветах (как под веером Сцены 4). */
+@media (max-width: 879px), (max-height: 500px) {
+  .cta {
+    top: 28px;
+    height: 32px;
+    padding: 0 14px;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 767px), (max-height: 500px) {
+  .logo {
+    top: 20px;
+    left: 20px;
+    font-size: 1rem;
+  }
+
+  .cta {
+    top: 14px;
+    right: 56px;
+  }
+
+  .close {
+    top: 8px;
+    right: 8px;
+  }
+
+  .close::before,
+  .close::after {
+    left: 12px;
+    width: 20px;
+  }
+}
+
+/* Телефон боком: подпись главы мельче — вровень с логотипом (как SceneLabel на главной). */
+@media (max-height: 500px) {
+  .label {
+    top: 23px;
+    left: calc(50% + 12px);
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .label {
+    top: 42px;
+    left: 20px;
+    font-size: 0.9375rem;
+    font-weight: 400;
+  }
+
+  .dot {
+    z-index: 0;
+  }
+
+  .title,
+  .ntitle {
+    font-size: 28px;
+    line-height: 1.1;
+  }
+
+  .htext .count {
+    margin-top: 14px;
+  }
+
+  .htext .title {
+    margin-top: 8px;
+  }
+
+  .htext > * + * {
+    margin-top: 14px;
+  }
+
+  .htext,
+  .txt,
+  .f,
+  .res > .chap,
+  .src {
+    background: var(--color-bg);
+  }
+
+  .result {
+    font-size: 56px;
+  }
+
+  .fig {
+    font-size: 36px;
+  }
+
+  .meta {
+    gap: 4px 16px;
+    font-size: 14px;
+  }
+
+  .big,
+  .quote {
+    font-size: 19px;
+  }
+
+  .h2 {
+    font-size: 26px;
+  }
+
+  .row {
+    display: block;
+    padding: 14vh 20px 0;
+  }
+
+  .media,
+  .media.port {
+    width: 100%;
+    margin: 0;
+  }
+
+  .media.port {
+    width: 72%;
+    margin: 0 auto;
+  }
+
+  .txt,
+  .txt.L,
+  .txt.R {
+    width: 100%;
+    margin: 18px 0 0;
+    padding: 6px 0;
+  }
+
+  .row.two .media + .media {
+    margin-top: 18px;
+  }
+
+  .res {
+    padding: 16vh 20px 0;
+  }
+
+  .res > .chap,
+  .src {
+    width: auto;
+    padding: 4px 0;
+    text-align: left;
+  }
+
+  .figs {
+    grid-template-columns: 1fr;
+    row-gap: 36px;
+  }
+
+  .f,
+  .f.L,
+  .f.R {
+    grid-column: 1;
+    justify-self: start;
+    width: 100%;
+    margin: 0;
+    padding: 4px 0;
+    text-align: left;
+  }
+
+  .next {
+    height: calc(var(--h) * 3);
+  }
+
+  .ncap .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-top: 8px;
+    font-size: 13.5px;
+  }
+
+  .ncap .meta dt {
+    display: none;
+  }
+
+  .ncap .meta dd:not(:last-of-type)::after {
+    content: "\00a0·\00a0";
+  }
+
+  .ncap .ntitle {
+    margin-top: 6px;
+    font-size: 24px;
+  }
+
+  .ncap .result {
+    margin-top: 12px;
+    font-size: 40px;
+  }
+
+  .ncap .acts {
+    margin-top: 16px;
+  }
+}
+
+/* Без движения: всё на местах, «Дальше» — обычным блоком: карточка следующего кейса с подписью,
+   переход — кнопкой, затуханием. */
+@media (prefers-reduced-motion: reduce) {
+  .next {
+    height: auto;
+  }
+
+  .stick {
+    position: relative;
+  }
+
+  .ncard,
+  .ncap {
+    opacity: 1;
+  }
+
+  .ncard {
+    transform: perspective(1200px) rotateY(-8deg);
+  }
+
+  .next[data-side="l"] .ncard {
+    transform: perspective(1200px) rotateY(8deg);
+  }
+
+  .n3 {
+    display: none;
+  }
+}

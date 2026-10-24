@@ -5,7 +5,9 @@
    z-index выше всех сцен и Hero: к прыжку экран — только фон футера и круг, без логотипа,
    телефона и точки Hero, как кадр интро в момент «вдоха» круга. */
 .footer {
-  --fh: 60dvh;
+  /* Высота — от высоты экрана сцен (--ih, lib/scroll/onScroll), как у всех сцен: панели
+     браузера на телефоне футер и петлю не сдвигают. */
+  --fh: calc(var(--ih, 100dvh) * 0.6);
   --zone: 100vh;
   /* Пунктир пути «впереди» — как линия Сцены 6: точки 2px через 8px. */
   --ghost: radial-gradient(circle at 50% 1px, rgba(10, 10, 10, 0.32) 1px, transparent 1.5px) 0
@@ -39,17 +41,22 @@
   clip-path: inset(0 0 var(--clip, 0px) 0);
 }
 
-/* Над вставшим футером точка уже прошла — там чернила. */
+/* Над вставшим футером точка уже прошла — там чернила. Точка вошла в футер (data-in) — сверху
+   на 2px в Сцену 6: стык двух отрезков линии не оставляет волосяного просвета. */
 .footer::before {
   left: calc(50% - 2px);
   width: 4px;
   background: var(--color-fg);
 }
 
+.footer[data-in]::before {
+  top: -2px;
+}
+
 .stage {
   --dot-y: 42%;
   position: sticky;
-  top: calc(100dvh - var(--fh));
+  top: calc(var(--ih, 100dvh) - var(--fh));
   height: var(--fh);
   overflow: hidden;
   background: var(--color-bg);
@@ -179,7 +186,7 @@
   background: none;
   font: inherit;
   font-size: 0.8125rem;
-  color: rgba(10, 10, 10, 0.5);
+  color: rgba(10, 10, 10, 0.62);
   cursor: pointer;
 }
 
@@ -212,7 +219,7 @@
   background: none;
   font: inherit;
   font-size: 0.9375rem;
-  color: rgba(10, 10, 10, 0.5);
+  color: rgba(10, 10, 10, 0.62);
   text-align: left;
   cursor: pointer;
 }
@@ -227,7 +234,7 @@
   gap: 4px 20px;
   font-size: 0.8125rem;
   line-height: 1.4;
-  color: rgba(10, 10, 10, 0.5);
+  color: rgba(10, 10, 10, 0.62);
 }
 
 .fine a {
@@ -237,6 +244,10 @@
 
 .copy {
   margin-left: auto;
+}
+
+.short {
+  display: none;
 }
 
 .contacts a:hover,
@@ -251,8 +262,9 @@
   text-underline-offset: 0.2em;
 }
 
-/* Сенсорные экраны (телефон и телефон боком): у ссылок зона нажатия 44px — отступами. */
-@media (max-width: 767px), (max-height: 560px) {
+/* Сенсорные экраны (телефон, планшет в портрете и телефон боком): у ссылок зона нажатия 44px —
+   отступами. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 560px) {
   .contacts {
     top: calc(var(--dot-y) - 22px);
     gap: 0;
@@ -261,7 +273,7 @@
   .contacts a,
   .mail,
   .again {
-    padding-block: 11px;
+    padding-block: 12px;
   }
 
   .fine {
@@ -270,7 +282,7 @@
   }
 
   .fine a {
-    padding-block: 12px;
+    padding-block: 13px;
   }
 
   .copy {
@@ -286,10 +298,18 @@
   }
 }
 
-/* Телефон: подпись — под точкой, по центру. */
-@media (max-width: 767px) {
+/* Телефон боком: петля — во весь круг Hero (r 90px) на линии; подпись — справа от неё, иначе
+   петля легла бы на подпись и та гасла бы (Footer.tsx). */
+@media (min-width: 768px) and (max-height: 560px) {
+  .contacts {
+    left: calc(50% + 114px);
+  }
+}
+
+/* Телефон и планшет в портрете (lib/phoneLayout.ts): подпись — под точкой, по центру. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
   .footer {
-    --fh: 62dvh;
+    --fh: calc(var(--ih, 100dvh) * 0.62);
   }
 
   .stage {
@@ -315,6 +335,17 @@
 
   .copy {
     margin-left: 0;
+  }
+}
+
+/* Телефон: название согласия — «ПД», иначе подвал в три строки; на планшете оно целиком. */
+@media (max-width: 767px) {
+  .long {
+    display: none;
+  }
+
+  .short {
+    display: inline;
   }
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useLenis } from "@/app/providers";
 import { BRIEF_CONFIG } from "@/lib/brief";
+import { phoneLayout } from "@/lib/phoneLayout";
 import { pathHandoff } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Footer.module.css";
@@ -39,13 +40,13 @@ const invert = (rgb: string) =>
     .join(", ")})`;
 
 // Круг интро Hero на экране после прыжка наверх (scrollY = 0) — как .pill в Hero.module.css:
-// на телефоне (< 768px) — 140px в (74%, --y1), --y1 — от общей высоты экрана (--ih);
-// иначе — 180px в центре Hero.
+// в телефонной раскладке Hero (телефон и планшет в портрете) — 140px в (74%, --y1), --y1 — от
+// общей высоты экрана (--ih); иначе — 180px в центре Hero.
 function heroCircle() {
   const hero = document.querySelector<HTMLElement>('[data-scene="hero"]');
   const w = window.innerWidth;
   const top = hero ? hero.getBoundingClientRect().top + window.scrollY : 0;
-  if (w < 768) {
+  if (phoneLayout()) {
     const h = viewportH();
     const y1 = h * 0.3 + Math.max(h * -0.03, h * 0.22 - w * 0.352);
     return { x: w * 0.74, y: top + y1, r: 70 };
@@ -116,7 +117,7 @@ export function Footer() {
     };
 
     const layout = () => {
-      const h = window.innerHeight;
+      const h = viewportH();
       const fh = stage.offsetHeight;
       const c = heroCircle();
       g.dx = dot.offsetLeft + dot.offsetWidth / 2;
@@ -235,7 +236,7 @@ export function Footer() {
     const update = () => {
       if (playing) return;
       const rect = section.getBoundingClientRect();
-      const h = window.innerHeight;
+      const h = viewportH();
       const fh = stage.offsetHeight;
       // Футер встаёт низом экрана, когда верх секции — на stuck. Зона — всё, что секция длиннее
       // футера: столько он стоит внизу, а точка рисует петлю.
@@ -268,17 +269,23 @@ export function Footer() {
       // пунктир. Граница сцен ещё ниже этой высоты — точка в Сцене 6, здесь её нет. Без анимаций
       // — точка на месте, линия в чернилах.
       const y6 = Number.isFinite(pathHandoff.y) ? pathHandoff.y : g.dy;
-      const k = y6 <= stuck ? 1 : clamp01((y6 - rect.top) / (y6 - stuck));
+      // Ловит, когда верх футера дошёл до низа точки (радиус 6px): пока он проходит через точку, её
+      // низ — здесь (верх режет край футера), а верх ещё рисует Сцена 6 — точка целая. Пока так,
+      // точка стоит на высоте y6, как у Сцены 6, и место — с точностью до 0,1px: половины не
+      // расходятся; к своему месту она идёт, когда верх футера прошёл её верх.
+      const k = y6 - 6 <= stuck ? 1 : clamp01((y6 - 6 - rect.top) / (y6 - 6 - stuck));
       const at = reduced
         ? g.ry
-        : rect.top > y6
-          ? -1
+        : rect.top > y6 + 6
+          ? -7
           : Math.min(g.ry, y6 + (g.dy - y6) * k - rect.top);
-      const came = at < 0 ? "-" : `${Math.round(at)}`;
+      const came = at < -6 ? "-" : at.toFixed(1);
       if (came !== arrived) {
         arrived = came;
-        dot.style.opacity = at < 0 ? "0" : "";
-        dot.style.transform = at < 0 || at >= g.ry ? "" : `translateY(${(at - g.ry).toFixed(1)}px)`;
+        dot.style.opacity = at < -6 ? "0" : "";
+        section.toggleAttribute("data-in", at >= 0);
+        dot.style.transform =
+          at < -6 || at >= g.ry ? "" : `translateY(${(at - g.ry).toFixed(1)}px)`;
         line.style.setProperty("--ink", `${Math.max(0, Math.round(at))}px`);
       }
 
@@ -381,8 +388,12 @@ export function Footer() {
           </button>
         </div>
         <p className={styles.fine}>
-          <Link href="/privacy">Политика конфиденциальности</Link>
-          <Link href="/consent">Согласие на обработку данных</Link>
+          <Link href="/privacy">Политика обработки персональных данных</Link>
+          {/* Название документа целиком; на телефоне — «ПД»: иначе подвал в три строки. */}
+          <Link href="/consent">
+            Согласие на обработку <span className={styles.long}>персональных данных</span>
+            <span className={styles.short}>ПД</span>
+          </Link>
           <span className={styles.copy}>© 2026 White Inks</span>
         </p>
       </div>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f7dccb"/>
+  <rect x="32" y="34" width="336" height="266" rx="3" fill="#fff"/>
+  <rect x="52" y="52" width="70" height="10" fill="#0a0a0a"/>
+  <rect x="32" y="78" width="336" height="1.5" fill="#0a0a0a" fill-opacity=".1"/>
+  <rect x="52" y="96" width="30" height="30" fill="#dddaf5"/>
+  <rect x="94" y="102" width="70" height="6" rx="3" fill="#0a0a0a"/>
+  <rect x="94" y="114" width="44" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="52" y="140" width="30" height="30" fill="#f4ebc3"/>
+  <rect x="94" y="146" width="60" height="6" rx="3" fill="#0a0a0a"/>
+  <rect x="94" y="158" width="36" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="52" y="184" width="30" height="30" fill="#0a0a0a"/>
+  <rect x="94" y="190" width="76" height="6" rx="3" fill="#0a0a0a"/>
+  <rect x="94" y="202" width="40" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="52" y="228" width="30" height="30" fill="#d3ebdd"/>
+  <rect x="94" y="234" width="56" height="6" rx="3" fill="#0a0a0a"/>
+  <rect x="94" y="246" width="30" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <g fill="none" stroke="#0a0a0a" stroke-width="1.5">
+    <rect x="176" y="101" width="40" height="20" rx="10"/><rect x="176" y="145" width="40" height="20" rx="10"/>
+    <rect x="176" y="189" width="40" height="20" rx="10"/><rect x="176" y="233" width="40" height="20" rx="10"/>
+  </g>
+  <g fill="#0a0a0a" fill-opacity=".16">
+    <rect x="188" y="108" width="16" height="6" rx="3"/><rect x="188" y="152" width="16" height="6" rx="3"/>
+    <rect x="188" y="196" width="16" height="6" rx="3"/><rect x="188" y="240" width="16" height="6" rx="3"/>
+  </g>
+  <rect x="236" y="92" width="1.5" height="208" fill="#0a0a0a" fill-opacity=".1"/>
+  <rect x="254" y="100" width="60" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="254" y="116" width="90" height="16" fill="#0a0a0a"/>
+  <rect x="254" y="148" width="50" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="254" y="160" width="70" height="6" rx="3" fill="#0a0a0a" fill-opacity=".16"/>
+  <rect x="254" y="218" width="96" height="30" rx="15" fill="#0a0a0a"/>
+  <rect x="276" y="230" width="52" height="6" rx="3" fill="#fff"/>
+  <rect x="254" y="258" width="96" height="30" rx="15" fill="none" stroke="#0a0a0a" stroke-width="1.5"/>
+  <rect x="280" y="270" width="44" height="6" rx="3" fill="#0a0a0a"/>
+</svg>

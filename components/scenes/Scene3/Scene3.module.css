@@ -30,6 +30,20 @@
   will-change: transform, opacity;
 }
 
+/* Карточка с кейсом — ссылка в него (и в туннеле, и в сетке). Ловит клики и фокус, только пока
+   видна (visibility пишет Scene3.tsx). */
+.caseCard {
+  display: block;
+  color: inherit;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.caseCard:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 4px;
+}
+
 .preview {
   height: 100%;
   border: 1.5px solid var(--color-fg);
@@ -78,7 +92,7 @@
 .count span,
 .meta dt,
 .label > span:last-child {
-  opacity: 0.45;
+  opacity: 0.62;
 }
 
 .title {
@@ -228,7 +242,9 @@
 
 /* Своя точка финала — на месте общей (.drop в Hero, 12px): скатывается под сетку и ждёт там
    с лёгким пульсом; место (transform) и прозрачность пишет Scene3.tsx. Пульс — у круга внутри:
-   scale на самой точке умножал бы и её сдвиг. */
+   scale на самой точке умножал бы и её сдвиг. Ход пульса — --pulse (globals.css), размах —
+   --breath на точке (Scene3.tsx): нарастает, пока точка докатывается, и сходит на нет до того,
+   как её подхватит Сцена 4, — там она ровно 12px. Без размаха пульс на паузе. */
 .drop {
   position: fixed;
   top: 0;
@@ -246,20 +262,22 @@
   inset: 0;
   border-radius: 50%;
   background: var(--color-fg);
+  scale: calc(1 + (var(--pulse) - 1) * var(--breath, 0));
+  animation: wait 2.4s ease-in-out infinite paused;
 }
 
 .drop[data-wait="true"]::before {
-  animation: wait 2.4s ease-in-out infinite;
+  animation-play-state: running;
 }
 
 @keyframes wait {
   0%,
   100% {
-    scale: 1;
+    --pulse: 1;
   }
 
   50% {
-    scale: 1.3;
+    --pulse: 1.3;
   }
 }
 
@@ -269,9 +287,9 @@
   }
 }
 
-/* Телефон и короткий экран: подпись плотнее — клиент, тип и год в одну строку, цифра от высоты
-   экрана; у плиток — только название. Тот же порог — compact в Scene3.tsx. */
-@media (max-width: 767px), (max-height: 500px) {
+/* Телефон, планшет в портрете и короткий экран: подпись плотнее — клиент, тип и год в одну строку,
+   цифра от высоты экрана; у плиток — только название. Тот же запрос — compact в Scene3.tsx. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
   .count {
     font-size: 13px;
   }
@@ -311,7 +329,7 @@
   }
 
   .label {
-    font-size: 12.5px;
+    font-size: 13px;
   }
 
   .label > span:last-child,

@@ -2,6 +2,7 @@
 
 import { type CSSProperties, type RefObject, useEffect, useId, useRef, useState } from "react";
 import { useLenis } from "@/app/providers";
+import { BRIEF_CONFIG } from "@/lib/brief";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import { goToStation, pathProgress, STATIONS } from "@/lib/stations";
 import styles from "./Hero.module.css";
@@ -48,19 +49,33 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
     const burger = burgerRef.current;
     if (!root || !burger) return;
     const footer = document.querySelector('[data-scene="footer"]');
+    const cta = document.querySelector(`.${styles.cta}`);
+    const brief = document.querySelector('[data-scene="scene6"]');
     let scrolled = false;
+    let asking = false;
     let dark = false;
 
     return onScroll(root, () => {
       const h = viewportH();
       const y = window.scrollY;
+      // «Связаться» Hero ушла за верх экрана, а письмо (Сцена 6) ещё ниже 35% экрана — вместо
+      // телефона кнопка к письму (.asking). В письме — снова телефон: форма просит номер, наш рядом.
+      const ask =
+        !!cta &&
+        !!brief &&
+        cta.getBoundingClientRect().bottom < 0 &&
+        brief.getBoundingClientRect().top > h * 0.35;
       // Порог — 10% экрана: пункты успевают уйти до того, как к шапке подъедет заголовок Hero.
       if (y > h * 0.1 !== scrolled) {
         scrolled = !scrolled;
         header.current?.classList.toggle(styles.scrolled, scrolled);
       }
-      // Над футером бургер — цвета фона (.onDark): к прыжку наверх его уже не видно, стык петли
-      // не ломается.
+      if (ask !== asking) {
+        asking = ask;
+        header.current?.classList.toggle(styles.asking, asking);
+      }
+      // Над футером бургер — цвета фона и не нажимается (.onDark): к прыжку наверх его уже не
+      // видно, стык петли не ломается.
       const b = burger.getBoundingClientRect();
       const overFooter = !!footer && footer.getBoundingClientRect().top < b.top + b.height / 2;
       if (overFooter !== dark) {
@@ -69,7 +84,7 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
       }
       // Открытая панель закрывается, когда страницу увели на четверть экрана от места открытия
       // (меньше — докатывает инерция Lenis) или бургер спрятался (pointer-events: none в CSS —
-      // вверху страницы на широком экране).
+      // вверху страницы на широком экране и над футером).
       const at = openedAt.current;
       if (
         at !== null &&
@@ -116,7 +131,8 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
         onClick={() => setOpen(!open)}
       />
       {/* Панель — те же станции, что на карте пути: слева нить, пройденные — чернилами, текущая —
-          точкой 12px. Выбор — закрыть панель и лететь; фокус — обратно на бургер. */}
+          точкой 12px. Выбор — закрыть панель и лететь; фокус — обратно на бургер. Последней
+          строкой — телефон: в шапке его место на время пути занимает кнопка к письму. */}
       <nav id={panelId} className={styles.panel} aria-label="Меню">
         <ol className={styles.thread} style={{ "--k": Math.max(0, station) } as CSSProperties}>
           {STATIONS.map((s, i) => (
@@ -137,6 +153,12 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
             </li>
           ))}
         </ol>
+        <a
+          className={`${styles.panelItem} ${styles.panelPhone}`}
+          href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, "")}`}
+        >
+          {BRIEF_CONFIG.phone}
+        </a>
       </nav>
     </div>
   );

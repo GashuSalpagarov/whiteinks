@@ -91,14 +91,52 @@
 }
 
 /* Подпись этапа: крупный срок, «срок этапа», делаем / получаете. Номер и название этапа —
-   в чек-листе и на карточке, здесь они не повторяются. */
+   в чек-листе и на карточке, здесь они не повторяются. Видна, пока идёт её этап (data-on из
+   Scene4.tsx). */
 .caption {
   opacity: 0;
   visibility: hidden;
+  translate: 0 12px;
+}
+
+.caption[data-on="true"] {
+  opacity: 1;
+  visibility: visible;
+  translate: none;
+}
+
+/* Смена этапа — по порогу, переходом: старая подпись уходит быстро, новая всплывает следом;
+   карточка проявляется за 0,3 с, её движение — по прокрутке. */
+@media (prefers-reduced-motion: no-preference) {
+  .caption {
+    transition:
+      opacity 0.15s,
+      visibility 0.15s,
+      translate 0.15s;
+  }
+
+  .caption[data-on="true"] {
+    transition:
+      opacity 0.3s 0.12s,
+      visibility 0s 0.12s,
+      translate 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.12s;
+  }
+
+  .card {
+    transition:
+      opacity 0.3s,
+      visibility 0.3s;
+  }
+
+  .lead {
+    transition:
+      opacity 0.3s,
+      translate 0.3s;
+  }
 }
 
 .meta dt {
-  opacity: 0.45;
+  opacity: 0.62;
 }
 
 /* Название этапа — только на низком телефоне (ниже): там в чек-листе одни номера. */
@@ -132,8 +170,8 @@
 }
 
 /* Точка сцены — копия общей .drop (Hero): 12px, цвет текста. Положение — transform из
-   Scene4.tsx от левого верхнего угла экрана. Под кадром сцены: в центре первой карточки её
-   закрывает веер, на выходе капля выходит из-под него. */
+   Scene4.tsx от левого верхнего угла экрана. Под кадром сцены, как и линия: идёт по стопке под
+   карточками, белая кромка карточки обрывает линию. */
 .dot {
   position: fixed;
   top: 0;
@@ -165,9 +203,9 @@
 .sticky:is([data-mode="tall"], [data-mode="short"]) .badge {
   top: 16px;
   left: 16px;
-  height: 20px;
-  padding: 0 7px;
-  font-size: 11px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 13px;
 }
 
 .sticky:is([data-mode="tall"], [data-mode="short"]) .meta {

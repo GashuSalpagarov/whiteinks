@@ -11,7 +11,8 @@
 
 /* Трасса: путь целиком (Scene2.tsx, buildTrail) уезжает вверх вместе со страницей — transform
  * у svg, своим слоем, без перерисовки. Видна только выше точки: слой обрезан по её центру
- * (центр экрана + 20px, --drop-offset), обрез прячется под точкой. */
+ * (центр экрана + 20px, --drop-offset; на входе из Hero точка ниже — слой сдвинут за ней
+ * transform-ом), обрез прячется под точкой. */
 .trail {
   position: fixed;
   top: 0;
@@ -23,6 +24,7 @@
   color: var(--color-fg);
   pointer-events: none;
   visibility: hidden;
+  will-change: transform;
 }
 
 .trail svg {
@@ -110,7 +112,7 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1.7;
-  color: rgba(10, 10, 10, 0.5);
+  color: rgba(10, 10, 10, 0.62);
 }
 
 .tags li {
@@ -226,10 +228,10 @@
   --accent: #f4ebc3;
 }
 
-/* ---------- Телефон (< 768px; тот же порог — в Scene2.tsx) ----------
+/* ---------- Телефон и планшет в портрете (тот же запрос — lib/phoneLayout.ts) ----------
  * Блок — от поля 20px до 26vw с другой стороны; там, в 13vw от края, идёт точка: пара блоков
  * колена — напротив неё, между парами она переходит на другую сторону (Scene2.tsx). */
-@media (max-width: 767px) {
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
   .block {
     width: calc(74vw - 20px);
   }

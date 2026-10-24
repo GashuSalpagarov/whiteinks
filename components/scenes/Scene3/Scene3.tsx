@@ -1,9 +1,12 @@
 "use client";
 
 import { invalidate } from "@react-three/fiber";
-import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { useLenis } from "@/app/providers";
 import heroStyles from "@/components/scenes/Hero/Hero.module.css";
+import skipStyles from "@/components/ui/Skip.module.css";
+import { caseHref, openCase } from "@/lib/caseRoute";
+import { phoneLayout } from "@/lib/phoneLayout";
 import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
 import { r3fTunnel } from "@/r3f/tunnel";
 import { CARDS_CONTENT, PROJECTS_TOTAL, WORKS_HREF } from "./cardsData";
@@ -36,6 +39,12 @@ const STAGGER = 0.02; // вразнобой, по очереди
 const DOT_Y = 20; // --drop-offset: точка на 20px ниже центра экрана, как в Сцене 2
 const DROP_GAP = 26; // в портрете точка ждёт под сеткой: зазор под неё
 const ROLL = 0.4; // за столько, пока собирается сетка, точка скатывается к месту покоя
+const BREATH_IN = 0.08; // пульс в покое нарастает, пока точка докатывается
+const BREATH_OUT = 0.05; // и сходит на нет до конца сцены — к Сцене 4 она ровно 12px
+const SETTLE = FINALE_AT + 0.05 + ROLL; // сетка собрана целиком, точка — на месте покоя
+// «Пропустить» туннель: видна, пока летят карточки; нажатие — пролёт Lenis к собранной сетке.
+const SKIP_FROM = 0.05;
+const SKIP_TO = 3.5;
 const GAP = 48; // от точки до карточки в окне чтения
 const CAPTION_GAP = 80; // от точки до подписи: у точки гуще всего частицы
 const GRID_GAP = 24;
@@ -72,13 +81,13 @@ type Box = { x: number; y: number; w: number; h: number };
 // карточка над точкой, подпись под ней; сетка 2×3 (центр — между вторым и третьим рядом) —
 // первые пять и «Все проекты». Точка в финале — не в сетке, а под ней (rest).
 // Сверху — полоса шапки (72px), снизу — 16px поля: если тесно, меньше становятся карточки и
-// плитки, а не текст.
+// плитки (в портрете у плиток — только поле картинки по высоте), а не текст.
 function layout(w: number, h: number) {
   const dx = w / 2;
   const dy = h / 2 + DOT_Y;
   const portrait = w < h;
-  // Телефон или короткий экран: подписи короче (тот же порог — в Scene3.module.css).
-  const compact = w < 768 || h <= 500;
+  // Телефонная раскладка или короткий экран: подписи короче (тот же запрос — в Scene3.module.css).
+  const compact = phoneLayout() || h <= 500;
   const read: Box[] = [];
   const caption: Box[] = [];
   const tilt: number[] = [];
@@ -104,25 +113,35 @@ function layout(w: number, h: number) {
     tilt.push(left ? TILT : -TILT);
   }
 
-  // Сетка: cols × rows по центру — колонки поровну слева и справа от точки, над ней — upRows рядов.
-  // Широкий экран — 4×2: все кейсы и «Все проекты»; портрет — 2×3: первые пять и «Все проекты».
+  // Сетка: cols × rows, колонки поровну слева и справа от точки. Широкий экран — 4×2: все кейсы
+  // и «Все проекты», над точкой — один ряд; портрет — 2×3: первые пять и «Все проекты».
   const shown = portrait ? TUNNEL : N; // кейсов в сетке; за ними — «Все проекты»
   const gap = portrait ? (compact ? 10 : 12) : compact ? 16 : GRID_GAP;
+  // В портрете между колонками скатывается точка (12px) — зазор ей с запасом.
+  const colGap = portrait ? 24 : gap;
   const labelH = compact ? LABEL_H_COMPACT : LABEL_H;
   const cols = portrait ? 2 : 4;
-  const upRows = portrait ? 2 : 1;
-  // Ширина плитки — по самому тесному: колонки на всю ширину между полями шапки (32px, на
-  // телефоне и в коротком ландшафте — 20px), ряды над точкой и под ней.
+  const upRows = portrait ? 2 : 1; // рядов над точкой
+  // Колонки — на всю ширину между полями шапки (32px, на телефоне и в коротком ландшафте — 20px).
   const margin = portrait || compact ? 20 : 32;
-  const room = (w - 2 * margin - (cols - 1) * gap) / cols;
+  const room = (w - 2 * margin - (cols - 1) * colGap) / cols;
+  // Ширина плитки — по самому тесному: колонки и ряды над точкой и под ней. Телефон в портрете —
+  // иначе: плитка по ширине, а не помещаются три ряда по высоте (от полосы шапки до места точки
+  // под сеткой) — ниже поле картинки; сетка сдвигается в экран, если над точкой два ряда не встают.
+  const phone = portrait && compact;
   const rowH = portrait
     ? Math.min((dy - GRID_TOP - 1.5 * gap) / 2 - labelH, h - 16 - DROP_GAP - gap / 2 - labelH - dy)
     : Math.min(dy - gap / 2 - TOP - labelH, h - dy - gap / 2 - 16 - labelH);
-  const tw = Math.min(room, fitW(rowH));
-  const th = cardH(tw);
+  const tw = phone ? room : Math.min(room, fitW(rowH));
+  const th = phone
+    ? Math.min(cardH(tw), (h - GRID_TOP - 16 - DROP_GAP - 2 * gap) / 3 - labelH)
+    : cardH(tw);
+  const pitch = th + labelH + gap;
+  const y0 = dy + gap / 2 - upRows * pitch;
+  const top = phone ? Math.max(GRID_TOP, Math.min(y0, h - 16 - DROP_GAP - 3 * pitch + gap)) : y0;
   const tile: Box[] = Array.from({ length: shown + 1 }, (_, i) => ({
-    x: dx + gap / 2 + ((i % cols) - cols / 2) * (tw + gap),
-    y: dy + gap / 2 + (Math.floor(i / cols) - upRows) * (th + labelH + gap),
+    x: dx + colGap / 2 + ((i % cols) - cols / 2) * (tw + colGap),
+    y: top + Math.floor(i / cols) * pitch,
     w: tw,
     h: th,
   }));
@@ -134,11 +153,21 @@ function layout(w: number, h: number) {
     x: dx,
     y: portrait ? bottom + DROP_GAP / 2 : Math.min(h - 24, Math.max(h - 52, bottom + 16)),
   };
-  return { dx, dy, portrait, compact, read, caption, tilt, shown, tile, labelGap, rest };
+  return { dx, dy, portrait, compact, read, caption, tilt, shown, tile, labelGap, rest, bottom };
 }
 
 // Где Сцена 3 оставляет точку, когда отпускает свой sticky: отсюда её ведёт Сцена 4.
 export const dropRest = (w: number, h: number) => layout(w, h).rest;
+
+// Прокрутка страницы, на которой карточка i стоит в окне чтения (середина стоянки), — для слоя
+// кейса (components/case): туда он ставит главную, когда кейс открыт по прямой ссылке и его
+// закрывают. Кейсы только сетки (06–07) — сетка собрана, точка на месте покоя.
+export function cardScrollY(i: number): number {
+  const section = document.querySelector<HTMLElement>('[data-scene="scene3"]');
+  if (!section) return 0;
+  const u = i < TUNNEL ? launchAt(i) + APPROACH + HOLD / 2 : SETTLE;
+  return Math.round(section.getBoundingClientRect().top + window.scrollY + u * viewportH());
+}
 
 type Layout = ReturnType<typeof layout>;
 
@@ -210,6 +239,26 @@ export function Scene3() {
   const dropRef = useRef<HTMLSpanElement>(null);
   const progressRef = useRef(0);
   const streamRef = useRef({ opacity: 0, reveal: 0 });
+  const skipRef = useRef<HTMLButtonElement>(null);
+  const flying = useRef(false); // идёт пролёт по «пропустить»
+  const lenis = useLenis();
+
+  // Пролёт к собранной сетке (SETTLE) — Lenis, 1–1,5 с, с торможением в конце: карточки быстро
+  // пролетают, экран не меняется рывком. Без Lenis (reduced motion) туннеля нет — и кнопки.
+  const skipTunnel = () => {
+    const section = sectionRef.current;
+    if (!section || !lenis) return;
+    const h = viewportH();
+    const target = section.getBoundingClientRect().top + window.scrollY + SETTLE * h;
+    const screens = Math.abs(target - window.scrollY) / h;
+    flying.current = true;
+    skipRef.current?.classList.remove(skipStyles.on);
+    lenis.scrollTo(target, {
+      duration: Math.min(1.5, 1 + 0.12 * screens),
+      easing: (t) => 1 - (1 - t) ** 3,
+    });
+  };
+
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -220,6 +269,7 @@ export function Scene3() {
     // Плитки сетки и их подписи по местам раскладки: кейсы, сколько их в ней, и «Все проекты».
     let tiles: (HTMLElement | null)[] = [];
     let labels: (HTMLElement | null)[] = [];
+    let skipShown = false;
     // Последние записанные стили: пишем только изменившиеся.
     const written = new Map<HTMLElement, string>();
     const put = (el: HTMLElement | null, opacity: number, transform = "") => {
@@ -263,6 +313,23 @@ export function Scene3() {
         }
         if (moreRef.current) moreRef.current.textContent = `+${PROJECTS_TOTAL - L.shown}`;
         for (let i = 0; i < TUNNEL; i++) place(captionRefs.current[i], L.caption[i]);
+        // «Пропустить» — внизу по центру. В портрете подпись под точкой бывает до самого низа
+        // (375×548): тогда пилюля справа в строке номера «01 / 05» — она там короткая.
+        const pill = skipRef.current;
+        if (pill) {
+          pill.classList.remove(skipStyles.inRow);
+          const caps = captionRefs.current.filter((c) => c !== null);
+          const low = Math.max(0, ...caps.map((c) => c.offsetTop + c.offsetHeight));
+          const free = h - Number.parseFloat(getComputedStyle(pill).bottom) - pill.offsetHeight;
+          const row = L.portrait && low + 12 > free && caps[0]?.firstElementChild;
+          pill.classList.toggle(skipStyles.inRow, !!row);
+          if (row instanceof HTMLElement) {
+            pill.style.setProperty(
+              "--skip-top",
+              `${caps[0].offsetTop + row.offsetTop + row.offsetHeight / 2}px`,
+            );
+          }
+        }
         for (let i = 0; i <= L.shown; i++) {
           const t = L.tile[i];
           place(labels[i], { x: t.x, y: t.y + t.h + L.labelGap, w: t.w });
@@ -274,9 +341,23 @@ export function Scene3() {
         sticky.dataset.stage = stage;
         for (let i = 0; i <= L.shown; i++) place(tiles[i], boxOf(L, i, u));
       }
+      // Sticky отпущен: сетка уезжает медленнее страницы — её низ уходит за верх экрана (на
+      // телефоне — под полосу шапки) ровно тогда, когда через экран встаёт Сцена 4. Так между
+      // сеткой и Сценой 4 нет пустой линии; Сцена 4 по-прежнему берёт точку с места покоя.
+      const gone = L.compact ? GRID_TOP : 0;
+      const lag = reduced ? 0 : clamp01(raw - TOTAL) * (h - L.bottom + gone);
+      const shift = lag ? `translateY(${lag.toFixed(1)}px)` : "";
+      if (sticky && sticky.style.transform !== shift) sticky.style.transform = shift;
       for (let i = 0; i <= L.shown; i++) {
         const c = cardAt(L, i, u);
         put(tiles[i], c ? c.o : 0, c ? c.transform : "");
+        // Карточка с кейсом — ссылка: ловит клики и фокус, только пока видна (невидимые стоят
+        // на своих местах поверх других).
+        const tile = tiles[i];
+        const vis = c && c.o > 0 ? "" : "hidden";
+        if (i < L.shown && tile && CARDS_CONTENT[i].slug && tile.style.visibility !== vis) {
+          tile.style.visibility = vis;
+        }
         const f1 = FINALE_AT + i * STAGGER + ASSEMBLE;
         put(labels[i], clamp01((u - f1 + 0.08) / 0.1));
         if (i === L.shown) {
@@ -293,7 +374,11 @@ export function Scene3() {
           u >= FINALE_AT
             ? 0
             : Math.min(clamp01((u - t1 + 0.1) / 0.1), 1 - clamp01((u - t2) / 0.08));
-        put(captionRefs.current[i], co, `translateY(${(1 - co) * 12}px)`);
+        const caption = captionRefs.current[i];
+        put(caption, co, `translateY(${(1 - co) * 12}px)`);
+        // Погасшая подпись не ловит нажатий: подписи через одну стоят на одном месте.
+        const cv = co > 0 ? "" : "hidden";
+        if (caption && caption.style.visibility !== cv) caption.style.visibility = cv;
       }
       // Поток частиц: уже идёт и с первого кадра сцены расходится из точки — пока летит первая
       // карточка, становится виден целиком, до камеры. Тексту не мешает: под строками подписей —
@@ -324,9 +409,29 @@ export function Scene3() {
       const roll = easeInOut(clamp01((u - FINALE_AT - 0.05) / ROLL));
       const drop = dropRef.current;
       put(drop, finale ? 1 : 0, `translate(${L.dx}px, ${lerp(L.dy, L.rest.y, roll).toFixed(2)}px)`);
-      const wait = finale && roll >= 1 ? "true" : "false";
+      // Размах пульса в покое (Scene3.module.css): нарастает, пока точка докатывается (BREATH_IN),
+      // и сходит на нет к концу сцены (BREATH_OUT) — Сцена 4 берёт точку ровно 12px.
+      const breath = finale
+        ? easeInOut(
+            Math.min(
+              clamp01((u - SETTLE + BREATH_IN) / BREATH_IN),
+              clamp01((TOTAL - u) / BREATH_OUT),
+            ),
+          )
+        : 0;
+      const wait = breath > 0 ? "true" : "false";
       if (drop && drop.dataset.wait !== wait) drop.dataset.wait = wait;
+      const b = breath.toFixed(3);
+      if (drop && drop.style.getPropertyValue("--breath") !== b)
+        drop.style.setProperty("--breath", b);
       if (u > 0) setVar("--drop-offset", `${DOT_Y}px`);
+      // «Пропустить» — пока стоит туннель и летят карточки, не во время своего же пролёта.
+      if (flying.current && (u >= SKIP_TO || u <= 0)) flying.current = false;
+      const skip = !flying.current && u > SKIP_FROM && u < SKIP_TO;
+      if (skip !== skipShown) {
+        skipShown = skip;
+        skipRef.current?.classList.toggle(skipStyles.on, skip);
+      }
       // Центр канваса (откуда летят частицы) — в точке. Рисует в канвасе только эта сцена, а до
       // неё он пуст — сдвиг постоянный: смена переменной на корне на входе в сцену пересчитывала
       // бы стили всей страницы.
@@ -338,106 +443,159 @@ export function Scene3() {
 
   const cases = CARDS_CONTENT;
   return (
-    <section
-      ref={sectionRef}
-      className={styles.scene3}
-      style={{ height: `calc(var(--ih, 100vh) * ${TOTAL + 1})` }}
-      data-scene="scene3"
-      aria-label="Работы"
-    >
-      <div ref={stickyRef} className={styles.sticky}>
-        {cases.map((c, i) => (
-          <figure
-            key={c.title}
-            ref={(el) => {
+    <>
+      <section
+        ref={sectionRef}
+        className={styles.scene3}
+        style={{ height: `calc(var(--ih, 100vh) * ${TOTAL + 1})` }}
+        data-scene="scene3"
+        aria-label="Работы"
+      >
+        <div ref={stickyRef} className={styles.sticky}>
+          {cases.map((c, i) => {
+            const ref = (el: HTMLElement | null) => {
               cardRefs.current[i] = el;
-            }}
-            className={styles.card}
-            style={{ zIndex: N - i }}
-          >
-            <div className={styles.preview}>
-              {/* Цветное поле вокруг вписанной картинки — её собственный фон: на втором круге
-                  (инверсия палитры, globals.css) img возвращается в свои цвета вместе с полем,
-                  а рамки и белое поле карточки остаются в негативе. */}
-              {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-              <img src={c.image} alt="" style={{ background: c.color }} />
-            </div>
-            <span className={styles.badge}>{num(i)}</span>
-          </figure>
-        ))}
-        {/* Последняя плитка сетки — вход на страницу всех проектов: стопка рамок («+17» — сколько
+            };
+            const inner = (
+              <>
+                <div className={styles.preview}>
+                  {/* Цветное поле вокруг вписанной картинки — её собственный фон: на втором круге
+                    (инверсия палитры, globals.css) img возвращается в свои цвета вместе с полем,
+                    а рамки и белое поле карточки остаются в негативе. */}
+                  {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
+                  <img src={c.image} alt="" style={{ background: c.color }} />
+                </div>
+                <span className={styles.badge}>{num(i)}</span>
+              </>
+            );
+            const slug = c.slug;
+            if (!slug) {
+              return (
+                <figure key={c.title} ref={ref} className={styles.card} style={{ zIndex: N - i }}>
+                  {inner}
+                </figure>
+              );
+            }
+            // Карточка с кейсом — ссылка в него: нажатие — пролёт сквозь неё (слой кейса).
+            // nofollow — роботам страницы кейсов не показываем (docs/12-case-page.md).
+            return (
+              <a
+                key={c.title}
+                ref={ref}
+                href={caseHref(slug)}
+                rel="nofollow"
+                className={`${styles.card} ${styles.caseCard}`}
+                style={{ zIndex: N - i }}
+                aria-label={`Кейс: ${c.title}`}
+                data-case={slug}
+                onClick={(e) =>
+                  openCase(e, {
+                    slug,
+                    card: cardRefs.current[i],
+                    caption: captionRefs.current[i] ?? null,
+                  })
+                }
+              >
+                {inner}
+              </a>
+            );
+          })}
+          {/* Последняя плитка сетки — вход на страницу всех проектов: стопка рамок («+17» — сколько
             ещё, без показанных в сетке; пишет update) и стрелка. Видна и ловит клики только в
             сетке (visibility пишет update). */}
-        <a
-          ref={allRef}
-          href={WORKS_HREF}
-          className={`${styles.card} ${styles.all}`}
-          aria-label={`Все проекты: ${projects(PROJECTS_TOTAL)}`}
-        >
-          <div className={`${styles.preview} ${styles.allField}`}>
-            <div className={styles.stack}>
-              <span />
-              <span />
-              <span ref={moreRef}>+{PROJECTS_TOTAL - N}</span>
+          <a
+            ref={allRef}
+            href={WORKS_HREF}
+            className={`${styles.card} ${styles.all}`}
+            aria-label={`Все проекты: ${projects(PROJECTS_TOTAL)}`}
+          >
+            <div className={`${styles.preview} ${styles.allField}`}>
+              <div className={styles.stack}>
+                <span />
+                <span />
+                <span ref={moreRef}>+{PROJECTS_TOTAL - N}</span>
+              </div>
+              <span className={styles.arrow}>→</span>
             </div>
-            <span className={styles.arrow}>→</span>
-          </div>
-        </a>
-        {cases.slice(0, TUNNEL).map((c, i) => (
-          <div
-            key={c.title}
-            ref={(el) => {
-              captionRefs.current[i] = el;
-            }}
-            className={styles.caption}
-          >
-            <p className={styles.count}>
-              {num(i)} <span>/ {num(TUNNEL - 1)}</span>
+          </a>
+          {cases.slice(0, TUNNEL).map((c, i) => (
+            <div
+              key={c.title}
+              ref={(el) => {
+                captionRefs.current[i] = el;
+              }}
+              className={styles.caption}
+            >
+              <p className={styles.count}>
+                {num(i)} <span>/ {num(TUNNEL - 1)}</span>
+              </p>
+              <h3 className={styles.title}>{c.title}</h3>
+              <dl className={styles.meta}>
+                <dt>Клиент</dt>
+                <dd>{c.client}</dd>
+                <dt>Тип</dt>
+                <dd>{c.type}</dd>
+                <dt>Год</dt>
+                <dd>{c.year}</dd>
+              </dl>
+              <p className={styles.result}>{c.result}</p>
+              <p className={styles.resultNote}>{c.resultNote}</p>
+              {c.slug && (
+                <a
+                  href={caseHref(c.slug)}
+                  rel="nofollow"
+                  className={styles.link}
+                  onClick={(e) =>
+                    c.slug &&
+                    openCase(e, {
+                      slug: c.slug,
+                      card: cardRefs.current[i],
+                      caption: captionRefs.current[i],
+                    })
+                  }
+                >
+                  Смотреть кейс →
+                </a>
+              )}
+            </div>
+          ))}
+          {cases.map((c, i) => (
+            <p
+              key={c.title}
+              ref={(el) => {
+                labelRefs.current[i] = el;
+              }}
+              className={styles.label}
+            >
+              <span>
+                <span className={styles.labelNum}>{num(i)} · </span>
+                {c.title}
+              </span>
+              <span>
+                {c.type} · {c.year}
+              </span>
             </p>
-            <h3 className={styles.title}>{c.title}</h3>
-            <dl className={styles.meta}>
-              <dt>Клиент</dt>
-              <dd>{c.client}</dd>
-              <dt>Тип</dt>
-              <dd>{c.type}</dd>
-              <dt>Год</dt>
-              <dd>{c.year}</dd>
-            </dl>
-            <p className={styles.result}>{c.result}</p>
-            <p className={styles.resultNote}>{c.resultNote}</p>
-            {c.href && (
-              <Link href={c.href} className={styles.link}>
-                Смотреть кейс →
-              </Link>
-            )}
-          </div>
-        ))}
-        {cases.map((c, i) => (
-          <p
-            key={c.title}
-            ref={(el) => {
-              labelRefs.current[i] = el;
-            }}
-            className={styles.label}
-          >
-            <span>
-              <span className={styles.labelNum}>{num(i)} · </span>
-              {c.title}
-            </span>
-            <span>
-              {c.type} · {c.year}
-            </span>
+          ))}
+          <p ref={allLabelRef} className={styles.label}>
+            <span>Все проекты</span>
+            <span>{projects(PROJECTS_TOTAL)}</span>
           </p>
-        ))}
-        <p ref={allLabelRef} className={styles.label}>
-          <span>Все проекты</span>
-          <span>{projects(PROJECTS_TOTAL)}</span>
-        </p>
-      </div>
-      <span ref={dropRef} className={styles.drop} aria-hidden="true" />
-      <r3fTunnel.In>
-        <Scene3R3F progressRef={progressRef} streamRef={streamRef} />
-      </r3fTunnel.In>
-    </section>
+        </div>
+        <span ref={dropRef} className={styles.drop} aria-hidden="true" />
+        <r3fTunnel.In>
+          <Scene3R3F progressRef={progressRef} streamRef={streamRef} />
+        </r3fTunnel.In>
+      </section>
+      {/* Слоем страницы, вне сцены (components/ui/Skip.module.css); видна, пока летят карточки. */}
+      <button
+        ref={skipRef}
+        type="button"
+        className={skipStyles.skip}
+        aria-label="Пропустить туннель работ"
+        onClick={skipTunnel}
+      >
+        пропустить
+      </button>
+    </>
   );
 }

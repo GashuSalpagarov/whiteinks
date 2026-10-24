@@ -1,8 +1,9 @@
 // Кейсы Сцены 3: карточка и подпись в туннеле, плитка финальной сетки. Тексты и цифры —
 // заглушки, правьте здесь. Картинки — в public/assets/hero/; color — фон картинки (как первый
 // прямоугольник в её SVG): с ним она вписывается в карточку целиком.
-// href — страница кейса. Пока страниц нет, ссылки «Смотреть кейс» в подписи нет; появится
-// /cases/<slug>/ — впишите адрес сюда, и ссылка покажется.
+// slug — страница кейса /works/<slug>/ (её содержимое — cases.ts): у карточки появляются ссылка
+// «Смотреть кейс →» в подписи туннеля, и сама карточка и плитка сетки ведут в кейс. Без slug —
+// просто карточка.
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const img = (name: string) => `${BASE}/assets/hero/${name}.svg`;
@@ -16,7 +17,7 @@ export type CardContent = {
   resultNote: string;
   image: string;
   color: string;
-  href?: string;
+  slug?: string;
 };
 
 // Порядок — и в туннеле (первые пять), и в сетке: 4×2 на широком экране (все семь и белая
@@ -41,6 +42,7 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "заказов онлайн за год",
     image: img("shop"),
     color: "#dddaf5",
+    slug: "e-commerce",
   },
   {
     title: "Промо-сайт студии",
@@ -51,6 +53,7 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "от идеи до запуска",
     image: img("browser"),
     color: "#f7dccb",
+    slug: "studio-site",
   },
   {
     title: "Бренд-система",

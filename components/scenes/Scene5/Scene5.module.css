@@ -40,7 +40,7 @@
 }
 
 /* Точка — копия общей .drop (Hero), 12px. Положение — transform из Scene5.tsx от левого верхнего
-   угла экрана; над линией, под мозаикой: на телефоне её закрывает белое поле мозаики. */
+   угла экрана; над линией, под мозаикой: по средней линии мозаики ничего нет, точку видно. */
 .dot {
   position: fixed;
   top: 0;
@@ -241,6 +241,28 @@
   color: var(--muted);
 }
 
+/* Вся клетка — кнопка окна заявки (Scene5.tsx): прозрачная, поверх содержимого; курсор — рука,
+   с клавиатуры — рамка фокуса по клетке. */
+.open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: -8px;
+}
+
+.scene5[data-armed] .tile:not([data-in]) > .open {
+  pointer-events: none;
+}
+
 /* Элементы Сцены 2: коробка в 0,1em на единицу. В плитке 1×1 — как в Сцене 2 (10px на единицу
    при 1440, Scene2.module.css), справа внизу, вровень с ценой; в широкой — от её ширины (cqw),
    справа вверху, рядом с текстом. */
@@ -296,6 +318,24 @@
   letter-spacing: -0.04em;
 }
 
+/* Тихая строка под мозаикой, двумя половинами: слева условия работы, справа оговорка о ценах.
+   Середину держит линия пути, точка идёт между ними, разделители их не пересекают (под последним
+   рядом линий нет; вертикальные кончаются над строкой с зазором). Поля — как у плиток: текст
+   вровень с клетками последнего ряда. */
+.terms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.terms > span {
+  padding: 0 clamp(20px, 12.5vw - 140px, min(2.8vw, 48px));
+  text-wrap: balance;
+}
+
 /* Узкая плитка 1×1 (экран уже 1280px и телефон): справа от цены места нет — элементы встают
    сверху, над названием. Ширина — внутри полей плитки. */
 @container (width < 260px) {
@@ -314,7 +354,8 @@
     transition:
       opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
       translate 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-      scale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+      scale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .tile::after {
@@ -327,23 +368,23 @@
 
   /* Внутри плитки — по очереди, чуть позже разделителя над ней; рисунок — последним. */
   .tile > :nth-child(2) {
-    transition-delay: 0.15s;
+    transition-delay: 0.15s, 0.15s, 0.15s, 0s;
   }
 
   .tile > :nth-child(3) {
-    transition-delay: 0.22s;
+    transition-delay: 0.22s, 0.22s, 0.22s, 0s;
   }
 
   .tile > :nth-child(4) {
-    transition-delay: 0.29s;
+    transition-delay: 0.29s, 0.29s, 0.29s, 0s;
   }
 
   .tile > :nth-child(5) {
-    transition-delay: 0.34s;
+    transition-delay: 0.34s, 0.34s, 0.34s, 0s;
   }
 
   .tile > .art {
-    transition-delay: 0.4s;
+    transition-delay: 0.4s, 0.4s, 0.4s, 0s;
   }
 
   .scene5[data-armed] .tile:not([data-in]) > * {
@@ -360,8 +401,31 @@
     scale: 0 1;
   }
 
+  /* Наведение на клетку — её содержимое чуть поднимается (своим transform, без задержек входа). */
+  @media (hover: hover) {
+    .tile:has(> .open:hover) > :not(.open) {
+      transform: translateY(-4px);
+    }
+  }
+
+  .tile:has(> .open:focus-visible) > :not(.open) {
+    transform: translateY(-4px);
+  }
+
   .scene5[data-armed] .tile:not([data-in])::before {
     scale: 1 0;
+  }
+
+  /* Условия — когда точка до них дошла (data-in), и больше не складываются. */
+  .terms {
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      translate 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scene5[data-armed] .terms:not([data-in]) {
+    opacity: 0;
+    translate: 0 12px;
   }
 }
 
@@ -402,8 +466,8 @@
   }
 }
 
-/* Телефон и телефон боком: поля 20px, сверху шапка 72px. */
-@media (max-width: 767px), (max-height: 500px) {
+/* Телефон, планшет в портрете и телефон боком: поля 20px, сверху шапка 72px. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
   /* Подводка Сцены 6 здесь на белом поверх линии — точка на выходе уходит под неё, а не по
      тексту. */
   .scene5 {
@@ -412,14 +476,10 @@
   }
 }
 
-/* Телефон: две колонки, «Уникальный» и «Магазин» — во всю ширину, дальше две пары. Мозаика — на
-   белом поверх линии пути: она уходит под неё и выходит снизу; средний разделитель пар — линия
-   1,5. */
-@media (max-width: 767px) {
-  .inner {
-    background: var(--color-bg);
-  }
-
+/* Телефон и планшет в портрете (lib/phoneLayout.ts): две колонки, «Уникальный» и «Магазин» — во
+   всю ширину, дальше пары. Средний разделитель — сама линия пути, как на широком экране: в широких
+   клетках текст слева от неё, рисунок справа; точка идёт по ней на виду. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: none;
@@ -434,6 +494,10 @@
 
   .tile {
     padding: 16px 14px;
+  }
+
+  .terms > span {
+    padding: 0 14px;
   }
 
   .unique {
@@ -460,12 +524,14 @@
     transform-origin: 0 50%;
   }
 
-  .builder::before {
-    content: "";
+  /* Вертикальных линий нет: между клетками пар — линия пути. */
+  .tile::before {
+    content: none;
   }
 
-  .landing::before {
-    content: none;
+  .unique > :not(.art),
+  .shop > :not(.art) {
+    max-width: calc(50% - 12px);
   }
 
   .art {
@@ -490,7 +556,7 @@
   }
 
   .includes {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 
   .price {
@@ -498,7 +564,7 @@
   }
 
   .term {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 
   .unique .name,
@@ -511,9 +577,10 @@
     font-size: 0.8125rem;
   }
 
+  /* Цена — в половине клетки: от её ширины, не больше 30px. */
   .unique .price,
   .shop .price {
     padding-top: 14px;
-    font-size: 30px;
+    font-size: min(30px, 7.4cqw);
   }
 }

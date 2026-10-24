@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { LOOP_EVENT } from "@/components/scenes/Footer";
+import { phoneLayout } from "@/lib/phoneLayout";
 import { onScroll, setVar, syncScroll, viewportH } from "@/lib/scroll/onScroll";
 import heroStyles from "../Hero/Hero.module.css";
 import styles from "./Scene2.module.css";
@@ -20,12 +21,29 @@ const PRELUDE = 7;
 const TAIL = 30;
 const FADE = 60;
 const EDGE = 0.25; // как у маски .fade в Scene2.module.css
+const BREATH = 48; // px прокрутки, за которые гаснет пульс точки в покое
+const smooth = (t: number) => t * t * (3 - 2 * t);
+
+// Вход из Hero. В покое точка у конца линии Hero (93% экрана) — на d ниже своего места в центре
+// (+20px). С первого пикселя прокрутки она идёт по пути: поднимается к месту вдвое медленнее
+// страницы, то есть по странице — вниз, вдвое медленнее прокрутки, и последние 0.14 экрана плавно
+// тормозит. Возвращает, на сколько px точка ниже места. Страницу тянут вниз за верх (iOS) — точка
+// едет с ней, как стояла.
+function dropLift(y: number, h: number): number {
+  const d = 0.43 * h - 20;
+  const e = 0.14 * h;
+  const s = 2 * d - e / 2; // отсюда — торможение
+  if (y < 0) return d - y;
+  if (y >= s + e) return 0;
+  const t = Math.max(0, y - s);
+  return d - y / 2 + (t * t) / (4 * e);
+}
 
 // Раскладка: места блоков (px от верха секции) и опорные точки трассы [phase, сдвиг в vw] —
-// между ними косинусный переход. Phase отсчитывается от scroll = 43vh (момент фиксации точки
-// в центре); точка на phase стоит в (phase − 7)vh + 20px от верха секции. Считается раз на размер
-// экрана и высоты блоков (heights; below — насколько элемент пункта под блоком, со стороны
-// трассы, ниже блока).
+// между ними косинусный переход. Phase — по месту точки на странице: (прокрутка + dropLift) − 43vh;
+// точка на phase стоит в (phase − 7)vh + 20px от верха секции, на phase 0 — на 20px ниже конца
+// линии Hero. Считается раз на размер экрана и высоты блоков (heights; below — насколько элемент
+// пункта под блоком, со стороны трассы, ниже блока).
 type Layout = { tops: number[]; keys: [number, number][]; end: number };
 
 function layout(w: number, h: number, heights: number[], below: number[]): Layout {
@@ -40,7 +58,7 @@ function layout(w: number, h: number, heights: number[], below: number[]): Layou
     for (let k = 0; k < 4; k++)
       keys.push([PRELUDE + 100 * k + 50, KNEES[k]], [PRELUDE + 100 * (k + 1), 0]);
     tops = [0.06, 0.58, 0.9, 1.58, 2.06, 2.58, 2.84, 3.58].map((f) => f * h);
-  } else if (w >= 768) {
+  } else if (!phoneLayout()) {
     // Ровный ритм по настоящей высоте блоков: в паре (одна сторона трассы) от тегов верхнего
     // до нижнего — 0.11 экрана, между парами (по разные стороны) — 0.04. Перед первым блоком —
     // 0.16 экрана от точки, а трасса до него идёт прямо: Сцена 2 начинается отдельно от Hero.
@@ -57,13 +75,13 @@ function layout(w: number, h: number, heights: number[], below: number[]): Layou
       top = end + cross;
     }
   } else {
-    // Телефон (< 768px, как мобильный блок Scene2.module.css): блоки широкие, колоколу между ними
+    // Телефонная раскладка (как мобильный блок Scene2.module.css): блоки широкие, колоколу между ними
     // места нет. Точка идёт «серпантином»: в 13vw от края (±37vw), пока напротив неё пара блоков,
     // и между парами переходит на другую сторону. Верхний блок пары встаёт, когда переход пройден
     // на 0.85, нижний — через просвет 0.06 экрана; у края точка держится до низа пары и элемента
     // под ней со стороны трассы (below) и ещё 0.02 экрана — элемент снаружи, у края экрана, точка
     // минует уже выше него. Из центра и в центр — как на десктопе: стыки с Hero и Scene 3 те же.
-    let y = 20 - 0.07 * h; // точка в миг фиксации
+    let y = 20 - 0.07 * h; // точка на phase 0
     let cross = 0.19 * h;
     for (let k = 0; k < 4; k++) {
       const side = k % 2 ? 37 : -37;
@@ -169,9 +187,9 @@ function getBlock(top: number, h: number): { opacity: number; rise: number } {
   return { opacity: appear, rise: (1 - appear) * 24 };
 }
 
-// Трасса целиком, в координатах страницы при прокрутке 0: точка на прокрутке s (vh) стоит
-// в (50vw + getDropX(s), 50vh + s + 20px). Строится вместе с раскладкой, на экране её двигает
-// transform, а видна она только выше точки (Scene2.module.css, .trail).
+// Трасса целиком, в координатах страницы при прокрутке 0: точка на месте s (vh, прокрутка +
+// dropLift) стоит в (50vw + getDropX(s), 50vh + s + 20px). Строится вместе с раскладкой, на экране
+// её двигает transform, а видна она только выше точки (Scene2.module.css, .trail).
 function buildTrail(w: number, h: number, { keys, end }: Layout): string {
   // Начало — конец линии Hero (точка покоя, 93vh): вместе они читаются как одна линия. 20px —
   // сдвиг точки вниз после Hero (--drop-offset).
@@ -249,7 +267,14 @@ export function Scene2() {
       if (!h) return; // иначе scrollVh = NaN
       const scrollY = window.scrollY;
       const scrollVh = (scrollY / h) * 100;
-      const phone = w < 768;
+      const phone = phoneLayout();
+      // Точка и трасса — целыми пикселями экрана, чтобы линия не размывалась.
+      const dpr = window.devicePixelRatio || 1;
+      const px = (v: number) => Math.round(v * dpr) / dpr;
+      // Вход из Hero: точка ниже своего места на lift; её место на пути — dotVh (как прокрутка).
+      const lift = px(dropLift(scrollY, h));
+      const dotVh = ((scrollY + lift) / h) * 100;
+      const moved = scrollY > 0;
 
       // Сначала замеры, потом записи: замер после записи заново пересчитывал бы стили.
       const rect = section.getBoundingClientRect();
@@ -280,23 +305,25 @@ export function Scene2() {
       const blocksGone = rect.bottom < 0;
       const tops = L.tops.map((top) => rect.top + top);
 
-      // X-смещение точки — отсюда, Y-смещение и фиксация — Hero. Переменная — на самой точке
-      // (она в вёрстке Hero), а не на корне: меняется почти каждый кадр.
+      // Сдвиги точки — переменными на самой точке (она в вёрстке Hero), а не на корне: меняются
+      // почти каждый кадр. Место точки — центр экрана + 20px, как в Сцене 3.
       if (!drop?.isConnected) drop = document.querySelector<HTMLElement>(`.${heroStyles.drop}`);
-      if (drop) put(drop, "--drop-x", `${getDropX(scrollVh, L.keys)}vw`);
-
-      // После Hero-фазы (scrollVh > 43) сдвигаем точку на 20px вниз — единый
-      // уровень с Scene 3, где точка попадает в gap финальной сетки.
-      if (scrollVh > 43) {
-        setVar("--drop-offset", "20px");
+      if (drop) {
+        put(drop, "--drop-x", `${getDropX(dotVh, L.keys)}vw`);
+        put(drop, "--drop-y", `${lift}px`);
+        // Пульс в покое (Hero.module.css): размах плавно сходит на нет за первые BREATH px
+        // прокрутки и так же возвращается наверху; без размаха пульс на паузе — не тикает.
+        const breath = smooth(Math.max(0, Math.min(1, 1 - scrollY / BREATH)));
+        put(drop, "--breath", breath.toFixed(3));
+        put(drop, "animation-play-state", breath > 0 ? "" : "running, paused");
       }
+      setVar("--drop-offset", "20px");
 
-      // Трасса — целыми пикселями экрана, чтобы линия не размывалась. Конец трассы, ушедший
-      // за верх экрана, дальше не двигаем.
-      put(trail, "visibility", scrollVh > 43 ? "visible" : "hidden");
-      if (scrollVh > 43) {
-        const dpr = window.devicePixelRatio || 1;
-        const px = (v: number) => Math.round(v * dpr) / dpr;
+      // Трасса — с первого пикселя прокрутки; слой обрезан по точке (lift — пока она ниже своего
+      // места, трасса в слое — на столько же выше). Конец трассы, ушедший за верх экрана, дальше
+      // не двигаем.
+      put(trail, "visibility", moved ? "visible" : "hidden");
+      if (moved) {
         const shift = px(scrollY);
         const endVh = 43 + L.end;
         const endY = ((50 + endVh) * h) / 100 + 20; // конец трассы в странице
@@ -306,7 +333,8 @@ export function Scene2() {
         const f = Math.max(0, Math.min(1, ((shift / h) * 100 - (endVh + TAIL - FADE)) / FADE));
         const d = px((dot + EDGE * h) * f - EDGE * h);
         put(fade, "transform", `translateY(${d}px)`);
-        put(trailSvg, "transform", `translateY(${-Math.min(shift, endY + 20) - d}px)`);
+        put(trail, "transform", `translateY(${lift}px)`);
+        put(trailSvg, "transform", `translateY(${-Math.min(shift, endY + 20) - d - lift}px)`);
         // Нить: верх — у конца трассы (ушедшего за верх экрана — у верха), низ обрезан по центру точки.
         const top = px(Math.max(0, Math.min(dot, endY - shift)));
         put(thread, "transform", `translateY(${top - d}px)`);
@@ -334,11 +362,11 @@ export function Scene2() {
       const up = scrollY < lastY;
       lastY = scrollY;
       const straight = 20 + ((phone ? 0 : PRELUDE - 1) * h) / 100;
-      const reach = Math.min(straight, ((scrollVh - 43) * h) / 100 + 20);
+      const reach = Math.min(straight, ((dotVh - 43) * h) / 100 + 20);
       // top по смыслу постоянен, но дробный шум менял бы d каждый кадр — округляем до 0,1px.
       const top = Math.round((((93 - scrollVh) * h) / 100 - rect.top) * 10) / 10;
       const end = Math.round((top + reach) * 10) / 10;
-      const bridge = scrollVh > 43 && !up ? `M${w / 2} ${top} V${end}` : "";
+      const bridge = moved && !up && reach > 0 ? `M${w / 2} ${top} V${end}` : "";
       if (bridgeRef.current && bridge !== bridgeKey) {
         bridgeKey = bridge;
         bridgeRef.current.setAttribute("d", bridge);

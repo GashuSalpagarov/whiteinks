@@ -11,14 +11,25 @@ import {
   useRef,
   useState,
 } from "react";
-import { BRIEF_CONFIG, submitBrief } from "@/lib/brief";
+import { useLenis } from "@/app/providers";
+import { BriefModal } from "@/components/ui/BriefModal";
+import {
+  BRIEF_CONFIG,
+  type BriefStatus,
+  briefErrors,
+  clearBrief,
+  FAIL_TEXT,
+  NEEDS,
+  needText,
+  OTHER,
+  setBrief,
+  submitBrief,
+  useBrief,
+} from "@/lib/brief";
 import { caretAt, formatPhone, PHONE_MASK, PHONE_PREFIX, phoneEdit } from "@/lib/phone";
-import { pathHandoff } from "@/lib/scroll/handoff";
+import { pathHandoff, phoneHold } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Scene6.module.css";
-
-const OTHER = "Другое";
-const NEEDS = ["Сайт", "Магазин", "Приложение", "ИИ и автоматизация", OTHER];
 
 type Errors = { phone?: string; consent?: string; form?: string };
 
@@ -29,7 +40,8 @@ type Errors = { phone?: string; consent?: string; form?: string };
 // Стоянка (с мышью, если сцена влезает в экран): сцена — экран, ещё RUN экрана она стоит
 // (sticky). Без стоянки (сенсорный или низкий экран) сцена едет как обычно.
 const RUN = 1.1;
-// Стык со Сценой 5: её точка сливается с этой у нижнего края экрана и сразу идёт дальше.
+// Стык со Сценой 5: её точка сливается с этой у нижнего края экрана и сразу идёт дальше; если
+// каталог выше экрана (телефон) — на высоте phoneHold.y (lib/scroll/handoff.ts), а не у края.
 // Со стоянкой — доходит до верхнего края конверта, когда сцена въехала на MEET экрана, и к концу
 // стоянки проходит конверт до места над низом сцены (END от низа экрана); сборка — по её ходу
 // сквозь конверт. Без стоянки — поднимается со скоростью RISE (доля прокрутки) до высоты передачи
@@ -119,16 +131,20 @@ export function Scene6() {
   const caretRef = useRef<number | null>(null); // цифр левее каретки после правки номера
   const updateRef = useRef<() => void>(() => {});
   const ids = useId();
+  const lenis = useLenis();
 
-  const [phone, setPhone] = useState(""); // 10 цифр после +7
+  // Данные формы — общие с окном заявки (lib/brief.ts): набрали там — здесь то же, и наоборот.
+  const brief = useBrief();
+  const { phone, name, need, other, consent, status } = brief;
+  const setPhone = (v: string) => setBrief({ phone: v });
+  const setName = (v: string) => setBrief({ name: v });
+  const setNeed = (v: string) => setBrief({ need: v });
+  const setOther = (v: string) => setBrief({ other: v });
+  const setConsent = (v: boolean) => setBrief({ consent: v });
+  const setStatus = (v: BriefStatus) => setBrief({ status: v });
   const [focused, setFocused] = useState(false); // поле телефона в фокусе — маска с «+7 (»
-  const [name, setName] = useState("");
-  const [need, setNeed] = useState("");
-  const [other, setOther] = useState(""); // своё к «Другое» — остаётся, и когда выбор снят
-  const [rows, setRows] = useState(1); // строк в нём
-  const [consent, setConsent] = useState(false);
+  const [rows, setRows] = useState(1); // строк в своём к «Другое»
   const [errors, setErrors] = useState<Errors>({});
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "mail">("idle");
   const closed = status === "sent" || status === "mail";
   const isOther = need === OTHER;
   const lines = isOther ? rows : 1;
@@ -269,8 +285,14 @@ export function Scene6() {
         ? Math.min(stageH - 12, Math.max(bottom + 24, stageH - END))
         : footerHome(section);
       pathHandoff.y = end;
-      // «Связаться» приводит к собранному конверту (u — прокрутка от входа сцены); без стоянки —
-      // ещё и не выше вершины клапана под шапкой.
+      // Без стоянки — высота, на которой подъём точки проходит верхний край конверта: на ней её
+      // ведут Сцены 4–5, когда каталог выше экрана (lib/scroll/handoff.ts), и здесь она подхватывает
+      // точку, а со своим подъёмом сливается ровно у края конверта — сборка идёт как прежде.
+      phoneHold.y = pinned ? Number.NaN : Math.max(h + 6 - ((1 - RISE) * (rim - 6)) / RISE, end);
+      // «Связаться» приводит к собранному конверту (u — прокрутка от входа сцены). Без стоянки —
+      // ещё и так, чтобы подпись над ним стояла под шапкой (верх — на 88px): что будет после
+      // заявки, видно сразу. Где конверт собирается позже (низкий экран, телефон боком), подпись
+      // уходит вверх: собранный конверт и кнопка важнее.
       let u: number;
       if (pinned) {
         u = MEET * h + ((bottom + 8 - rim) / (end - rim)) * ((1 + RUN - MEET) * h) + 0.04 * h;
@@ -279,7 +301,10 @@ export function Scene6() {
         const at = rim + SPAN * h;
         u = (at - 6) / RISE;
         if (h + 6 - (1 - RISE) * u < end) u = at + h - end;
-        u = Math.max(u + 0.03 * h, h + apex - 88);
+        u = Math.max(u + 4, h + head.offsetTop - 88); // собран (запас 4px), подпись под шапкой
+        // Конверт выше экрана (низкий телефон) — ниже, чтобы была видна кнопка, но письмо не уходит
+        // под шапку дальше своего поля.
+        u = Math.max(u, Math.min(bottom + 12, h + apex + sheet.offsetTop - 60));
       }
       section.style.scrollMarginTop = `${Math.round(Math.min(0, h - u))}px`;
       s5 = scene5Dot();
@@ -288,11 +313,15 @@ export function Scene6() {
 
     // Точка на экране по верху сцены (top). Со стоянкой: от нижнего края — к верхнему краю
     // конверта (MEET экрана), дальше сквозь конверт к end к концу стоянки, потом стоит на end.
-    // Без стоянки: поднимается со скоростью RISE до end и стоит на нём.
+    // Без стоянки: поднимается со скоростью RISE до end и стоит на нём; если Сцена 5 держит точку
+    // на высоте (каталог выше экрана) — не ниже этой высоты: на ней и подхватывает.
     const dotOnScreen = (h: number, top: number) => {
       const u = h - top;
+      if (!pinned) {
+        const y = u <= 0 ? top + 6 : Math.max(h + 6 - (1 - RISE) * u, end);
+        return Number.isFinite(phoneHold.low) ? Math.min(y, phoneHold.y) : y;
+      }
       if (u <= 0) return top + 6;
-      if (!pinned) return Math.max(h + 6 - (1 - RISE) * u, end);
       const meet = MEET * h;
       if (u < meet) return top + 6 + ((rim - 6) * u) / meet;
       return Math.max(top, 0) + rim + (end - rim) * clamp01((u - meet) / ((1 + RUN) * h - meet));
@@ -358,10 +387,11 @@ export function Scene6() {
         section.toggleAttribute("data-drawing", drawing);
 
       // Чернила — от верха сцены до точки. Пока точка этой сцены под экраном, сверху падает
-      // точка Сцены 5: чернила — до неё, а ниже края Сцены 5 её же показывает эта сцена.
+      // точка Сцены 5: чернила — до неё, а ниже края Сцены 5 её же показывает эта сцена. Так же —
+      // пока точка Сцены 5 на высоте стыка выше этой сцены (каталог выше экрана).
       let ink = Math.max(0, Math.min(stageH, at));
       let hold = "";
-      if (!reduced && y > h) {
+      if (!reduced && (y > h || at < 0)) {
         ink = 0;
         if (s5?.style.opacity === "1") {
           const y5 = s5.getBoundingClientRect().top + 6;
@@ -371,9 +401,15 @@ export function Scene6() {
         }
       }
       put(railInk, "clip-path", `inset(0 0 ${Math.round(stageH - ink)}px 0)`);
-      const show = !reduced && at >= 0 && at < stageH;
-      put(drop, "opacity", show ? "1" : "0");
-      if (show) put(drop, "transform", `translateY(${(at - 6).toFixed(1)}px)`);
+      // До низа сцены и ещё на радиус: пока верх футера проходит через точку, её верх — здесь, над
+      // футером, а низ уже рисует футер (он ловит её, когда его верх дошёл до её низа).
+      const show = !reduced && at >= 0 && at <= stageH + 6;
+      // У нижнего края, пока точка не поднялась в экран целиком: если точка Сцены 5 ещё ждёт там —
+      // не видна; если уже слилась с этой — стоит на краю, а не наполовину за ним.
+      const waits = s5?.style.opacity === "1";
+      put(drop, "opacity", show && (y <= h - 6 || !waits) ? "1" : "0");
+      const drawn = waits ? at : Math.min(at, h - 6 - stageTop);
+      if (show) put(drop, "transform", `translateY(${(drawn - 6).toFixed(1)}px)`);
       put(hand, "opacity", hold ? "1" : "0");
       if (hold) put(hand, "transform", hold);
     };
@@ -439,21 +475,35 @@ export function Scene6() {
     const pill = otherPillRef.current;
     if (!isOther || !row || !pill) return;
     const r = pill.getBoundingClientRect();
-    const o = r.left + r.width / 2 - row.getBoundingClientRect().left;
+    const box = row.getBoundingClientRect();
+    const o = r.left + r.width / 2 - box.left;
     row.style.setProperty("--o", `${Math.round(o)}px`);
-    if (focusOther.current) otherRef.current?.focus({ preventScroll: true });
+    if (focusOther.current) {
+      // Строка у нижнего края (телефон боком) — сначала подвозим её выше: печатать под краем
+      // экрана вслепую нельзя.
+      const h = viewportH();
+      if (box.bottom > 0.7 * h) {
+        const y = window.scrollY + box.bottom - 0.55 * h;
+        if (lenis) lenis.scrollTo(y, { duration: 0.6 });
+        else window.scrollTo(0, y);
+      }
+      otherRef.current?.focus({ preventScroll: true });
+    }
     focusOther.current = false;
-  }, [isOther, lines]);
+  }, [isOther, lines, lenis]);
 
   // Строк — сколько занял текст (замер при нулевой высоте); больше --max — прокрутка в поле.
-  const onOther = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    const ta = e.currentTarget;
-    setOther(ta.value);
+  // Текст мог прийти и из окна заявки — меряем по самому полю, когда текст сменился.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: строк — по тексту, когда он сменился
+  useLayoutEffect(() => {
+    const ta = otherRef.current;
+    if (!ta) return;
     ta.style.height = "0";
     const lh = Number.parseFloat(getComputedStyle(ta).lineHeight);
     setRows(Math.max(1, Math.round(ta.scrollHeight / lh)));
     ta.style.height = "";
-  };
+  }, [other]);
+  const onOther = (e: ChangeEvent<HTMLTextAreaElement>) => setOther(e.currentTarget.value);
 
   // Прокрутка поля — целыми строками (линии не режутся краем), зеркало с линиями — за ней.
   const onOtherScroll = (e: UIEvent<HTMLTextAreaElement>) => {
@@ -500,12 +550,7 @@ export function Scene6() {
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trap = String(new FormData(e.currentTarget).get("website") ?? "");
-    const next: Errors = {};
-    if (phone.length < 10)
-      next.phone = phone
-        ? "Номер неполный — нужно 10 цифр после +7"
-        : "Оставьте телефон — по нему и перезвоним";
-    if (!consent) next.consent = "Отметьте согласие — без него не сможем перезвонить";
+    const next: Errors = briefErrors(brief);
     setErrors(next);
     if (next.phone) return phoneRef.current?.focus();
     if (next.consent) return consentRef.current?.focus();
@@ -516,7 +561,7 @@ export function Scene6() {
         {
           phone: `+7${phone}`,
           name: name.trim() || undefined,
-          need: isOther && other.trim() ? `${OTHER}: ${other.trim()}` : need || undefined,
+          need: needText(brief),
           time: new Date().toISOString(),
         },
         { trap, startedAt: shownAt.current },
@@ -524,22 +569,13 @@ export function Scene6() {
       setStatus(result);
     } catch {
       setStatus("idle");
-      setErrors({
-        form: `Не получилось отправить. Позвоните ${BRIEF_CONFIG.phone} или напишите в Telegram ${BRIEF_CONFIG.telegram}`,
-      });
+      setErrors({ form: FAIL_TEXT });
     }
   };
 
   // «Отправить ещё одну» — чистая форма; «вернуться к форме» после письма в почте — те же данные.
   const reopen = (clear: boolean) => {
-    if (clear) {
-      setPhone("");
-      setName("");
-      setNeed("");
-      setOther("");
-      setRows(1);
-      setConsent(false);
-    }
+    if (clear) clearBrief();
     setErrors({});
     setStatus("idle");
   };
@@ -569,7 +605,8 @@ export function Scene6() {
               <div role="status">
                 <p>
                   <strong>Заявка отправлена.</strong> Перезвоним на{" "}
-                  <span className={styles.nw}>{phoneText}</span> {BRIEF_CONFIG.replyIn}.
+                  <span className={styles.nw}>{phoneText}</span> {BRIEF_CONFIG.replyIn}{" "}
+                  в рабочее время.
                 </p>
                 <button type="button" className={styles.link} onClick={() => reopen(true)}>
                   отправить ещё одну
@@ -598,7 +635,12 @@ export function Scene6() {
                 </button>
               </div>
             ) : (
-              <p>Перезвоним {BRIEF_CONFIG.replyIn} и обсудим задачу.</p>
+              // «В тот же день» — ЗАГЛУШКА владельца, как и часы (BRIEF_CONFIG.hours).
+              <p>
+                Перезвоним {BRIEF_CONFIG.replyIn} в рабочее время{" "}
+                <span className={styles.nw}>({BRIEF_CONFIG.hours})</span>, уточним задачу и в тот же
+                день назовём срок и цену.
+              </p>
             )}
           </div>
         </div>
@@ -832,6 +874,8 @@ export function Scene6() {
             первую 12px точку этой сцены). */}
         <span ref={handRef} className={styles.handoff} aria-hidden="true" />
       </div>
+      {/* Окно заявки — быстрая версия этого конверта для кнопок по всему сайту; рисуется в body. */}
+      <BriefModal />
     </section>
   );
 }

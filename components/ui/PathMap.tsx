@@ -2,6 +2,7 @@
 
 import { type CSSProperties, useEffect, useRef } from "react";
 import { useLenis } from "@/app/providers";
+import { phoneLayout } from "@/lib/phoneLayout";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import { goToStation, pathProgress, STATIONS } from "@/lib/stations";
 import styles from "./PathMap.module.css";
@@ -32,7 +33,8 @@ const mark = (i: number) => `translate(0 ${MARKS[i + 1]})`;
 // Карта пути слева: та же линия, что идёт по сайту, в миниатюре. Позади точки — чернила, впереди —
 // пунктир; значки сцен, до которых дошли, — чернилами. Наведение или Tab открывает лист с
 // названиями; клик — пролёт Lenis к станции (lib/stations.ts). Нет на Hero (там пункты шапки) и в
-// зоне петли футера; уже 1024px и ниже 600px по высоте — нет совсем (там меню в бургере).
+// зоне петли футера; уже 1024px, ниже 600px по высоте и в телефонной раскладке (планшет в портрете)
+// — нет совсем (там меню в бургере).
 export function PathMap() {
   const rootRef = useRef<HTMLElement>(null);
   const inkRef = useRef<SVGPathElement>(null);
@@ -78,6 +80,7 @@ export function PathMap() {
       // Видна, когда ушли пункты шапки (как в HeaderMenu — 10% экрана), и до зоны петли футера.
       const show =
         wide.matches &&
+        !phoneLayout() &&
         window.scrollY > 0.1 * h &&
         (footer?.getBoundingClientRect().top ?? h) > 0.35 * h;
       if (show !== on) {
