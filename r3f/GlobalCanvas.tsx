@@ -27,6 +27,9 @@ export function GlobalCanvas() {
       }}
       gl={{ alpha: true, antialias: true }}
       dpr={[1, 2]}
+      // Канвас fixed — прокрутка его не двигает: размер следим только по resize, без замера
+      // прямоугольника на каждом scroll.
+      resize={{ scroll: false }}
       frameloop="demand"
     >
       <r3fTunnel.Out />

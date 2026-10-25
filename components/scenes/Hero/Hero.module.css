@@ -1221,34 +1221,6 @@
   }
 }
 
-/* ---------- Полоса под шапкой: телефонная раскладка (lib/phoneLayout.ts) и короткий ландшафт ----------
-   Полоса цвета фона, тающая книзу: контент уходит под шапку, а не сквозь неё. На инверсии полосу
-   переворачивает тот же фильтр. Проявляется вместе с логотипом. */
-@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
-  .header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    left: 0;
-    height: 72px;
-    background: linear-gradient(var(--color-bg) 45%, transparent);
-    opacity: 0;
-  }
-
-  .ready.header::before {
-    animation: fadeIn 0.45s ease-out 4s forwards;
-  }
-}
-
-/* Планшет в портрете: шапка своя, крупнее телефонной — сплошная часть полосы до низа логотипа
-   (32 + 20px), граница та же, 72px. */
-@media (orientation: portrait) and (min-width: 768px) and (max-width: 1024px) {
-  .header::before {
-    background: linear-gradient(var(--color-bg) 52px, transparent);
-  }
-}
-
 /* ---------- Шапка на телефоне и в коротком ландшафте ---------- */
 @media (max-width: 767px), (max-height: 500px) {
   .header {
@@ -1357,9 +1329,5 @@
 
   .drop {
     visibility: visible;
-  }
-
-  .header::before {
-    opacity: 1;
   }
 }

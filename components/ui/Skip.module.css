@@ -1,8 +1,9 @@
 /* «пропустить» — тихая пилюля внизу по центру, пока идёт долгая анимация: заставка Hero
    (Hero.tsx) и туннель Сцены 3 (Scene3.tsx). Нажатие ускоряет анимацию, а не обрывает её.
-   Цвет — разницей с тем, что под ней: на чёрном круге заставки белая, на белом — чёрная; на втором
-   круге её переворачивает вместе со всем фильтр палитры. Поэтому она — отдельным слоем страницы,
-   вне слоёв сцен: внутри них разнице не с чем смешиваться. Пилюля 30px, нажатие — 46px. */
+   Цвет — чёрный, как разница белого с белым фоном; на втором круге её переворачивает вместе со
+   всем фильтр палитры. На заставке (.blend) — разницей с тем, что под ней: там под пилюлей
+   сжимается чёрный круг, и она белая на нём и чёрная рядом. Смешивание — отдельный проход
+   отрисовки всего экрана в каждом кадре, поэтому только там. Пилюля 30px, нажатие — 46px. */
 .skip {
   position: fixed;
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
@@ -10,10 +11,10 @@
   z-index: 7;
   height: 30px;
   padding: 0 14px;
-  border: 1.5px solid #fff;
+  border: 1.5px solid #000;
   border-radius: 999px;
   background: none;
-  color: #fff;
+  color: #000;
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1;
@@ -21,7 +22,6 @@
   cursor: pointer;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
-  mix-blend-mode: difference;
   translate: -50% 0;
   opacity: 0;
   visibility: hidden;
@@ -37,8 +37,15 @@
 }
 
 .skip:focus-visible {
-  outline: 1.5px solid #fff;
+  outline: 1.5px solid currentColor;
   outline-offset: 3px;
+}
+
+/* Заставка: разница с тем, что под пилюлей (см. выше). */
+.blend {
+  border-color: #fff;
+  color: #fff;
+  mix-blend-mode: difference;
 }
 
 /* Видна (туннель — по прокрутке, Scene3.tsx). */

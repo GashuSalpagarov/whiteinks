@@ -41,13 +41,17 @@ import styles from "./BriefModal.module.css";
 //
 // Слой — fixed в body, не <dialog>: верхний слой <dialog> не берёт общий invert второго круга и
 // прячет курсор сайта. Под окном страница стоит (Lenis stop, html[data-brief]) и не нажимается
-// (inert на остальном body); Esc, «Назад» (своя запись истории), крестик и щелчок мимо закрывают;
-// фокус — обратно на кнопку. Данные — общие с конвертом Сцены 6 (lib/brief.ts).
+// (нажатия ловит слой окна, Tab ходит по кругу внутри окна); Esc, «Назад» (своя запись истории),
+// крестик и щелчок мимо закрывают; фокус — обратно на кнопку. Данные — общие с конвертом Сцены 6
+// (lib/brief.ts).
 
 type G = { x: number; y: number; w: number; h: number; r: number };
 type Errors = { phone?: string; consent?: string; form?: string };
 
 const EZ = "cubic-bezier(.76,0,.24,1)";
+// Что получает фокус по Tab внутри окна.
+const FOCUSABLE =
+  "a[href], button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex]";
 const IO = "cubic-bezier(.65,0,.35,1)";
 const OUT = "cubic-bezier(.16,1,.3,1)";
 const PHONE = "(max-width: 767px)";
@@ -155,7 +159,6 @@ export function BriefModal() {
     stopped: false, // Lenis остановили мы
     pushed: false,
     ignorePop: false,
-    inert: new Map<Element, boolean>(),
     shownAt: 0,
     after: null as null | (() => void),
   }).current;
@@ -332,13 +335,6 @@ export function BriefModal() {
       () => {
         if (S.phase !== "opening") return;
         S.phase = "open";
-        // Остальной сайт — inert: Tab и щелчки не уходят из окна (после входа — inert
-        // пересчитывает стили всей страницы).
-        for (const c of document.body.children) {
-          if (c === layerRef.current || c.tagName === "SCRIPT") continue;
-          S.inert.set(c, (c as HTMLElement).inert);
-          (c as HTMLElement).inert = true;
-        }
         if (!S.phone && view === "form") phoneRef.current?.focus({ preventScroll: true });
         else cardRef.current?.focus({ preventScroll: true });
       },
@@ -350,8 +346,6 @@ export function BriefModal() {
   const close = (byPop = false) => {
     if (S.phase !== "open" && S.phase !== "opening") return;
     S.phase = "closing";
-    for (const [c, v] of S.inert) (c as HTMLElement).inert = v;
-    S.inert.clear();
     if (S.pushed && !byPop) {
       S.ignorePop = true;
       window.history.back();
@@ -447,7 +441,31 @@ export function BriefModal() {
   useEffect(() => {
     const layer = layerRef.current;
     if (!open || !layer) return;
+    // Tab и Shift+Tab — по кругу внутри окна, на страницу под ним фокус не уходит. Не inert на
+    // остальном body: он пересчитывал стили всей страницы — рывок на входе и выходе окна.
+    const trap = (e: KeyboardEvent) => {
+      const card = cardRef.current;
+      if (!card) return;
+      const list = [...card.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (el) =>
+          el.tabIndex >= 0 &&
+          el.getClientRects().length > 0 &&
+          getComputedStyle(el).visibility !== "hidden",
+      );
+      const first = list[0];
+      const end = list[list.length - 1];
+      const at = document.activeElement;
+      const inside = at instanceof HTMLElement && at !== card && card.contains(at);
+      if (!first || !end) {
+        e.preventDefault();
+        card.focus({ preventScroll: true });
+      } else if (!inside || at === (e.shiftKey ? first : end)) {
+        e.preventDefault();
+        (e.shiftKey ? end : first).focus({ preventScroll: true });
+      }
+    };
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab") return trap(e);
       if (e.key !== "Escape") return;
       e.preventDefault();
       e.stopPropagation();
@@ -777,11 +795,11 @@ export function BriefModal() {
                   />
                   <span>
                     согласен на{" "}
-                    <Link href="/consent" target="_blank">
+                    <Link href="/consent" target="_blank" prefetch={false}>
                       обработку персональных данных
                     </Link>{" "}
                     ·{" "}
-                    <Link href="/privacy" target="_blank">
+                    <Link href="/privacy" target="_blank" prefetch={false}>
                       политика
                     </Link>
                   </span>

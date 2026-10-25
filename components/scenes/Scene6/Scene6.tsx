@@ -235,6 +235,7 @@ export function Scene6() {
     let dirty = true;
     let pinned = false;
     let stageH = 0; // линия идёт по всей сцене
+    let railH = 0; // высота линии без округления — от неё доля чернил (scaleY)
     let apex = 0; // вершина открытого клапана, в координатах сцены
     let rim = 0; // верхний край конверта — тут из точки выходит контур
     let bottom = 0; // низ конверта
@@ -281,6 +282,7 @@ export function Scene6() {
         max = num("--max") || 1;
       }
       stageH = stage.offsetHeight;
+      railH = railInk.parentElement?.getBoundingClientRect().height ?? stageH;
       end = pinned
         ? Math.min(stageH - 12, Math.max(bottom + 24, stageH - END))
         : footerHome(section);
@@ -400,7 +402,11 @@ export function Scene6() {
           if (y5 + 6 > edge5) hold = `translateY(${(y5 - 6 - stageTop).toFixed(1)}px)`;
         }
       }
-      put(railInk, "clip-path", `inset(0 0 ${Math.round(stageH - ink)}px 0)`);
+      // Чернила — своим слоем, долей высоты (scaleY от верха): clip-path на каждом кадре
+      // перерисовывал линию, а это главная работа видеокарты в сцене. Длина — та же, что давала
+      // обрезка снизу на округлённые px.
+      const inkLen = railH - Math.round(stageH - ink);
+      put(railInk, "transform", `scaleY(${railH > 0 ? clamp01(inkLen / railH).toFixed(5) : 0})`);
       // До низа сцены и ещё на радиус: пока верх футера проходит через точку, её верх — здесь, над
       // футером, а низ уже рисует футер (он ловит её, когда его верх дошёл до её низа).
       const show = !reduced && at >= 0 && at <= stageH + 6;
@@ -805,11 +811,11 @@ export function Scene6() {
                       />
                       <span>
                         согласен на{" "}
-                        <Link href="/consent" target="_blank">
+                        <Link href="/consent" target="_blank" prefetch={false}>
                           обработку персональных данных
                         </Link>{" "}
                         ·{" "}
-                        <Link href="/privacy" target="_blank">
+                        <Link href="/privacy" target="_blank" prefetch={false}>
                           политика
                         </Link>
                       </span>

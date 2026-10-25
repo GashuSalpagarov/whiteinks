@@ -1,25 +1,20 @@
-import type { CSSProperties, MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { CARDS_CONTENT, type CaseData, type CaseImage } from "@/components/scenes/Scene3";
+import { BRIEF_CONFIG } from "@/lib/brief";
 import { HOME_HREF } from "@/lib/caseRoute";
 import styles from "./Case.module.css";
 
-// Разметка страницы кейса (вариант A «Сквозь карточку»). Ход — CaseLayer.tsx: картинки
-// [data-fly] вылетают из точки и встают на место, тексты [data-rise] всплывают, первый экран
-// следующего кейса собирается в закреплённом блоке «Дальше».
+// Разметка страницы кейса (вариант D2 «Рассказ», docs/12-case-page.md): ось у левого края, первый
+// экран и главы «о проекте → что сделали → результат → отзыв», в конце — заявка и следующий кейс.
+// Засечки глав и пунктов, номер главы и закреплённая подпись слева — в CSS. Ход по прокрутке
+// (чернила, всплытие [data-rise], подпись главы в шапке по [data-ch]) — CaseLayer.tsx.
+
+export const LAST_LINE = "Следующая остановка на этой линии — ваш проект.";
 
 const N = CARDS_CONTENT.length;
 const num = (i: number) => String(i + 1).padStart(2, "0");
 const cardOf = (slug: string) => CARDS_CONTENT.findIndex((c) => c.slug === slug);
-// Сторона карточки в окне чтения — как в туннеле Сцены 3: 01, 03, 05 слева, 02, 04 справа.
-export const sideOf = (i: number) => (i % 2 === 0 ? "l" : "r");
-
-function weeks(n: number) {
-  const d = n % 10;
-  const dd = n % 100;
-  if (d === 1 && dd !== 11) return `${n} неделя`;
-  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return `${n} недели`;
-  return `${n} недель`;
-}
+const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 export type CaseActions = {
   close: () => void;
@@ -35,255 +30,198 @@ export const back = (close: () => void) => (e: MouseEvent) => {
   close();
 };
 
-// Первый экран: карточка в окне чтения (без наклона), текст — на месте подписи туннеля.
-// preview — его копия в блоке «Дальше» (без h1 и главы, для глаз): в неё уходим сквозь карточку.
-function Hero({ c, act, preview }: { c: CaseData; act: CaseActions; preview?: boolean }) {
-  const i = cardOf(c.slug);
-  const card = CARDS_CONTENT[i];
-  const Title = preview ? "p" : "h1";
-  return (
-    <section
-      className={styles.hero}
-      data-side={sideOf(i)}
-      data-ch={preview ? undefined : "Работы"}
-      data-hero
-    >
-      <figure className={`${styles.card} ${styles.cover}`} data-cover>
-        <div className={styles.pv}>
-          {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-          <img src={card.image} alt="" style={{ background: card.color, objectFit: "contain" }} />
-        </div>
-        <span className={styles.badge}>{num(i)}</span>
-      </figure>
-      <div className={styles.htext} data-hr>
-        <a className={styles.back} href={HOME_HREF} onClick={back(act.close)}>
-          ← все работы
-        </a>
-        <p className={styles.count}>
-          {num(i)} <span>/ {num(N - 1)}</span>
-          {c.example && <span className={styles.ex}>пример</span>}
-        </p>
-        <Title className={styles.title} id={preview ? undefined : "case-title"}>
-          {card.title}
-        </Title>
-        <p className={styles.lead}>{c.summary}</p>
-        <dl className={styles.meta}>
-          <dt>Клиент</dt>
-          <dd>{card.client}</dd>
-          <dt>Тип</dt>
-          <dd>{card.type}</dd>
-          <dt>Год</dt>
-          <dd>{card.year}</dd>
-          <dt>Срок</dt>
-          <dd>{weeks(c.weeks)}</dd>
-          {c.url && (
-            <>
-              <dt>Сайт</dt>
-              <dd>
-                <a className={styles.ulink} href={c.url} target="_blank" rel="noopener noreferrer">
-                  {c.url.replace(/^https?:\/\//, "").replace(/\/$/, "")} ↗
-                </a>
-              </dd>
-            </>
-          )}
-        </dl>
-        <div>
-          <p className={styles.result}>{card.result}</p>
-          <p className={styles.small}>{card.resultNote}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Картинка главы: вылетает из точки (side — с какой стороны оси, для наклона при полёте).
-function Media({ img, side, note }: { img: CaseImage; side: "L" | "R"; note?: string }) {
-  const port = img.ratio === "3/4";
+function Img({ img, wide }: { img: CaseImage; wide?: boolean }) {
   return (
     <figure
-      className={`${styles.card} ${styles.media} ${styles[side]} ${port ? styles.port : ""}`}
-      data-fly={side === "L" ? 1 : -1}
-      style={port ? ({ "--ar": "3 / 4" } as CSSProperties) : undefined}
+      className={`${styles.card} ${img.ratio === "3/4" ? styles.port : ""} ${wide ? styles.wide : ""}`}
     >
       <div className={styles.pv}>
         {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
         <img src={img.src} alt={img.alt} loading="lazy" />
       </div>
-      {note && <figcaption className={styles.cap}>{note}</figcaption>}
     </figure>
   );
 }
 
-export function CaseView({ c, next, act }: { c: CaseData; next: CaseData; act: CaseActions }) {
-  const ni = cardOf(next.slug);
-  const nextCard = CARDS_CONTENT[ni];
+// Обложка — карточка туннеля: та же картинка на своём фоне и номер. next — маленькая карточка
+// следующего кейса в конце (её CaseLayer уводит в точку).
+function Cover({ i, className, next }: { i: number; className: string; next?: boolean }) {
+  const card = CARDS_CONTENT[i];
+  return (
+    <figure
+      className={`${styles.card} ${className}`}
+      data-ncard={next ? "" : undefined}
+      aria-hidden={next ? true : undefined}
+    >
+      <div className={styles.pv}>
+        {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
+        <img src={card.image} alt="" style={{ background: card.color, objectFit: "contain" }} />
+      </div>
+      <span className={styles.badge}>{num(i)}</span>
+    </figure>
+  );
+}
+
+// Глава: засечка на оси и номер (CSS по data-n), слева — закреплённая подпись, справа — текст.
+function Chapter(p: { n: number; word: string; sub?: string; children: ReactNode }) {
+  return (
+    <section className={`${styles.sec} ${styles.ch}`} data-ch={p.word} data-n={num(p.n)}>
+      <div className={styles.l}>
+        <div className={styles.stick}>
+          <p className={styles.word}>{p.word}</p>
+          {p.sub && <p className={styles.sub}>{p.sub}</p>}
+        </div>
+      </div>
+      <div className={styles.r}>{p.children}</div>
+    </section>
+  );
+}
+
+// full — вся статья; без него — только первый экран (вход: остальное дорисует CaseLayer, когда
+// карточка уйдёт в точку).
+export function CaseView(p: { c: CaseData; next: CaseData; act: CaseActions; full: boolean }) {
+  const { c, act } = p;
+  const i = cardOf(c.slug);
+  const card = CARDS_CONTENT[i];
+  const ni = cardOf(p.next.slug);
+  const nc = CARDS_CONTENT[ni];
+  let n = 0;
   return (
     <>
-      <Hero c={c} act={act} />
+      <section className={`${styles.sec} ${styles.hero}`} data-ch="Работы">
+        <div className={styles.l} />
+        <div className={styles.r} data-hero>
+          <a className={styles.back} href={HOME_HREF} onClick={back(act.close)}>
+            ← все работы
+          </a>
+          <p className={styles.count}>
+            {num(i)} <span>/ {num(N - 1)}</span>
+            {c.example && <span className={styles.ex}>пример</span>}
+          </p>
+          <h1 className={styles.title} id="case-title">
+            {card.title}
+          </h1>
+          <p className={styles.lead}>{c.summary}</p>
+          <p className={styles.meta}>
+            {card.client} · {card.type} · {card.year}
+            {c.url && (
+              <>
+                {" · "}
+                <a className={styles.ulink} href={c.url} target="_blank" rel="noopener noreferrer">
+                  {c.url.replace(/^https?:\/\//, "").replace(/\/$/, "")} ↗
+                </a>
+              </>
+            )}
+          </p>
+          <div className={styles.hr}>
+            <p className={styles.result}>{card.result}</p>
+            <p className={styles.small}>{card.resultNote}</p>
+          </div>
+        </div>
+      </section>
 
-      <section className={styles.row} data-ch="Задача">
-        <Media img={c.beforeImage} side="L" />
-        <div className={`${styles.txt} ${styles.R}`}>
-          <p className={styles.chap} data-rise>
-            <b>01</b>задача
-          </p>
-          <p className={styles.big} data-rise>
-            {c.task}
-          </p>
-          <div className={styles.facts} data-rise>
-            {c.before.map((b) => (
-              <div key={b.value}>
-                <b>{b.value}</b>
-                <p className={styles.p}>{b.note}</p>
+      {p.full && (
+        <>
+          <Chapter n={n++} word="о проекте" sub={card.client}>
+            <p className={styles.big} data-rise>
+              {c.task}
+            </p>
+            <div className={styles.facts} data-rise>
+              {c.before.map((b) => (
+                <div key={b.value}>
+                  <b>{b.value}</b>
+                  <span>{b.note}</span>
+                </div>
+              ))}
+            </div>
+            <div data-rise>
+              <Img img={c.beforeImage} wide />
+            </div>
+          </Chapter>
+
+          <Chapter n={n++} word="что сделали" sub={c.services.map(lower).join(", ")}>
+            {c.solution.map((s, k) => (
+              <div key={s.title} className={styles.it} data-rise>
+                <p className={styles.k}>
+                  <b>{num(k)}</b>решение
+                </p>
+                <h2 className={styles.h3}>{s.title}</h2>
+                <p className={styles.p}>{s.text}</p>
+                <Img img={s.image} wide />
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {c.solution.map((s, k) => {
-        const textLeft = k % 2 === 0;
-        const text = (
-          <div className={`${styles.txt} ${textLeft ? styles.L : styles.R}`}>
-            {k === 0 && (
-              <p className={styles.chap} data-rise>
-                <b>02</b>решение
-              </p>
-            )}
-            <p className={styles.step} data-rise>
-              {num(k)}
-            </p>
-            <h2 className={styles.h3} data-rise>
-              {s.title}
-            </h2>
-            <p className={styles.p} data-rise>
-              {s.text}
-            </p>
-          </div>
-        );
-        const media = <Media img={s.image} side={textLeft ? "R" : "L"} />;
-        return (
-          <section key={s.title} className={styles.row} data-ch={k === 0 ? "Решение" : undefined}>
-            {textLeft ? text : media}
-            {textLeft ? media : text}
-          </section>
-        );
-      })}
-
-      <section className={`${styles.row} ${styles.two}`}>
-        <Media img={c.gallery[0]} side="L" />
-        <Media img={c.gallery[1]} side="R" note={c.galleryNote} />
-      </section>
-
-      <section className={styles.res} data-ch="Результат">
-        <p className={styles.chap} data-rise>
-          <b>03</b>результат
-          {c.example && <span className={styles.ex}>пример</span>}
-        </p>
-        <div className={styles.figs}>
-          {c.results.map((r, k) => (
-            <div
-              key={r.note}
-              className={`${styles.f} ${k % 2 ? styles.R : styles.L}`}
-              data-fly={k % 2 ? -1 : 1}
-            >
-              <p className={k === 0 ? styles.result : styles.fig}>{r.value}</p>
-              <p className={styles.small}>{r.note}</p>
+            <div className={styles.it} data-rise>
+              <div className={styles.pair}>
+                <Img img={c.gallery[0]} />
+                <Img img={c.gallery[1]} />
+              </div>
+              <p className={styles.note}>{c.galleryNote}</p>
             </div>
-          ))}
-        </div>
-        <p className={styles.src} data-rise>
-          {c.resultsSource}
-        </p>
-      </section>
+          </Chapter>
 
-      <section className={`${styles.row} ${styles.rev}`} data-ch={c.quote ? "Отзыв" : "Заявка"}>
-        <div className={`${styles.txt} ${styles.L}`}>
-          <p className={styles.chap} data-rise>
-            <b>04</b>
-            {c.quote ? "отзыв" : "что делали"}
-          </p>
+          <Chapter n={n++} word="результат" sub={c.resultsSource}>
+            <div data-rise>
+              <Cover i={i} className={styles.wide} />
+            </div>
+            <div className={styles.figs} data-rise>
+              {c.results.map((r) => (
+                <div key={r.note}>
+                  <p className={styles.fig}>{r.value}</p>
+                  <p className={styles.small}>{r.note}</p>
+                </div>
+              ))}
+            </div>
+          </Chapter>
+
           {c.quote && (
-            <>
+            <Chapter n={n++} word="отзыв">
               <p className={styles.quote} data-rise>
                 {c.quote.text}
               </p>
               <p className={styles.who} data-rise>
                 {c.quote.who}
               </p>
-            </>
+            </Chapter>
           )}
-          <div className={styles.tags} data-rise>
-            {c.services.map((s) => (
-              <span key={s} className={styles.tag}>
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className={`${styles.txt} ${styles.R}`}>
-          <p className={styles.h2} data-rise>
-            Похожая задача?
-          </p>
-          <p className={styles.p} data-rise>
-            Расскажите о ней — перезвоним в течение 2 часов и прикинем срок и цену.
-          </p>
-          <div className={styles.acts} data-rise>
-            <button type="button" className={styles.pillDark} onClick={act.discuss}>
-              Обсудить проект
-            </button>
-            <button type="button" className={styles.ulink} onClick={act.prices}>
-              сколько стоит похожее
-            </button>
-          </div>
-        </div>
-      </section>
 
-      {/* Дальше: из точки вылетает карточка следующего кейса и встаёт в окно чтения, как в туннеле;
-          прокрутка дальше — сквозь неё, и собирается его первый экран. Собрался — CaseLayer
-          подменяет кейс (тот же кадр, прокрутка с начала). */}
-      <section className={styles.next} data-side={sideOf(ni)} data-ch="Дальше" data-next>
-        <div className={styles.stick}>
-          <figure className={`${styles.card} ${styles.ncard}`} data-ncard aria-hidden="true">
-            <div className={styles.pv}>
-              {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-              <img
-                src={nextCard.image}
-                alt=""
-                style={{ background: nextCard.color, objectFit: "contain" }}
-              />
+          {/* Конец пути: засечка «заявка» встаёт на точку в самом конце прокрутки (высота блока —
+              Case.module.css). Карточка следующего кейса по «Следующий кейс →» уходит в точку. */}
+          <section className={`${styles.sec} ${styles.end}`} data-ch="заявка">
+            <div className={styles.l}>
+              <p className={styles.word}>дальше</p>
             </div>
-            <span className={styles.badge}>{num(ni)}</span>
-          </figure>
-          <div className={styles.ncap} data-ncap>
-            <p className={styles.count}>
-              дальше · {num(ni)} <span>/ {num(N - 1)}</span>
-            </p>
-            <p className={styles.ntitle}>{nextCard.title}</p>
-            <dl className={styles.meta}>
-              <dt>Клиент</dt>
-              <dd>{nextCard.client}</dd>
-              <dt>Тип</dt>
-              <dd>{nextCard.type}</dd>
-              <dt>Год</dt>
-              <dd>{nextCard.year}</dd>
-            </dl>
-            <p className={styles.result}>{nextCard.result}</p>
-            <p className={styles.small}>{nextCard.resultNote}</p>
-            <div className={styles.acts}>
-              <button type="button" className={styles.pill} onClick={act.next}>
-                Следующий кейс →
-              </button>
-              <a className={styles.ulink} href={HOME_HREF} onClick={back(act.close)}>
-                все работы
-              </a>
+            <div className={styles.r}>
+              <p className={styles.h2} data-rise>
+                {LAST_LINE}
+              </p>
+              <p className={styles.p} data-rise>
+                Расскажите о задаче — перезвоним {BRIEF_CONFIG.replyIn} и прикинем цену.
+              </p>
+              <div className={styles.acts} data-rise>
+                <button type="button" className={styles.pillDark} onClick={act.discuss}>
+                  Обсудить проект
+                </button>
+                <button type="button" className={styles.ulink} onClick={act.prices}>
+                  сколько стоит похожее
+                </button>
+              </div>
+              <div className={styles.nx} data-rise>
+                <Cover i={ni} className={styles.mini} next />
+                <div>
+                  <p className={styles.k}>ещё проект · {num(ni)}</p>
+                  <p className={styles.h3}>{nc.title}</p>
+                  <p className={styles.sub}>
+                    {nc.result} · {nc.resultNote}
+                  </p>
+                  <button type="button" className={styles.pill} onClick={act.next}>
+                    Следующий кейс →
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className={styles.n3} data-n3 aria-hidden="true" inert>
-            <Hero c={next} act={act} preview />
-          </div>
-        </div>
-      </section>
+          </section>
+        </>
+      )}
     </>
   );
 }

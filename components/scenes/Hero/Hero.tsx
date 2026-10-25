@@ -97,6 +97,7 @@ export function Hero() {
       hero.getBoundingClientRect();
       hero.classList.add(styles.ready);
       for (const el of others) el?.classList.add(styles.ready);
+      skipRef.current?.classList.add(skipStyles.blend);
       const from = (e as CustomEvent<{ from?: number }>).detail?.from ?? 0;
       if (!from) return;
       for (const root of [
@@ -177,13 +178,19 @@ export function Hero() {
         </button>
       </header>
       <HeaderMenu header={headerRef} />
-      {/* Видна в начале заставки (Hero.module.css, .introSkip), уходит до её конца. */}
+      {/* Видна в начале заставки (Hero.module.css, .introSkip), уходит до её конца. Смешивание
+          (.blend) — только пока она идёт: даже скрытая пилюля с ним держит второй слой во всю
+          высоту страницы. Новый круг возвращает его (restart). */}
       <button
         ref={skipRef}
         type="button"
-        className={`${skipStyles.skip} ${styles.introSkip} ${ready ? styles.ready : ""}`}
+        className={`${skipStyles.skip} ${skipStyles.blend} ${styles.introSkip} ${ready ? styles.ready : ""}`}
         aria-label="Пропустить заставку"
         onClick={skipIntro}
+        onAnimationEnd={(e) => {
+          if (e.animationName.includes("introSkip"))
+            e.currentTarget.classList.remove(skipStyles.blend);
+        }}
       >
         пропустить
       </button>

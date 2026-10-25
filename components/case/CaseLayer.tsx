@@ -16,38 +16,33 @@ import { syncScroll, viewportH } from "@/lib/scroll/onScroll";
 import { SITE_TITLE } from "@/lib/site";
 import { goToStation, STATIONS } from "@/lib/stations";
 import styles from "./Case.module.css";
-import { back, type CaseActions, CaseView, sideOf } from "./CaseView";
+import { back, type CaseActions, CaseView } from "./CaseView";
 
-// Слой кейса поверх главной (вариант A «Сквозь карточку», docs/12-case-page.md). Главная под
-// ним смонтирована и стоит: прокрутку держат Lenis (stop) и html[data-case-open] (overflow),
-// у слоя — своя прокрутка. Адрес — /works/<slug>/ через history.pushState: «назад» браузера
-// и свои кнопки выхода закрывают слой, и главная там же, где была. Переходы — Web Animations
-// (transform и opacity, без своих циклов кадров); ход по прокрутке слоя — в его событии scroll.
+// Слой кейса поверх главной (вариант D2 «Рассказ», docs/12-case-page.md). Главная под ним
+// смонтирована и стоит: прокрутку держат Lenis (stop) и html[data-case-open] (overflow), у слоя —
+// своя прокрутка. Адрес — /works/<slug>/ через history.pushState: «назад» браузера и свои кнопки
+// выхода закрывают слой, и главная там же, где была. Переходы — Web Animations (transform и
+// opacity, без своих циклов кадров); ход по прокрутке слоя — один проход в его событии scroll.
 
-const DOT_Y = 20; // точка — на 20px ниже центра экрана, как в туннеле Сцены 3
-const FLY = 980; // мс: карточка выпрямляется и летит на зрителя — мы проходим сквозь неё
-const T0 = 640; // мс: с этого момента из точки собирается первый экран кейса
+const DOT_Y = 20; // точка туннеля — на 20px ниже центра экрана
+const IN = 600; // мс: карточка уходит в точку
 const FADE = 300; // мс: без движения (prefers-reduced-motion) — затухание
-const SWAP = 0.96; // доля блока «Дальше»: первый экран следующего кейса собран — подмена
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
 const PRICES = STATIONS.findIndex((s) => s.scene === "scene5");
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const prog = (v: number, a: number, b: number) => clamp01((v - a) / (b - a));
 const out2 = (t: number) => 1 - (1 - t) ** 2;
-const out3 = (t: number) => 1 - (1 - t) ** 3;
-const in3 = (t: number) => t ** 3;
-const io2 = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
-const OUT2 = "cubic-bezier(0.5, 1, 0.89, 1)";
+const IN3 = "cubic-bezier(0.32, 0, 0.67, 0)";
 const OUT3 = "cubic-bezier(0.33, 1, 0.68, 1)";
-const IO2 = "cubic-bezier(0.45, 0, 0.55, 1)";
+const IO3 = "cubic-bezier(0.65, 0, 0.35, 1)";
 
 const titleOf = (slug: string) =>
   `${CARDS_CONTENT.find((c) => c.slug === slug)?.title ?? ""} — кейс White Inks`;
 const vp = () => ({ x: window.innerWidth / 2, y: viewportH() / 2 + DOT_Y });
 type Point = ReturnType<typeof vp>;
 
-// Карточка Сцены 3, сквозь которую входим и выходим, и её подпись.
+// Карточка Сцены 3, через которую входим и выходим, и её подпись.
 type Source = { card: HTMLElement; caption: HTMLElement | null };
 
 // Карточка кейса на главной и подпись с её ссылкой «Смотреть кейс →» — если карточка сейчас
@@ -95,84 +90,51 @@ function makeFlyer(card: HTMLElement, holder: HTMLElement) {
   const o = Number.parseFloat(card.style.opacity) || 1;
   return { el, box, pose, o };
 }
+type Flyer = ReturnType<typeof makeFlyer>;
 
-// Пролёт: карточка выпрямляется, её центр идёт к точке схода, сама она растёт впятеро и гаснет.
-// Кадры — по формулам макета (у размера, сдвига и наклона свои кривые), между ними — прямо.
-function flight(f: ReturnType<typeof makeFlyer>, V: Point): Keyframe[] {
-  const { box, pose, o } = f;
-  const cx = box.x + box.w / 2 + pose.x;
-  const cy = box.y + box.h / 2 + pose.y;
-  const frames: Keyframe[] = [];
-  for (let k = 0; k <= 24; k++) {
-    const t = (k / 24) * FLY;
-    const mv = io2(prog(t, 40, 700));
-    const s = pose.s * (1 + 4.6 * in3(prog(t, 40, FLY)));
-    const x = pose.x + (V.x - cx) * mv * 0.9;
-    const y = pose.y + (V.y - cy) * mv * 0.9;
-    const tilt = pose.tilt * (1 - mv);
-    frames.push({
-      transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${s.toFixed(4)}) perspective(1200px) rotateY(${tilt.toFixed(2)}deg)`,
-      opacity: o * (1 - prog(t, 560, FLY)),
-    });
-  }
-  return frames;
+// Копия карточки: как она стоит на главной и как ушла в точку (12px, без наклона).
+function poses(f: Flyer, V: Point) {
+  const { box, pose } = f;
+  const t = (x: number, y: number, s: number, tilt: number) =>
+    `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${s.toFixed(4)}) perspective(1200px) rotateY(${tilt.toFixed(2)}deg)`;
+  return {
+    card: t(pose.x, pose.y, pose.s, pose.tilt),
+    dot: t(V.x - box.x - box.w / 2, V.y - box.y - box.h / 2, 12 / box.w, 0),
+  };
 }
 
-// Сдвиг элемента к точке: из неё он вылетает (или в неё уходит).
-const toDot = (el: Element, V: Point) => {
-  const r = el.getBoundingClientRect();
-  return [V.x - (r.left + r.width / 2), V.y - (r.top + r.height / 2)];
-};
+// Прозрачность у точки: карточка гаснет на последней пятой пути (к точке — и из неё).
+const intoDot = (o: number) => [{ opacity: o }, { opacity: o, offset: 0.8 }, { opacity: 0 }];
+const outOfDot = (o: number) => [{ opacity: 0 }, { opacity: o, offset: 0.15 }, { opacity: o }];
 
 // Геометрия прокрутки слоя: места элементов в статье без transform (offsetTop), пересчёт — на
 // resize и смену размеров статьи.
-function rel(el: HTMLElement, root: Element) {
-  let x = 0;
+function relY(el: HTMLElement, root: Element) {
   let y = 0;
   let n: HTMLElement | null = el;
   while (n && n !== root) {
-    x += n.offsetLeft;
     y += n.offsetTop;
     n = n.offsetParent as HTMLElement | null;
   }
-  return { x, y, cx: x + el.offsetWidth / 2, cy: y + el.offsetHeight / 2, h: el.offsetHeight };
+  return y;
 }
 
-function measure(content: HTMLElement, scroller: HTMLElement) {
-  const W = window.innerWidth;
+function measure(content: HTMLElement, scroller: HTMLElement, dot: HTMLElement | null) {
   const H = viewportH();
-  const V = { x: W / 2, y: H / 2 + DOT_Y };
-  const portrait = W < H;
+  const dy = H / 2 + DOT_Y;
   const all = (sel: string) => [...content.querySelectorAll<HTMLElement>(sel)];
-  const flies = all("[data-fly]").map((el) => ({
-    el,
-    side: Number(el.dataset.fly),
-    ...rel(el, content),
-  }));
-  const rises = all("[data-rise]").map((el) => ({ el, top: rel(el, content).y }));
-  const chapters = all("[data-ch]").map((el) => ({
-    word: el.dataset.ch ?? "",
-    top: rel(el, content).y,
-  }));
-  const next = content.querySelector<HTMLElement>("[data-next]");
-  const stick = next?.firstElementChild as HTMLElement | null;
-  const part = (el: HTMLElement | null) => (el && stick ? { el, ...rel(el, stick) } : null);
-  const ncard = part(next?.querySelector<HTMLElement>("[data-ncard]") ?? null);
   return {
-    W,
     H,
-    V,
-    portrait,
-    flies,
-    rises,
-    chapters,
+    dy,
+    x: dot ? dot.offsetLeft + dot.offsetWidth / 2 : 0, // ось (--x в Case.module.css)
+    path: content.offsetHeight - H + dy, // длина пути: до точки в конце прокрутки
     maxS: scroller.scrollHeight - scroller.clientHeight,
-    next: next ? { top: rel(next, content).y, h: next.offsetHeight } : null,
-    ncard,
-    tilt: portrait ? 0 : next?.dataset.side === "l" ? 8 : -8,
-    ncap: next?.querySelector<HTMLElement>("[data-ncap]") ?? null,
-    n3cover: part(next?.querySelector<HTMLElement>("[data-n3] [data-cover]") ?? null),
-    n3parts: all("[data-n3] [data-hr] > *"),
+    rises: all("[data-rise]").map((el) => ({ el, top: relY(el, content) })),
+    // Глава начинается засечкой — у верхнего отступа блока.
+    chapters: all("[data-ch]").map((el) => ({
+      word: el.dataset.ch ?? "",
+      top: relY(el, content) + Number.parseFloat(getComputedStyle(el).paddingTop),
+    })),
   };
 }
 type Geometry = ReturnType<typeof measure>;
@@ -186,14 +148,17 @@ export function CaseLayer({ initial }: { initial?: string }) {
     const s = caseSlugFrom(window.location.pathname);
     return s && caseBySlug(s) ? s : null;
   });
+  // Вся статья или только первый экран: на входе остальное рисуется, когда карточка ушла в точку,
+  // — первая задача после нажатия короткая, а пролёт к этому времени уже идёт.
+  const [full, setFull] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const flyerRef = useRef<HTMLDivElement>(null);
+  const pathRef = useRef<HTMLDivElement>(null);
   const inkRef = useRef<HTMLDivElement>(null);
-  const ghostRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const lenisRef = useRef(lenis);
@@ -212,7 +177,9 @@ export function CaseLayer({ initial }: { initial?: string }) {
     word: "Работы",
     geo: null as Geometry | null,
     written: new Map<HTMLElement, string>(),
+    risen: new WeakSet<HTMLElement>(),
     reduced: false,
+    rest: false, // на входе остальная статья ещё не дорисована
     homeY: 0,
     t0: 0, // нажатие: от него — задержки входа
   }).current;
@@ -257,101 +224,55 @@ export function CaseLayer({ initial }: { initial?: string }) {
     }
   };
 
-  // Один проход по прокрутке слоя: полёты из точки, всплытие текста, блок «Дальше», хвост
-  // пунктира у конца пути, подпись главы. Пишет только изменившееся.
+  // Один проход по прокрутке слоя: чернила до точки, всплытие текста, подпись главы, ожидание
+  // точки в конце пути. Пишет только изменившееся.
   const update = () => {
     const g = S.geo;
     const scroller = scrollRef.current;
     if (!g || !scroller) return;
     const y = scroller.scrollTop;
-    const { H, V, portrait } = g;
-    let q = -1;
+    const ink = inkRef.current;
+    if (ink) put(ink, "", `scaleY(${clamp01((y + g.dy) / g.path).toFixed(4)})`);
+    // Всплывшее остаётся: уезжает вверх со страницей и не гаснет на обратном ходу.
     if (!S.reduced) {
-      for (const f of g.flies) {
-        const cy = f.cy - y;
-        const land = portrait ? V.y - 22 - f.h / 2 : V.y;
-        const p = prog(cy, H + f.h * 0.25, land);
-        if (p >= 1) {
-          put(f.el, "1", "none");
-          continue;
-        }
-        const e = out3(p);
-        const dx = (V.x - f.cx) * (1 - e);
-        const dy = (V.y - cy) * (1 - e);
-        const rot = portrait
-          ? ""
-          : ` perspective(1600px) rotateY(${(f.side * 10 * (1 - e)).toFixed(2)}deg)`;
+      for (const r of g.rises) {
+        if (S.risen.has(r.el)) continue;
+        const p = out2(prog(r.top - y, g.H * 0.94, g.H * 0.74));
+        if (p >= 1) S.risen.add(r.el);
         put(
-          f.el,
-          p <= 0 ? "0" : String(Math.min(1, p * 7)),
-          `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${(0.04 + 0.96 * e).toFixed(4)})${rot}`,
+          r.el,
+          p >= 1 ? "" : p.toFixed(3),
+          p >= 1 ? "" : `translateY(${((1 - p) * 22).toFixed(1)}px)`,
         );
       }
-      for (const r of g.rises) {
-        const p = out2(prog(r.top - y, H * 0.9, H * 0.66));
-        put(r.el, String(p), p >= 1 ? "none" : `translateY(${((1 - p) * 26).toFixed(1)}px)`);
-      }
-      // Дальше: карточка следующего кейса вылетает из точки в окно чтения (с наклоном, как в
-      // туннеле), потом — сквозь неё, и из точки собирается его первый экран.
-      if (g.next && g.ncard) {
-        q = (y - g.next.top) / (g.next.h - H);
-        const { el, cx, cy } = g.ncard;
-        const off = Math.max(0, g.next.top - y); // блок ещё не встал — точка схода в его координатах
-        const a = out3(prog(q, -0.12, 0.26));
-        const thr = prog(q, 0.52, 0.8);
-        let t: string;
-        if (thr <= 0) {
-          t = `translate(${((V.x - cx) * (1 - a)).toFixed(1)}px, ${((V.y - off - cy) * (1 - a)).toFixed(1)}px) scale(${(0.04 + 0.96 * a).toFixed(4)}) perspective(1200px) rotateY(${g.tilt}deg)`;
-        } else {
-          const mv = io2(thr);
-          t = `translate(${((V.x - cx) * mv * 0.9).toFixed(1)}px, ${((V.y - cy) * mv * 0.9).toFixed(1)}px) scale(${(1 + 4.6 * in3(thr)).toFixed(4)}) perspective(1200px) rotateY(${(g.tilt * (1 - mv)).toFixed(2)}deg)`;
-        }
-        put(el, a <= 0 ? "0" : (Math.min(1, a * 6) * (1 - prog(q, 0.68, 0.8))).toFixed(3), t);
-        if (g.ncap) {
-          const c = out2(prog(q, 0.14, 0.3)) * (1 - prog(q, 0.52, 0.6));
-          put(g.ncap, c.toFixed(3), `translateY(${((1 - c) * 16).toFixed(1)}px)`);
-          const vis = c > 0.5 ? "" : "hidden";
-          if (g.ncap.style.visibility !== vis) g.ncap.style.visibility = vis;
-        }
-        if (g.n3cover) {
-          const e = out3(prog(q, 0.78, 0.92));
-          const { el: c, cx: x3, cy: y3 } = g.n3cover;
-          put(
-            c,
-            q < 0.78 ? "0" : "1",
-            e >= 1
-              ? "none"
-              : `translate(${((V.x - x3) * (1 - e)).toFixed(1)}px, ${((V.y - y3) * (1 - e)).toFixed(1)}px) scale(${(0.04 + 0.96 * e).toFixed(4)})`,
-          );
-        }
-        g.n3parts.forEach((p, i) => {
-          const k = out2(prog(q, 0.8 + i * 0.014, 0.86 + i * 0.014));
-          put(p, k.toFixed(3), k >= 1 ? "none" : `translateY(${((1 - k) * 18).toFixed(1)}px)`);
-        });
-      }
-    }
-    // Пунктир впереди точки кончается вместе с путём: у конца прокрутки — короче.
-    const ghost = ghostRef.current;
-    if (ghost) {
-      const k = clamp01((g.maxS - y) / (H - V.y));
-      const t = k >= 1 ? "" : `scaleY(${k.toFixed(4)})`;
-      if (ghost.style.transform !== t) ghost.style.transform = t;
     }
     const dot = dotRef.current;
     const wait = y >= g.maxS - 1 ? "true" : "false";
     if (dot && dot.dataset.wait !== wait) dot.dataset.wait = wait;
-    let word = g.chapters[0]?.word ?? "Работы";
-    for (const c of g.chapters) if (c.top <= y + H * 0.5) word = c.word;
-    label(q > 0.8 ? "Работы" : word);
-    if (q >= SWAP && S.phase === "open") goNext(true);
+    let word = "Работы";
+    for (const c of g.chapters) if (c.top <= y + g.dy) word = c.word;
+    label(word);
   };
 
   const relayout = () => {
     const content = contentRef.current;
     const scroller = scrollRef.current;
     if (!content || !scroller) return;
-    S.geo = measure(content, scroller);
+    S.geo = measure(content, scroller, dotRef.current);
     S.written.clear();
+  };
+
+  // Точка вздрагивает (Case.module.css, data-pulse) — приняла карточку.
+  const pulse = (delay: number) => {
+    window.setTimeout(
+      () => {
+        const dot = dotRef.current;
+        if (!dot) return;
+        dot.dataset.pulse = "";
+        window.setTimeout(() => dot.removeAttribute("data-pulse"), 460);
+      },
+      Math.max(0, delay),
+    );
   };
 
   // Главная под кейсом: Lenis стоит, жесты и клавиши до неё не доходят (слушатели слоя), место
@@ -379,11 +300,20 @@ export function CaseLayer({ initial }: { initial?: string }) {
     document.title = titleOf(s);
     lockHome();
     if (S.enter === "fly" && source) {
-      // Пролёт — сразу, кейс рисуется следующей задачей: его первая раскладка (на телефоне —
-      // сотни мс) идёт, пока карточка уже летит (анимация — на композиторе).
+      // Карточка уходит в точку в кадре нажатия; кейс (пока — первый экран) рисуется задачей после
+      // этого кадра: пролёт уже на композиторе, раскладка его не задерживает.
       takeOff(source);
-      window.setTimeout(() => setSlug(s), 0);
-    } else setSlug(s);
+      requestAnimationFrame(() =>
+        window.setTimeout(() => {
+          if (S.phase !== "opening") return; // успели выйти («назад», Esc)
+          setFull(false);
+          setSlug(s);
+        }, 0),
+      );
+    } else {
+      setFull(true);
+      setSlug(s);
+    }
   };
 
   const takeOff = (source: Source) => {
@@ -391,7 +321,15 @@ export function CaseLayer({ initial }: { initial?: string }) {
     if (!holder) return;
     S.t0 = performance.now();
     const f = makeFlyer(source.card, holder);
-    S.anims = [f.el.animate(flight(f, vp()), { duration: FLY, fill: "forwards" })];
+    const p = poses(f, vp());
+    S.anims = [
+      f.el.animate([{ transform: p.card }, { transform: p.dot }], {
+        duration: IN,
+        easing: IN3,
+        fill: "forwards",
+      }),
+      f.el.animate(intoDot(f.o), { duration: IN, fill: "forwards" }),
+    ];
     S.hide = source.card.animate([{ opacity: 0 }, { opacity: 0 }], {
       duration: 1,
       fill: "forwards",
@@ -412,68 +350,71 @@ export function CaseLayer({ initial }: { initial?: string }) {
     show(d.slug, d.card ? { card: d.card, caption: d.caption } : null);
   };
 
-  // Вход: карточка Сцены 3 летит на зрителя, слой проявляется под ней, из точки собирается
-  // первый экран, линия прорастает из точки вверх.
+  // Задержка от нажатия: кейс отрисовался позже, чем карточка начала уходить в точку.
+  const at = (ms: number) => ms - (performance.now() - S.t0);
+  const sections = () => [...(contentRef.current?.querySelectorAll(":scope > section") ?? [])];
+  // Первый экран всплывает по строкам.
+  const heroIn = (delay: number) =>
+    [...(contentRef.current?.querySelector("[data-hero]")?.children ?? [])].map((el, i) =>
+      el.animate(
+        [
+          { opacity: 0, transform: "translateY(16px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 440, delay: delay + i * 45, easing: OUT3, fill: "backwards" },
+      ),
+    );
+
+  // Вход: слой проявляется, пока карточка уходит в точку (линия и точка слоя — там же, где
+  // туннельные, в центре); точка вздрагивает и уводит ось к левому краю, проявляется первый экран.
   const flyIn = () => {
     const content = contentRef.current;
-    if (!content) return;
-    const V = vp();
+    const g = S.geo;
+    if (!content || !g) return;
     const anims = [...S.anims];
-    // Задержки — от нажатия: кейс отрисовался чуть позже, чем взлетела карточка.
-    const at = (ms: number) => ms - (performance.now() - S.t0);
-    const fadeIn = {
-      duration: 450,
-      delay: at(250),
-      easing: "ease-out",
-      fill: "backwards",
-    } as const;
+    const fade = { duration: 420, delay: at(60), easing: "ease-out", fill: "backwards" } as const;
     for (const el of [stageRef.current, headerRef.current]) {
-      if (el) anims.push(el.animate([{ opacity: 0 }, { opacity: 1 }], fadeIn));
+      if (el) anims.push(el.animate([{ opacity: 0 }, { opacity: 1 }], fade));
     }
-    const cover = content.querySelector<HTMLElement>("[data-hero] [data-cover]");
-    if (cover) {
-      const [dx, dy] = toDot(cover, V);
-      anims.push(
-        cover.animate(
-          [
-            { transform: `translate(${dx}px, ${dy}px) scale(0.04)` },
-            { transform: "translate(0px, 0px) scale(1)" },
-          ],
-          { duration: 760, delay: at(T0), easing: OUT3, fill: "backwards" },
-        ),
-        cover.animate([{ opacity: 0 }, { opacity: 1 }], {
-          duration: 120,
-          delay: at(T0),
-          fill: "backwards",
-        }),
-      );
+    const dx = window.innerWidth / 2 - g.x;
+    const shift = { duration: 730, delay: at(IN + 130), easing: IO3, fill: "backwards" } as const;
+    for (const el of [pathRef.current, dotRef.current]) {
+      if (el)
+        anims.push(
+          el.animate([{ transform: `translateX(${dx}px)` }, { transform: "none" }], shift),
+        );
     }
-    const parts = content.querySelector("[data-hero] [data-hr]")?.children ?? [];
-    [...parts].forEach((el, i) => {
-      anims.push(
-        el.animate(
-          [
-            { opacity: 0, transform: "translateY(22px)" },
-            { opacity: 1, transform: "none" },
-          ],
-          { duration: 460, delay: at(T0 + 380 + i * 70), easing: OUT2, fill: "backwards" },
-        ),
-      );
-    });
-    const grow = { duration: 840, delay: at(T0 + 260), easing: IO2, fill: "backwards" } as const;
-    if (inkRef.current)
-      anims.push(
-        inkRef.current.animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], grow),
-      );
-    if (ghostRef.current)
-      anims.push(ghostRef.current.animate([{ opacity: 0 }, { opacity: 1 }], grow));
+    pulse(at(IN));
+    anims.push(...heroIn(at(IN + 280)));
     settle(anims, () => flyerRef.current?.replaceChildren());
+    // Остальная статья — когда карточка ушла в точку и поехала ось (их ведёт композитор).
+    S.rest = true;
+    window.setTimeout(() => setFull(true), Math.max(0, at(IN + 60)));
+  };
+
+  // Остальная статья дорисована на входе — проявляется, пока ось доезжает.
+  const restIn = () => {
+    if (!S.rest) return;
+    S.rest = false;
+    for (const el of sections().slice(1)) {
+      el.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 400,
+        delay: at(IN + 700),
+        fill: "backwards",
+      });
+    }
   };
 
   const fadeIn = () => {
     const root = rootRef.current;
     if (!root) return;
     settle([root.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE, fill: "backwards" })]);
+  };
+
+  // Следующий кейс: первый экран проявляется, точка вздрагивает — карточка ушла в неё.
+  const swapIn = () => {
+    pulse(0);
+    heroIn(200);
   };
 
   // Вход доигран — кейс открыт.
@@ -517,6 +458,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
     return sourceOf(s);
   };
 
+  // Выход: текст гаснет, ось возвращается в центр — к точке туннеля, из точки выходит карточка и
+  // встаёт на своё место, слой гаснет.
   const leave = () => {
     if (S.phase === "closed" || S.phase === "closing") return;
     if (!slug) {
@@ -538,7 +481,9 @@ export function CaseLayer({ initial }: { initial?: string }) {
     }
     const source = S.source ?? placeHome(slug);
     const holder = flyerRef.current;
-    if (S.reduced || !source || !holder) {
+    const content = contentRef.current;
+    const g = S.geo;
+    if (S.reduced || !source || !holder || !content || !g) {
       const root = rootRef.current;
       if (!root) return done();
       root
@@ -547,29 +492,44 @@ export function CaseLayer({ initial }: { initial?: string }) {
       return;
     }
     S.source = source;
-    // Главная впервые рисуется на этом месте (прямой заход) — дадим ей кадр.
-    const delay = direct ? 80 : 0;
     if (direct) {
       S.hide = source.card.animate([{ opacity: 0 }, { opacity: 0 }], {
         duration: 1,
         fill: "forwards",
       });
     }
+    for (const el of sections())
+      el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: "forwards" });
+    const dx = window.innerWidth / 2 - g.x;
+    for (const el of [pathRef.current, dotRef.current]) {
+      el?.animate([{ transform: "none" }, { transform: `translateX(${dx}px)` }], {
+        duration: 420,
+        easing: IO3,
+        fill: "forwards",
+      });
+    }
+    // Главная впервые рисуется на этом месте (прямой заход) — дадим ей кадр.
+    const delay = direct ? 460 : 380;
     const f = makeFlyer(source.card, holder);
-    const fly = f.el.animate(flight(f, vp()), {
-      duration: FLY,
-      delay,
-      direction: "reverse",
-      fill: "both",
+    const p = poses(f, vp());
+    const grow = { duration: 560, delay, fill: "both" } as const;
+    const fly = f.el.animate([{ transform: p.dot }, { transform: p.card }], {
+      ...grow,
+      easing: OUT3,
     });
-    // Кейс гаснет быстро, пока карточка ещё прозрачная и огромная: сквозь неё — уже главная.
-    const fadeOut = { duration: 380, delay, easing: "ease-out", fill: "forwards" } as const;
-    for (const el of [stageRef.current, headerRef.current])
-      el?.animate([{ opacity: 1 }, { opacity: 0 }], fadeOut);
+    f.el.animate(outOfDot(f.o), grow);
+    for (const el of [stageRef.current, headerRef.current]) {
+      el?.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 320,
+        delay,
+        easing: "ease-out",
+        fill: "forwards",
+      });
+    }
     if (source.caption) {
       source.caption.animate([{ opacity: 0, transform: "translateY(-12px)" }, {}], {
         duration: 320,
-        delay: delay + 640,
+        delay: delay + 400,
         easing: "ease-out",
         fill: "backwards",
       });
@@ -580,6 +540,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
   };
 
   const done = () => {
+    // Затухание слоя (без движения) держит opacity: 0 — снять, иначе следующий кейс не виден.
+    for (const a of rootRef.current?.getAnimations() ?? []) a.cancel();
     S.hide?.cancel();
     S.hide = null;
     S.capFade?.cancel();
@@ -598,49 +560,83 @@ export function CaseLayer({ initial }: { initial?: string }) {
     after?.();
   };
 
-  // Следующий кейс: адрес меняется на месте (запись истории та же — «назад» ведёт на главную).
-  // По прокрутке — подмена тем же кадром; кнопкой — пролёт до конца блока «Дальше» (без
-  // движения — затухание).
-  const goNext = (viaScroll: boolean) => {
+  // Следующий кейс: маленькая карточка уходит в точку, текст гаснет, линия остаётся; адрес
+  // меняется на месте (запись истории та же — «назад» ведёт на главную). Без движения — затухание.
+  const goNext = () => {
     if (S.phase !== "open" || !slug || S.swapping) return;
-    const scroller = scrollRef.current;
-    if (!viaScroll && !S.reduced && scroller) {
-      scroller.scrollTo({ top: S.geo?.maxS ?? scroller.scrollHeight, behavior: "smooth" });
-      return;
-    }
+    const content = contentRef.current;
+    const holder = flyerRef.current;
+    if (!content || !holder) return;
     const n = nextCase(slug).slug;
     S.swapping = true;
     // Своё состояние без служебного Next (__NA): так Next узнаёт о новом адресе.
     window.history.replaceState({ whiteinksCase: n, fromHome: S.fromHome }, "", caseHref(n));
     document.title = titleOf(n);
-    if (viaScroll) {
-      S.enter = "swap";
+    const swap = (enter: "swap" | "swapFade") => () => {
+      holder.replaceChildren();
+      S.enter = enter;
       setSlug(n);
+    };
+    if (S.reduced) {
+      content
+        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" })
+        .finished.then(swap("swapFade"), () => {});
       return;
     }
-    const content = contentRef.current;
-    if (!content) return;
-    content
-      .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" })
-      .finished.then(
-        () => {
-          S.enter = "swapFade";
-          setSlug(n);
-        },
-        () => {},
+    const anims: Animation[] = [];
+    const card = content.querySelector<HTMLElement>("[data-ncard]");
+    const dot = dotRef.current;
+    if (card && dot) {
+      // Летит копия поверх слоя: сама карточка гаснет вместе с текстом.
+      const r = card.getBoundingClientRect();
+      const d = dot.getBoundingClientRect();
+      const el = card.cloneNode(true) as HTMLElement;
+      Object.assign(el.style, {
+        position: "absolute",
+        left: `${r.left}px`,
+        top: `${r.top}px`,
+        width: `${r.width}px`,
+        margin: "0",
+      });
+      holder.append(el);
+      card.style.visibility = "hidden";
+      const tx = d.left + d.width / 2 - (r.left + r.width / 2);
+      const ty = d.top + d.height / 2 - (r.top + r.height / 2);
+      anims.push(
+        el.animate(
+          [
+            { transform: "none" },
+            {
+              transform: `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${(12 / r.width).toFixed(4)})`,
+            },
+          ],
+          { duration: 620, easing: IN3, fill: "forwards" },
+        ),
+        el.animate(intoDot(1), { duration: 620, fill: "forwards" }),
       );
+    }
+    for (const el of sections()) {
+      anims.push(
+        el.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: 360,
+          delay: 100,
+          fill: "forwards",
+        }),
+      );
+    }
+    Promise.all(anims.map((a) => a.finished)).then(swap("swap"), () => {});
   };
 
   const act: CaseActions = {
     close: () => close(),
-    next: () => goNext(false),
+    next: () => goNext(),
     // Заявка из кейса — окно заявки поверх кейса (components/ui/BriefModal): растёт из нажатой
     // «Обсудить проект», закрыли — снова в кейсе, на той же кнопке.
     discuss: (e) => openBrief(e.currentTarget),
     prices: () => close(() => goToStation(PRICES, lenisRef.current)),
   };
-  const fn = useRef({ open, leave, show, update, relayout, act });
-  fn.current = { open, leave, show, update, relayout, act };
+  const fn = useRef({ open, leave, show, update, relayout, restIn, act });
+  fn.current = { open, leave, show, update, relayout, restIn, act };
 
   // Lenis под кейсом стоит, даже если его запустит кто-то ещё (замок заставки HeroScrollLock).
   useEffect(() => {
@@ -690,12 +686,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
     S.swapping = false;
     const scroller = scrollRef.current;
     if (scroller) scroller.scrollTop = 0;
-    // Подмена по прокрутке: инерция колеса или пальца не уносит новый первый экран — полсекунды
-    // слой не прокручивается.
-    if (scroller && S.enter === "swap") {
-      scroller.style.overflowY = "hidden";
-      window.setTimeout(() => scroller.style.removeProperty("overflow-y"), 500);
-    }
     fn.current.relayout();
     S.word = "Работы";
     const box = labelRef.current;
@@ -705,6 +695,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     S.enter = null;
     if (enter === "fly") flyIn();
     else if (enter === "fade") fadeIn();
+    else if (enter === "swap") swapIn();
     else if (enter === "swapFade") {
       contentRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], {
         duration: 200,
@@ -716,6 +707,14 @@ export function CaseLayer({ initial }: { initial?: string }) {
       scroller?.focus({ preventScroll: true });
     }
   }, [slug]);
+
+  // Статья дорисована целиком (на входе): раскладка и проявление остального.
+  useLayoutEffect(() => {
+    if (!full || !slug) return;
+    fn.current.relayout();
+    fn.current.update();
+    fn.current.restIn();
+  }, [full, slug]);
 
   // Пока слой открыт: прокрутка слоя, resize, колесо и касания — не дальше слоя (главную они
   // не двигают, замок заставки их не видит), Esc — выход.
@@ -782,7 +781,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
   );
 
   const c = slug ? caseBySlug(slug) : null;
-  const i = c ? CARDS_CONTENT.findIndex((x) => x.slug === c.slug) : -1;
   // Слой есть всегда (в нём летит карточка), кейс в нём — пока открыт.
   if (!c) {
     return (
@@ -805,11 +803,13 @@ export function CaseLayer({ initial }: { initial?: string }) {
       <div key="flyer" ref={flyerRef} className={styles.flyer} aria-hidden="true" />
       <div key="stage" ref={stageRef} className={styles.stage}>
         <div className={styles.bg} />
-        <div ref={inkRef} className={styles.ink} />
-        <div ref={ghostRef} className={styles.ghost} />
         <div ref={scrollRef} className={styles.scroll} tabIndex={-1}>
-          <article ref={contentRef} key={c.slug} className={styles.content} data-side={sideOf(i)}>
-            <CaseView c={c} next={nextCase(c.slug)} act={act} />
+          <article ref={contentRef} key={c.slug} className={styles.content}>
+            <div ref={pathRef} className={styles.path} aria-hidden="true">
+              <div className={styles.ghost} />
+              <div ref={inkRef} className={styles.ink} />
+            </div>
+            <CaseView c={c} next={nextCase(c.slug)} act={act} full={full} />
           </article>
         </div>
         <span ref={dotRef} className={styles.dot} aria-hidden="true" />

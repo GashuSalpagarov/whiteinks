@@ -388,9 +388,11 @@ export function Footer() {
           </button>
         </div>
         <p className={styles.fine}>
-          <Link href="/privacy">Политика обработки персональных данных</Link>
+          <Link href="/privacy" prefetch={false}>
+            Политика обработки персональных данных
+          </Link>
           {/* Название документа целиком; на телефоне — «ПД»: иначе подвал в три строки. */}
-          <Link href="/consent">
+          <Link href="/consent" prefetch={false}>
             Согласие на обработку <span className={styles.long}>персональных данных</span>
             <span className={styles.short}>ПД</span>
           </Link>
