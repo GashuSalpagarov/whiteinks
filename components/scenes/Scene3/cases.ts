@@ -29,6 +29,7 @@ export type CaseData = {
   resultsSource: string; // откуда цифры: «данные клиента»
   quote?: { text: string; who: string }; // who — должность и тип компании, без имени
   services: string[]; // что делали
+  need?: string; // «что нужно» в заявке в конце кейса — пилюля из NEEDS (lib/brief.ts)
 };
 
 export const CASES: CaseData[] = [
@@ -82,6 +83,7 @@ export const CASES: CaseData[] = [
       who: "коммерческий директор, оптовый дистрибьютор",
     },
     services: ["Исследование", "Дизайн-система", "Веб-платформа", "Интеграция с 1С"],
+    need: "Магазин",
   },
   {
     slug: "studio-site",
@@ -130,6 +132,7 @@ export const CASES: CaseData[] = [
     ],
     resultsSource: "данные студии",
     services: ["Концепция", "Дизайн", "3D и анимация", "Разработка"],
+    need: "Сайт",
   },
 ];
 

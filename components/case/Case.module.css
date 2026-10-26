@@ -1,11 +1,12 @@
 /* Слой кейса (CaseLayer.tsx) — поверх главной, на весь экран, со своей прокруткой. Порядок
    слоёв: сцена (фон, прокрутка со статьёй и путём, точка) → летящая карточка → шапка.
-   Вариант D2 «Рассказ»: ось — у левого края (--x), точка 12px — на ней, на 20px ниже середины
-   экрана (как в туннеле Сцены 3). Экран — общая высота --ih (lib/scroll/onScroll). */
+   Вариант D2 «Рассказ»: ось — на четверти экрана (--x), точка 12px — на ней, на 20px ниже
+   середины экрана (как в туннеле Сцены 3). Экран — общая высота --ih (lib/scroll/onScroll).
+   Место обложки первого экрана повторяет coverBox() в CaseLayer.tsx — менять вместе. */
 .layer {
   --h: var(--ih, 100vh);
   --dy: calc(var(--h) / 2 + 20px);
-  --x: 34vw;
+  --x: 25vw;
   --pad: calc(var(--h) * 0.11);
   --text2: rgb(10 10 10 / 0.72);
   --muted: rgb(10 10 10 / 0.62);
@@ -139,7 +140,7 @@
   pointer-events: none;
 }
 
-/* ---------- шапка: логотип, подпись главы у оси, «Обсудить проект», «закрыть» ---------- */
+/* ---------- шапка: логотип, «Обсудить проект», «закрыть» ---------- */
 .header {
   position: absolute;
   top: 0;
@@ -166,27 +167,6 @@
   line-height: 1;
   color: inherit;
   text-decoration: none;
-}
-
-.label {
-  position: absolute;
-  top: 35px;
-  left: calc(var(--x) + 16px);
-  width: 12em;
-  height: calc(1em + 8px);
-  margin-top: -4px;
-  overflow: hidden;
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.label > span {
-  position: absolute;
-  top: 4px;
-  left: 0;
 }
 
 .cta {
@@ -242,13 +222,15 @@
   outline-offset: 3px;
 }
 
-/* ---------- главы: слева — подпись (закреплена), ось, справа — текст ---------- */
+/* ---------- главы: слева — подпись (закреплена), ось, справа — текст ----------
+   Колонка подписей — от поля 32px до оси минус 56px: 232px на 1280, 272px на 1440, 392px на
+   1920; подпись и строка под ней помещаются в две строки. */
 .sec {
   position: relative;
   display: grid;
-  grid-template-columns: calc(var(--x) - 56px) minmax(0, 1fr);
+  grid-template-columns: calc(var(--x) - 88px) minmax(0, 1fr);
   column-gap: 112px;
-  padding: var(--pad) 96px 0 0;
+  padding: var(--pad) 96px 0 32px;
 }
 
 .l {
@@ -282,7 +264,7 @@
 }
 
 .l .sub {
-  max-width: 260px;
+  max-width: 300px;
   margin-left: auto;
 }
 
@@ -329,26 +311,102 @@
   background: var(--color-fg);
 }
 
-/* Последняя глава не ниже остатка экрана под точкой: в конце прокрутки засечка «заявка» — на точке. */
+/* Конец пути — у формы заявки (CaseView, End). Засечка тянется от линии до рамки карточки и стоит
+   там, где точка в конце прокрутки: низ блока минус остаток экрана под точкой. Блок не ниже, чем
+   нужно, чтобы это было у поля «телефон» (--t — от верха карточки до его середины); если форма
+   выше остатка экрана под точкой (телефон 390×844), точка — у следующего поля. Ниже прокрутки нет. */
 .end {
-  min-height: calc(var(--h) - var(--dy) + var(--pad) + 10px);
+  --pad: 40px;
+  --t: 68px;
+  min-height: calc(var(--h) - var(--dy) + var(--pad) + var(--t));
 }
 
-/* ---------- первый экран ---------- */
+.end::before {
+  top: auto;
+  bottom: calc(var(--h) - var(--dy) - 1.5px);
+  width: 70px; /* от линии до рамки карточки */
+}
+
+/* ---------- первый экран: слева от линии — «02 / 07» и название, выровненные к ней, как подписи
+   глав; справа — «← все работы», обложка, справа от неё у нижнего края главная цифра, под ней
+   фраза и «клиент · тип · год». В разметке это одна колонка .r — так её строки встают на
+   телефоне; на широком экране она растворяется в сетке блока (display: contents). ---------- */
 .hero {
   padding-top: 0;
 }
 
-.hero .r {
-  padding-top: max(110px, calc(var(--h) * 0.16));
+/* Пустая колонка подписей первого экрана: на телефоне её отступ сдвигал всю статью на 14px. */
+.hero .l {
+  display: none;
+}
+
+.heroMedia {
+  display: flex;
+  gap: 36px;
+  align-items: flex-end;
+  margin-top: 18px !important;
+}
+
+.cover {
+  flex: 0 0 auto;
+  width: min(600px, 66%);
+}
+
+.heroMedia .hr {
+  margin-bottom: 6px;
+}
+
+.head > * + * {
+  margin-top: 14px;
 }
 
 .hero .title {
   margin-top: 6px;
 }
 
-.hero .hr {
-  margin-top: 34px;
+@media (min-width: 768px) {
+  .hero {
+    padding-top: 100px;
+  }
+
+  .hero .r {
+    display: contents;
+  }
+
+  /* «← все работы» — тоже в колонке подписей, над номером, к линии. */
+  .hero .back {
+    grid-area: 1 / 1;
+    justify-self: end;
+  }
+
+  .heroMedia {
+    grid-area: 2 / 2;
+    max-width: 900px;
+  }
+
+  /* Номер, название и «клиент · тип · год» — в колонке подписей, верх — по верху обложки; кегль
+     названия — под узкую колонку (37px на 1280, 42px на 1440, 44px на 1920), название встаёт
+     в 2 строки, слова не рвутся. */
+  .hero .head {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    text-align: right;
+  }
+
+  .hero .count {
+    margin-top: 18px !important;
+  }
+
+  .hero .title {
+    font-size: clamp(30px, 2.9vw, 44px);
+    line-height: 1.06;
+  }
+
+  .hero .lead {
+    grid-area: 3 / 2;
+    margin-top: 30px !important;
+  }
 }
 
 /* ---------- текст ---------- */
@@ -501,44 +559,9 @@
   cursor: pointer;
 }
 
-.acts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px 24px;
-  align-items: center;
-}
-
-.end .acts {
-  margin-top: 22px;
-}
-
-.pill,
-.pillDark {
-  display: inline-flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 20px;
-  border: 1.5px solid var(--color-fg);
-  border-radius: 999px;
-  background: var(--color-bg);
-  color: inherit;
-  font-size: 16px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.pillDark {
-  height: 52px;
-  padding: 0 28px;
-  background: var(--color-fg);
-  color: var(--color-bg);
-  font-weight: 500;
-}
-
 .back:focus-visible,
 .ulink:focus-visible,
-.pill:focus-visible,
-.pillDark:focus-visible {
+.moreLink:focus-visible {
   outline: 1.5px solid var(--color-fg);
   outline-offset: 3px;
 }
@@ -570,11 +593,16 @@
   color: var(--text2);
 }
 
+/* Цифры результата — строкой, над каждой линия (как у фактов «как было»). */
 .figs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 300px));
-  gap: 30px 56px;
-  margin-top: 34px !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 24px;
+}
+
+.figs > div {
+  padding-top: 16px;
+  border-top: 1.5px solid var(--color-fg);
 }
 
 /* ---------- карточка-паспарту, как в Сцене 3 ---------- */
@@ -639,30 +667,54 @@
   flex: 1 1 0;
 }
 
-/* Следующий кейс: маленькая карточка, название, цифра и кнопка. */
-.nx {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  margin-top: 44px !important;
+/* Конец: вопрос и строка над формой. */
+.h2 + .p {
+  max-width: 34em;
 }
 
-.mini {
-  flex: 0 0 auto;
-  width: 150px;
-  padding: 8px;
+/* Форма заявки (components/ui/BriefForm) — в карточке с рамкой 1,5px, как окно заявки. */
+.brief {
+  max-width: 660px; /* пять пилюль «что нужно» — в одну строку */
+  padding: 26px 28px 28px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 22px;
+  background: var(--color-bg);
 }
 
-.mini .badge {
-  display: none;
+/* Отправлено — что дальше. */
+.steps {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 10px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  list-style: none;
 }
 
-.nx .pill {
-  margin-top: 10px;
+.steps b {
+  font-weight: 500;
+  color: var(--color-fg);
 }
 
-.content [data-rise] {
-  will-change: transform, opacity;
+/* Следующий кейс — неброско: серая строка под формой. */
+.more {
+  margin-top: 18px !important;
+}
+
+.moreLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.moreLink:hover,
+.moreLink:focus-visible {
+  color: var(--color-fg);
 }
 
 /* ---------- телефон: ось у левого края (20px), текст от 44px, подпись главы — над текстом ---------- */
@@ -699,23 +751,7 @@
   }
 }
 
-/* Телефон боком: подпись главы мельче — вровень с логотипом (как SceneLabel на главной). */
-@media (max-height: 500px) {
-  .label {
-    top: 23px;
-    left: calc(var(--x) + 12px);
-    font-size: 0.8125rem;
-  }
-}
-
 @media (max-width: 767px) {
-  .label {
-    top: 42px;
-    left: 20px;
-    font-size: 0.9375rem;
-    font-weight: 400;
-  }
-
   .sec {
     display: block;
     padding: var(--pad) 20px 0 44px;
@@ -725,8 +761,34 @@
     padding-top: 0;
   }
 
+  /* Обложка — сразу под «← все работы», цифра — после текста первого экрана. */
   .hero .r {
-    padding-top: 104px;
+    display: flex;
+    flex-direction: column;
+    padding-top: 96px;
+  }
+
+  .heroMedia {
+    display: contents;
+  }
+
+  .cover {
+    order: 1;
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .hero .r > :not(.back, .heroMedia) {
+    order: 2;
+  }
+
+  .heroMedia .hr {
+    order: 3;
+    margin: 22px 0 0;
+  }
+
+  .hero .count {
+    margin-top: 22px !important;
   }
 
   .l {
@@ -799,8 +861,23 @@
     flex-basis: 36%;
   }
 
-  .mini {
-    width: 110px;
+  /* Конец: засечка — до рамки карточки (текст от 44px), «ещё проект →» не у самого края экрана. */
+  .end {
+    --t: 60px;
+    padding-bottom: 24px;
+  }
+
+  .end::before {
+    width: 38px;
+  }
+
+  .end > .l {
+    display: none;
+  }
+
+  .brief {
+    padding: 18px 16px 20px 18px;
+    border-radius: 20px;
   }
 }
 

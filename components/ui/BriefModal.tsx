@@ -1,33 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import {
-  type ChangeEvent,
-  type FormEvent,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLenis } from "@/app/providers";
 import {
   BRIEF_CONFIG,
   type BriefOpen,
-  briefErrors,
-  clearBrief,
-  FAIL_TEXT,
   getBrief,
-  NEEDS,
-  needText,
-  OTHER,
   setBrief,
   setBriefOpener,
-  submitBrief,
   useBrief,
 } from "@/lib/brief";
-import { caretAt, formatPhone, PHONE_MASK, PHONE_PREFIX, phoneEdit } from "@/lib/phone";
+import { BriefForm, type BriefFormHandle } from "./BriefForm";
 import styles from "./BriefModal.module.css";
 
 // Окно заявки (макет brief-modal/b2). Нажатая чёрная пилюля растёт в белую карточку с рамкой
@@ -42,11 +26,10 @@ import styles from "./BriefModal.module.css";
 // Слой — fixed в body, не <dialog>: верхний слой <dialog> не берёт общий invert второго круга и
 // прячет курсор сайта. Под окном страница стоит (Lenis stop, html[data-brief]) и не нажимается
 // (нажатия ловит слой окна, Tab ходит по кругу внутри окна); Esc, «Назад» (своя запись истории),
-// крестик и щелчок мимо закрывают; фокус — обратно на кнопку. Данные — общие с конвертом Сцены 6
-// (lib/brief.ts).
+// крестик и щелчок мимо закрывают; фокус — обратно на кнопку. Поля — общая форма (BriefForm, она же
+// в конце страницы кейса), данные — общие с конвертом Сцены 6 (lib/brief.ts).
 
 type G = { x: number; y: number; w: number; h: number; r: number };
-type Errors = { phone?: string; consent?: string; form?: string };
 
 const EZ = "cubic-bezier(.76,0,.24,1)";
 // Что получает фокус по Tab внутри окна.
@@ -124,27 +107,21 @@ function inkPill(el: HTMLElement) {
 export function BriefModal() {
   const ids = useId();
   const lenis = useLenis();
-  const brief = useBrief();
-  const { phone, name, need, detail, other, consent, status } = brief;
+  const { status } = useBrief();
+  // Поля или статус «отправлено» — по статусу заявки (так же решает и сама форма).
+  const view = status === "sent" || status === "mail" ? "done" : "form";
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("Обсудить проект");
-  const [view, setView] = useState<"form" | "done">("form");
-  const [focused, setFocused] = useState(false);
-  const [errors, setErrors] = useState<Errors>({});
 
   const layerRef = useRef<HTMLDivElement>(null);
   const inkRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLFormElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
   const tPaperRef = useRef<HTMLSpanElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const doneRef = useRef<HTMLDivElement>(null);
-  const phoneRef = useRef<HTMLInputElement>(null);
-  const otherRef = useRef<HTMLTextAreaElement>(null);
-  const caretRef = useRef<number | null>(null);
+  const formRef = useRef<BriefFormHandle>(null);
 
   // Состояние показа — вне React: его читают обработчики и шаги анимаций.
   const S = useRef({
@@ -165,14 +142,12 @@ export function BriefModal() {
   const lenisRef = useRef(lenis);
   lenisRef.current = lenis;
 
-  const shown = phone ? formatPhone(phone) : focused ? PHONE_PREFIX : "";
-
   // ---------- Раскладка ----------
   // Карточка у кнопки: из верхней половины экрана — вниз от неё (правый край вровень), из нижней —
   // вверх (низ вровень); из клетки — над местом нажатия или под ним. На телефоне — почти весь экран.
   // keep — карточка уже стоит: меняется только высота, край у кнопки остаётся на месте.
   const place = (keep?: G | null): G => {
-    const card = cardRef.current as HTMLFormElement;
+    const card = cardRef.current as HTMLDivElement;
     const vw = window.innerWidth;
     const vh = window.visualViewport?.height ?? window.innerHeight;
     if (S.phone) {
@@ -272,8 +247,7 @@ export function BriefModal() {
     setLabel(S.pill ? (el.textContent ?? "").trim() || "Обсудить проект" : "Обсудить проект");
     if (titleRef.current)
       titleRef.current.style.fontSize = S.pill ? getComputedStyle(el).fontSize : "";
-    setErrors({});
-    setView(s.status === "sent" || s.status === "mail" ? "done" : "form");
+    formRef.current?.clearErrors();
     // Страница стоит: Lenis, html[data-brief]; своя запись истории — для «Назад».
     const l = lenisRef.current;
     S.stopped = !!l && !l.isStopped;
@@ -335,7 +309,7 @@ export function BriefModal() {
       () => {
         if (S.phase !== "opening") return;
         S.phase = "open";
-        if (!S.phone && view === "form") phoneRef.current?.focus({ preventScroll: true });
+        if (!S.phone && view === "form") formRef.current?.focusPhone();
         else cardRef.current?.focus({ preventScroll: true });
       },
       S.reduced ? 230 : 600,
@@ -527,110 +501,33 @@ export function BriefModal() {
     after?.();
   }, [view]);
 
-  // ---------- Поля ----------
-  const onPhone = (e: ChangeEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    const type = (e.nativeEvent as InputEvent).inputType ?? "";
-    const caret = input.selectionStart ?? input.value.length;
-    const { digits, left } = phoneEdit(input.value, caret, phone, type);
-    caretRef.current = left;
-    setBrief({ phone: digits });
-    setErrors((x) => ({ ...x, phone: undefined, form: undefined }));
+  // ---------- Отправка (сама форма — BriefForm) ----------
+  // Ушло: поля гаснут, карточка садится до строки статуса (тот же текст, что в конверте).
+  const onSent = (show: () => void, body: HTMLElement | null) => {
+    if (S.phase !== "open") return show();
+    if (body && !S.reduced) move(body, { opacity: 1 }, { opacity: "0" }, { duration: 180 });
+    window.setTimeout(
+      () => {
+        S.after = () => {
+          for (const [i, el] of [
+            ...(cardRef.current?.querySelectorAll<HTMLElement>("[data-done]") ?? []),
+          ].entries())
+            move(
+              el,
+              { opacity: 0, transform: "translateY(8px)" },
+              { opacity: "", transform: "" },
+              {
+                delay: S.reduced ? 0 : 200 + i * 120,
+                duration: S.reduced ? 0 : 320,
+                easing: "ease-out",
+              },
+            );
+        };
+        show();
+      },
+      S.reduced ? 0 : 200,
+    );
   };
-  const keepPrefix = (input: HTMLInputElement) => {
-    const n = PHONE_PREFIX.length;
-    if (!input.value.startsWith(PHONE_PREFIX)) return;
-    const a = input.selectionStart ?? n;
-    const b = input.selectionEnd ?? n;
-    if (a < n || b < n) input.setSelectionRange(Math.max(n, a), Math.max(n, b));
-  };
-  useLayoutEffect(() => {
-    const input = phoneRef.current;
-    if (!input || !focused || document.activeElement !== input) return;
-    const left = caretRef.current;
-    caretRef.current = null;
-    if (left === null && phone) return;
-    const p = caretAt(input.value, left ?? 0);
-    input.setSelectionRange(p, p);
-  }, [phone, focused]);
-  const [lines, setLines] = useState(1);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: строк — по тексту, когда он сменился
-  useLayoutEffect(() => {
-    const ta = otherRef.current;
-    if (!ta) return;
-    ta.style.height = "0";
-    const lh = Number.parseFloat(getComputedStyle(ta).lineHeight);
-    setLines(Math.min(3, Math.max(1, Math.round(ta.scrollHeight / lh))));
-    ta.style.height = "";
-  }, [other, need]);
-
-  // ---------- Отправка ----------
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (status === "sending") return;
-    const trap = String(new FormData(e.currentTarget).get("website") ?? "");
-    const s = getBrief();
-    const next: Errors = briefErrors(s);
-    setErrors(next);
-    if (next.phone) return phoneRef.current?.focus();
-    if (next.consent)
-      return cardRef.current?.querySelector<HTMLInputElement>('[name="consent"]')?.focus();
-    setBrief({ status: "sending" });
-    try {
-      const result = await submitBrief(
-        {
-          phone: `+7${s.phone}`,
-          name: s.name.trim() || undefined,
-          need: needText(s),
-          time: new Date().toISOString(),
-        },
-        { trap, startedAt: S.shownAt },
-      );
-      if (S.phase !== "open") {
-        setBrief({ status: result });
-        return;
-      }
-      // Ушло: поля гаснут, карточка садится до строки статуса (тот же текст, что в конверте).
-      if (bodyRef.current && !S.reduced)
-        move(bodyRef.current, { opacity: 1 }, { opacity: "0" }, { duration: 180 });
-      window.setTimeout(
-        () => {
-          S.after = () => {
-            for (const [i, el] of [
-              ...(doneRef.current?.querySelectorAll<HTMLElement>("[data-done]") ?? []),
-            ].entries())
-              move(
-                el,
-                { opacity: 0, transform: "translateY(8px)" },
-                { opacity: "", transform: "" },
-                {
-                  delay: S.reduced ? 0 : 200 + i * 120,
-                  duration: S.reduced ? 0 : 320,
-                  easing: "ease-out",
-                },
-              );
-          };
-          setBrief({ status: result });
-          setView("done");
-        },
-        S.reduced ? 0 : 200,
-      );
-    } catch {
-      setBrief({ status: "idle" });
-      setErrors({ form: FAIL_TEXT });
-    }
-  };
-
-  // «Отправить ещё одну» — чистая форма; «вернуться к форме» (письмо в почте) — те же данные.
-  const reopen = (clear: boolean) => {
-    if (clear) clearBrief();
-    else setBrief({ status: "idle" });
-    setErrors({});
-    S.after = () => reveal(120);
-    setView("form");
-  };
-
-  const needLabel = (v: string) => (need === v && detail && v !== OTHER ? `${v} · ${detail}` : v);
 
   if (!host) return null;
   return createPortal(
@@ -651,12 +548,10 @@ export function BriefModal() {
         <i />
         <i />
       </div>
-      <form
+      <div
         ref={cardRef}
         className={styles.card}
         data-done={view === "done" || undefined}
-        noValidate
-        onSubmit={submit}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
@@ -678,207 +573,23 @@ export function BriefModal() {
           />
         </div>
 
-        {view === "form" ? (
-          <div key="form" ref={bodyRef} className={styles.body}>
-            <div className={styles.scroll}>
-              <p className={styles.lead} data-st>
-                Перезвоним {BRIEF_CONFIG.replyIn} в рабочее время{" "}
-                <span className={styles.nw}>({BRIEF_CONFIG.hours})</span>, уточним задачу и в тот же
-                день назовём срок и цену.
-              </p>
-              <div className={styles.field} data-st>
-                <label className={styles.label} htmlFor={`${ids}-phone`}>
-                  телефон
-                </label>
-                <span className={styles.mask}>
-                  <input
-                    ref={phoneRef}
-                    id={`${ids}-phone`}
-                    className={styles.input}
-                    name="phone"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    value={shown}
-                    onChange={onPhone}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    onSelect={(e) => keepPrefix(e.currentTarget)}
-                    onKeyDown={(e) => {
-                      const input = e.currentTarget;
-                      const n = PHONE_PREFIX.length;
-                      if (!input.value.startsWith(PHONE_PREFIX)) return;
-                      const a = input.selectionStart ?? n;
-                      const home = e.key === "Home" || e.key === "ArrowUp";
-                      if (home || (e.key === "ArrowLeft" && a <= n && !e.shiftKey)) {
-                        e.preventDefault();
-                        input.setSelectionRange(n, e.shiftKey ? (input.selectionEnd ?? n) : n);
-                      }
-                    }}
-                    required
-                    aria-invalid={Boolean(errors.phone)}
-                    aria-describedby={errors.phone ? `${ids}-phone-error` : undefined}
-                  />
-                  <span className={styles.ghost} aria-hidden="true">
-                    <i>{shown}</i>
-                    {PHONE_MASK.slice(shown.length)}
-                  </span>
-                </span>
-                {errors.phone && (
-                  <p id={`${ids}-phone-error`} className={styles.error}>
-                    {errors.phone}
-                  </p>
-                )}
-              </div>
-              <div className={styles.field} data-st>
-                <label className={styles.label} htmlFor={`${ids}-name`}>
-                  имя — по желанию
-                </label>
-                <input
-                  id={`${ids}-name`}
-                  className={styles.input}
-                  name="name"
-                  autoComplete="given-name"
-                  autoCapitalize="words"
-                  value={name}
-                  onChange={(e) => setBrief({ name: e.target.value })}
-                />
-              </div>
-              <div role="radiogroup" aria-labelledby={`${ids}-need`} data-st>
-                <span id={`${ids}-need`} className={styles.label}>
-                  что нужно — по желанию
-                </span>
-                <div className={styles.pills}>
-                  {NEEDS.map((v) => (
-                    <label key={v} className={styles.pill}>
-                      <input
-                        type="radio"
-                        name="need"
-                        value={v}
-                        checked={need === v}
-                        onChange={() => setBrief({ need: v })}
-                        onClick={() => {
-                          if (need === v) setBrief({ need: "" });
-                        }}
-                      />
-                      <span>{needLabel(v)}</span>
-                    </label>
-                  ))}
-                </div>
-                {need === OTHER && (
-                  <textarea
-                    ref={otherRef}
-                    className={styles.other}
-                    name="other"
-                    rows={lines}
-                    value={other}
-                    onChange={(e) => setBrief({ other: e.target.value })}
-                    maxLength={300}
-                    placeholder="что именно?"
-                    aria-label="Другое — что именно"
-                  />
-                )}
-              </div>
-              <div data-st>
-                <label className={styles.consent}>
-                  <input
-                    type="checkbox"
-                    name="consent"
-                    className={styles.check}
-                    checked={consent}
-                    onChange={(e) => {
-                      setBrief({ consent: e.target.checked });
-                      setErrors((x) => ({ ...x, consent: undefined, form: undefined }));
-                    }}
-                    aria-invalid={Boolean(errors.consent)}
-                    aria-describedby={errors.consent ? `${ids}-consent-error` : undefined}
-                  />
-                  <span>
-                    согласен на{" "}
-                    <Link href="/consent" target="_blank" prefetch={false}>
-                      обработку персональных данных
-                    </Link>{" "}
-                    ·{" "}
-                    <Link href="/privacy" target="_blank" prefetch={false}>
-                      политика
-                    </Link>
-                  </span>
-                </label>
-                {errors.consent && (
-                  <p id={`${ids}-consent-error`} className={styles.error}>
-                    {errors.consent}
-                  </p>
-                )}
-              </div>
-              {errors.form && (
-                <p className={styles.error} role="alert">
-                  {errors.form}
-                </p>
-              )}
-            </div>
-            <div className={styles.foot}>
-              <button type="submit" className={styles.send} disabled={status === "sending"} data-st>
-                {status === "sending" ? "Отправляем…" : "Отправить заявку"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div key="done" ref={doneRef} className={styles.done} role="status">
-            {status === "mail" ? (
-              <>
-                <p data-done>
-                  <strong>Осталось отправить.</strong> Письмо открыто в вашей почте — отправьте его.
-                  Или позвоните{" "}
-                  <a href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, "")}`} className={styles.nw}>
-                    {BRIEF_CONFIG.phone}
-                  </a>
-                  , Telegram{" "}
-                  <a
-                    href={`https://t.me/${BRIEF_CONFIG.telegram.replace(/^@/, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {BRIEF_CONFIG.telegram}
-                  </a>
-                  .
-                </p>
-                <button
-                  type="button"
-                  className={styles.link}
-                  onClick={() => reopen(false)}
-                  data-done
-                >
-                  вернуться к форме
-                </button>
-              </>
-            ) : (
-              <>
-                <p data-done>
-                  <strong>Заявка отправлена.</strong> Перезвоним на{" "}
-                  <span className={styles.nw}>{formatPhone(phone)}</span> {BRIEF_CONFIG.replyIn} в
-                  рабочее время.
-                </p>
-                <button
-                  type="button"
-                  className={styles.link}
-                  onClick={() => reopen(true)}
-                  data-done
-                >
-                  отправить ещё одну
-                </button>
-              </>
-            )}
-          </div>
-        )}
-        {/* Ловушка для ботов: людям не видна и недоступна с клавиатуры. */}
-        <input
-          className={styles.trap}
-          name="website"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden="true"
+        <BriefForm
+          ref={formRef}
+          className={styles.form}
+          lead={
+            <p className={styles.lead} data-st>
+              Перезвоним {BRIEF_CONFIG.replyIn} в рабочее время{" "}
+              <span className={styles.nw}>({BRIEF_CONFIG.hours})</span>, уточним задачу и в тот же
+              день назовём срок и цену.
+            </p>
+          }
+          since={() => S.shownAt}
+          onSent={onSent}
+          onReopen={() => {
+            S.after = () => reveal(120);
+          }}
         />
-      </form>
+      </div>
     </div>,
     host,
   );

@@ -14,26 +14,22 @@ import {
 } from "@/lib/caseRoute";
 import { syncScroll, viewportH } from "@/lib/scroll/onScroll";
 import { SITE_TITLE } from "@/lib/site";
-import { goToStation, STATIONS } from "@/lib/stations";
 import styles from "./Case.module.css";
 import { back, type CaseActions, CaseView } from "./CaseView";
 
 // Слой кейса поверх главной (вариант D2 «Рассказ», docs/12-case-page.md). Главная под ним
-// смонтирована и стоит: прокрутку держат Lenis (stop) и html[data-case-open] (overflow), у слоя —
-// своя прокрутка. Адрес — /works/<slug>/ через history.pushState: «назад» браузера и свои кнопки
+// смонтирована и стоит: прокрутку держит Lenis (stop), а html[data-case-open] ставит на паузу
+// анимации главной (слайды и пульс Hero, Hero.module.css); у слоя — своя прокрутка. Адрес — /works/<slug>/ через history.pushState: «назад» браузера и свои кнопки
 // выхода закрывают слой, и главная там же, где была. Переходы — Web Animations (transform и
 // opacity, без своих циклов кадров); ход по прокрутке слоя — один проход в его событии scroll.
 
 const DOT_Y = 20; // точка туннеля — на 20px ниже центра экрана
-const IN = 600; // мс: карточка уходит в точку
+const FLY = 700; // мс: карточка туннеля встаёт в рамку обложки (и обратно)
+const NEXT = 300; // мс: «ещё проект →» — от нажатия до выхода обложки нового кейса из точки
 const FADE = 300; // мс: без движения (prefers-reduced-motion) — затухание
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
-const PRICES = STATIONS.findIndex((s) => s.scene === "scene5");
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-const prog = (v: number, a: number, b: number) => clamp01((v - a) / (b - a));
-const out2 = (t: number) => 1 - (1 - t) ** 2;
-const IN3 = "cubic-bezier(0.32, 0, 0.67, 0)";
 const OUT3 = "cubic-bezier(0.33, 1, 0.68, 1)";
 const IO3 = "cubic-bezier(0.65, 0, 0.35, 1)";
 
@@ -103,9 +99,38 @@ function poses(f: Flyer, V: Point) {
   };
 }
 
-// Прозрачность у точки: карточка гаснет на последней пятой пути (к точке — и из неё).
-const intoDot = (o: number) => [{ opacity: o }, { opacity: o, offset: 0.8 }, { opacity: 0 }];
+// Прозрачность у точки: карточка, выходя из неё, проявляется за первые 15% пути.
 const outOfDot = (o: number) => [{ opacity: 0 }, { opacity: o, offset: 0.15 }, { opacity: o }];
+
+type Box = { x: number; y: number; w: number; h: number };
+const REST = "translate(0px, 0px) scale(1) perspective(1200px) rotateY(0deg)";
+
+// Рамка обложки первого экрана до того, как кейс отрисован: полёт стартует в кадре нажатия. Числа —
+// из Case.module.css (.sec, .hero, .back, .heroMedia, .cover), менять вместе; отрисованный кейс
+// сверяет цель с настоящей рамкой (flyIn).
+function coverBox(): Box {
+  const W = window.innerWidth;
+  const at = (x: number, y: number, w: number) => ({ x, y, w, h: w * 0.75 + 6.75 });
+  if (W < 768) return at(44, 96 + 22.5 + 14, W - 64);
+  const x = W * 0.25 + 56;
+  return at(x, 100 + 22.5 + 18, Math.min(600, Math.min(900, W - 96 - x) * 0.66));
+}
+
+// Копия карточки встаёт в рамку обложки: её разметка — сразу размером и на месте обложки, а
+// transform в начале повторяет карточку на главной. В конце transform пустой — и копия совпадает
+// с настоящей обложкой без шва. Возвращает transform начала.
+function landOn(f: Flyer, b: Box) {
+  const { box, pose } = f;
+  Object.assign(f.el.style, {
+    left: `${b.x}px`,
+    top: `${b.y}px`,
+    width: `${b.w}px`,
+    height: `${b.h}px`,
+  });
+  const dx = box.x + box.w / 2 + pose.x - (b.x + b.w / 2);
+  const dy = box.y + box.h / 2 + pose.y - (b.y + b.h / 2);
+  return `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${((box.w * pose.s) / b.w).toFixed(4)}) perspective(1200px) rotateY(${pose.tilt.toFixed(2)}deg)`;
+}
 
 // Геометрия прокрутки слоя: места элементов в статье без transform (offsetTop), пересчёт — на
 // resize и смену размеров статьи.
@@ -130,11 +155,6 @@ function measure(content: HTMLElement, scroller: HTMLElement, dot: HTMLElement |
     path: content.offsetHeight - H + dy, // длина пути: до точки в конце прокрутки
     maxS: scroller.scrollHeight - scroller.clientHeight,
     rises: all("[data-rise]").map((el) => ({ el, top: relY(el, content) })),
-    // Глава начинается засечкой — у верхнего отступа блока.
-    chapters: all("[data-ch]").map((el) => ({
-      word: el.dataset.ch ?? "",
-      top: relY(el, content) + Number.parseFloat(getComputedStyle(el).paddingTop),
-    })),
   };
 }
 type Geometry = ReturnType<typeof measure>;
@@ -148,8 +168,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
     const s = caseSlugFrom(window.location.pathname);
     return s && caseBySlug(s) ? s : null;
   });
-  // Вся статья или только первый экран: на входе остальное рисуется, когда карточка ушла в точку,
-  // — первая задача после нажатия короткая, а пролёт к этому времени уже идёт.
+  // Вся статья или только первый экран: на входе остальное рисуется, когда карточка встала в
+  // обложку, — первая задача после нажатия короткая, а пролёт к этому времени уже идёт.
   const [full, setFull] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -160,7 +180,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const pathRef = useRef<HTMLDivElement>(null);
   const inkRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
-  const labelRef = useRef<HTMLSpanElement>(null);
   const lenisRef = useRef(lenis);
   const S = useRef({
     phase: "closed" as "closed" | "opening" | "open" | "closing",
@@ -171,14 +190,17 @@ export function CaseLayer({ initial }: { initial?: string }) {
     capFade: null as Animation | null,
     enter: null as "fly" | "fade" | "swap" | "swapFade" | null,
     anims: [] as Animation[],
+    fly: null as { f: Flyer; box: Box } | null, // копия карточки на входе и её цель
     after: null as (() => void) | null,
     focus: null as HTMLElement | null,
     swapping: false,
-    word: "Работы",
     geo: null as Geometry | null,
     written: new Map<HTMLElement, string>(),
     risen: new WeakSet<HTMLElement>(),
-    reduced: false,
+    // Без движения — известно сразу, до первого прохода по прокрутке (прямой заход).
+    reduced:
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     rest: false, // на входе остальная статья ещё не дорисована
     homeY: 0,
     t0: 0, // нажатие: от него — задержки входа
@@ -192,40 +214,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
     el.style.transform = transform;
   };
 
-  // Подпись главы в шапке — перекатом, как на главной (SceneLabel).
-  const label = (word: string) => {
-    const box = labelRef.current;
-    if (!box || word === S.word) return;
-    S.word = word;
-    const old = [...box.children] as HTMLElement[];
-    const span = document.createElement("span");
-    span.textContent = word;
-    box.append(span);
-    const ease = "cubic-bezier(0.65, 0, 0.35, 1)";
-    if (S.reduced) {
-      for (const o of old) o.remove();
-      return;
-    }
-    span.animate([{ transform: "translateY(1.5em)" }, { transform: "translateY(0)" }], {
-      duration: 380,
-      easing: ease,
-    });
-    for (const o of old) {
-      o.animate(
-        [
-          { transform: "translateY(0)", opacity: 1 },
-          { transform: "translateY(-1.5em)", opacity: 0 },
-        ],
-        { duration: 380, easing: ease, fill: "forwards" },
-      ).finished.then(
-        () => o.remove(),
-        () => o.remove(),
-      );
-    }
-  };
-
-  // Один проход по прокрутке слоя: чернила до точки, всплытие текста, подпись главы, ожидание
-  // точки в конце пути. Пишет только изменившееся.
+  // Один проход по прокрутке слоя: чернила до точки, всплытие текста, ожидание точки в конце
+  // пути. Пишет только изменившееся.
   const update = () => {
     const g = S.geo;
     const scroller = scrollRef.current;
@@ -233,25 +223,28 @@ export function CaseLayer({ initial }: { initial?: string }) {
     const y = scroller.scrollTop;
     const ink = inkRef.current;
     if (ink) put(ink, "", `scaleY(${clamp01((y + g.dy) / g.path).toFixed(4)})`);
-    // Всплывшее остаётся: уезжает вверх со страницей и не гаснет на обратном ходу.
+    // Всплытие — один раз: верх блока дошёл до 90% экрана (или прокрутка в самом конце) — блок
+    // проявляется за 600 мс и остаётся, на обратном ходу не гаснет. До того ждёт невидимым.
     if (!S.reduced) {
+      const end = y >= g.maxS - 1;
       for (const r of g.rises) {
         if (S.risen.has(r.el)) continue;
-        const p = out2(prog(r.top - y, g.H * 0.94, g.H * 0.74));
-        if (p >= 1) S.risen.add(r.el);
-        put(
-          r.el,
-          p >= 1 ? "" : p.toFixed(3),
-          p >= 1 ? "" : `translateY(${((1 - p) * 22).toFixed(1)}px)`,
-        );
+        if (end || r.top - y < g.H * 0.9) {
+          S.risen.add(r.el);
+          put(r.el, "", "");
+          r.el.animate(
+            [
+              { opacity: 0, transform: "translateY(22px)" },
+              { opacity: 1, transform: "none" },
+            ],
+            { duration: 600, easing: OUT3 },
+          );
+        } else put(r.el, "0", "translateY(22px)");
       }
     }
     const dot = dotRef.current;
     const wait = y >= g.maxS - 1 ? "true" : "false";
     if (dot && dot.dataset.wait !== wait) dot.dataset.wait = wait;
-    let word = "Работы";
-    for (const c of g.chapters) if (c.top <= y + g.dy) word = c.word;
-    label(word);
   };
 
   const relayout = () => {
@@ -281,6 +274,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const lockHome = () => {
     S.homeY = window.scrollY;
     lenisRef.current?.stop();
+    document.documentElement.dataset.caseOpen = "";
   };
   const inertHome = (on: boolean) => {
     const main = document.querySelector("main");
@@ -289,6 +283,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const unlockHome = () => {
     inertHome(false);
     lenisRef.current?.start();
+    delete document.documentElement.dataset.caseOpen;
   };
 
   const show = (s: string, source: Source | null) => {
@@ -296,12 +291,11 @@ export function CaseLayer({ initial }: { initial?: string }) {
     S.source = source;
     S.focus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     S.enter = source && !S.reduced ? "fly" : "fade";
-    S.word = "Работы";
     document.title = titleOf(s);
     lockHome();
     if (S.enter === "fly" && source) {
-      // Карточка уходит в точку в кадре нажатия; кейс (пока — первый экран) рисуется задачей после
-      // этого кадра: пролёт уже на композиторе, раскладка его не задерживает.
+      // Карточка летит в рамку обложки с кадра нажатия; кейс (пока — первый экран) рисуется
+      // задачей после этого кадра: пролёт уже на композиторе, раскладка его не задерживает.
       takeOff(source);
       requestAnimationFrame(() =>
         window.setTimeout(() => {
@@ -321,15 +315,14 @@ export function CaseLayer({ initial }: { initial?: string }) {
     if (!holder) return;
     S.t0 = performance.now();
     const f = makeFlyer(source.card, holder);
-    const p = poses(f, vp());
-    S.anims = [
-      f.el.animate([{ transform: p.card }, { transform: p.dot }], {
-        duration: IN,
-        easing: IN3,
-        fill: "forwards",
-      }),
-      f.el.animate(intoDot(f.o), { duration: IN, fill: "forwards" }),
-    ];
+    const box = coverBox();
+    S.fly = { f, box };
+    const t = { duration: FLY, easing: IO3, fill: "forwards" } as const;
+    S.anims = [f.el.animate([{ transform: landOn(f, box) }, { transform: REST }], t)];
+    if (f.o < 1) S.anims.push(f.el.animate([{ opacity: f.o }, { opacity: 1 }], t));
+    // В сетке номер спрятан — в обложке он есть: проявляется в полёте.
+    const badge = f.el.lastElementChild as HTMLElement | null;
+    if (badge?.style.opacity === "0") badge.animate([{ opacity: 0 }, { opacity: 1 }], t);
     S.hide = source.card.animate([{ opacity: 0 }, { opacity: 0 }], {
       duration: 1,
       fill: "forwards",
@@ -350,46 +343,65 @@ export function CaseLayer({ initial }: { initial?: string }) {
     show(d.slug, d.card ? { card: d.card, caption: d.caption } : null);
   };
 
-  // Задержка от нажатия: кейс отрисовался позже, чем карточка начала уходить в точку.
+  // Задержка от нажатия: кейс отрисовался позже, чем карточка начала полёт.
   const at = (ms: number) => ms - (performance.now() - S.t0);
   const sections = () => [...(contentRef.current?.querySelectorAll(":scope > section") ?? [])];
-  // Первый экран всплывает по строкам.
+  // Первый экран всплывает по строкам. Порядок — сверху вниз по экрану (на телефоне цифра стоит
+  // ниже текста, хотя в разметке выше).
   const heroIn = (delay: number) =>
-    [...(contentRef.current?.querySelector("[data-hero]")?.children ?? [])].map((el, i) =>
-      el.animate(
-        [
-          { opacity: 0, transform: "translateY(16px)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: 440, delay: delay + i * 45, easing: OUT3, fill: "backwards" },
-      ),
-    );
+    [...(contentRef.current?.querySelectorAll("[data-hi]") ?? [])]
+      .map((el) => ({ el, top: el.getBoundingClientRect().top }))
+      .sort((a, b) => a.top - b.top)
+      .map(({ el }, i) =>
+        el.animate(
+          [
+            { opacity: 0, transform: "translateY(16px)" },
+            { opacity: 1, transform: "none" },
+          ],
+          { duration: 440, delay: delay + i * 45, easing: OUT3, fill: "backwards" },
+        ),
+      );
 
-  // Вход: слой проявляется, пока карточка уходит в точку (линия и точка слоя — там же, где
-  // туннельные, в центре); точка вздрагивает и уводит ось к левому краю, проявляется первый экран.
+  // Вход: копия карточки летит в рамку обложки, слой с линией и точкой на своих местах проявляется
+  // под ней (линия не едет — иначе прошла бы сквозь всплывающий текст); вокруг обложки всплывает
+  // текст первого экрана. Долетела — её сменяет настоящая обложка.
   const flyIn = () => {
     const content = contentRef.current;
-    const g = S.geo;
-    if (!content || !g) return;
+    if (!content) return;
     const anims = [...S.anims];
+    const cover = content.querySelector<HTMLElement>("[data-cover]");
+    if (cover && S.fly) {
+      // Цель — настоящая рамка: если раскладка разошлась с coverBox(), поправить полёт на ходу.
+      const r = cover.getBoundingClientRect();
+      const b = S.fly.box;
+      if (Math.abs(r.left - b.x) + Math.abs(r.top - b.y) + Math.abs(r.width - b.w) > 1) {
+        const box = { x: r.left, y: r.top, w: r.width, h: r.height };
+        (S.anims[0].effect as KeyframeEffect).setKeyframes([
+          { transform: landOn(S.fly.f, box) },
+          { transform: REST },
+        ]);
+      }
+      // Настоящая обложка проявляется под копией в самом конце полёта.
+      const swap = cover.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 120,
+        delay: at(FLY - 120),
+        fill: "backwards",
+      });
+      swap.finished.then(
+        () => flyerRef.current?.replaceChildren(),
+        () => {},
+      );
+      anims.push(swap);
+    }
     const fade = { duration: 420, delay: at(60), easing: "ease-out", fill: "backwards" } as const;
     for (const el of [stageRef.current, headerRef.current]) {
       if (el) anims.push(el.animate([{ opacity: 0 }, { opacity: 1 }], fade));
     }
-    const dx = window.innerWidth / 2 - g.x;
-    const shift = { duration: 730, delay: at(IN + 130), easing: IO3, fill: "backwards" } as const;
-    for (const el of [pathRef.current, dotRef.current]) {
-      if (el)
-        anims.push(
-          el.animate([{ transform: `translateX(${dx}px)` }, { transform: "none" }], shift),
-        );
-    }
-    pulse(at(IN));
-    anims.push(...heroIn(at(IN + 280)));
+    anims.push(...heroIn(at(FLY * 0.55)));
     settle(anims, () => flyerRef.current?.replaceChildren());
-    // Остальная статья — когда карточка ушла в точку и поехала ось (их ведёт композитор).
+    // Остальная статья — когда карточка встала в обложку (пролёт ведёт композитор).
     S.rest = true;
-    window.setTimeout(() => setFull(true), Math.max(0, at(IN + 60)));
+    window.setTimeout(() => setFull(true), Math.max(0, at(FLY + 60)));
   };
 
   // Остальная статья дорисована на входе — проявляется, пока ось доезжает.
@@ -399,7 +411,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     for (const el of sections().slice(1)) {
       el.animate([{ opacity: 0 }, { opacity: 1 }], {
         duration: 400,
-        delay: at(IN + 700),
+        delay: at(FLY + 200),
         fill: "backwards",
       });
     }
@@ -411,10 +423,33 @@ export function CaseLayer({ initial }: { initial?: string }) {
     settle([root.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE, fill: "backwards" })]);
   };
 
-  // Следующий кейс: первый экран проявляется, точка вздрагивает — карточка ушла в неё.
+  // Следующий кейс: строки первого экрана всплывают сразу; точка вздрагивает, и из неё выходит
+  // обложка нового кейса. Остальная статья — следом.
   const swapIn = () => {
-    pulse(0);
-    heroIn(200);
+    const cover = contentRef.current?.querySelector<HTMLElement>("[data-cover]");
+    const dot = dotRef.current;
+    const land = Math.max(0, at(NEXT));
+    if (cover && dot) {
+      const c = cover.getBoundingClientRect();
+      const d = dot.getBoundingClientRect();
+      const dx = d.left + d.width / 2 - (c.left + c.width / 2);
+      const dy = d.top + d.height / 2 - (c.top + c.height / 2);
+      const t = { duration: 600, delay: land, fill: "backwards" } as const;
+      cover.animate(
+        [
+          {
+            transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${(12 / c.width).toFixed(4)})`,
+          },
+          { transform: "none" },
+        ],
+        { ...t, easing: OUT3 },
+      );
+      cover.animate(outOfDot(1), t);
+    }
+    pulse(land);
+    heroIn(0);
+    S.rest = true;
+    window.setTimeout(() => setFull(true), Math.max(0, at(NEXT + 400)));
   };
 
   // Вход доигран — кейс открыт.
@@ -458,8 +493,9 @@ export function CaseLayer({ initial }: { initial?: string }) {
     return sourceOf(s);
   };
 
-  // Выход: текст гаснет, ось возвращается в центр — к точке туннеля, из точки выходит карточка и
-  // встаёт на своё место, слой гаснет.
+  // Выход: текст гаснет, слой гаснет. Обложка на экране — карточка летит с её места на своё место в
+  // туннеле (или в сетке). Кейс пролистан и обложки не видно — ось возвращается в центр, к точке
+  // туннеля, и карточка выходит из точки, как уходит в неё следующий кейс.
   const leave = () => {
     if (S.phase === "closed" || S.phase === "closing") return;
     if (!slug) {
@@ -498,30 +534,50 @@ export function CaseLayer({ initial }: { initial?: string }) {
         fill: "forwards",
       });
     }
+    const cover = content.querySelector<HTMLElement>("[data-cover]");
+    const cr = cover?.getBoundingClientRect();
+    const onScreen = !!cr && cr.bottom > 80 && cr.top < window.innerHeight - 40;
     for (const el of sections())
       el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: "forwards" });
-    const dx = window.innerWidth / 2 - g.x;
-    for (const el of [pathRef.current, dotRef.current]) {
-      el?.animate([{ transform: "none" }, { transform: `translateX(${dx}px)` }], {
-        duration: 420,
-        easing: IO3,
-        fill: "forwards",
-      });
+    // Из точки — ось сначала возвращается в центр, к точке туннеля.
+    if (!onScreen) {
+      const dx = window.innerWidth / 2 - g.x;
+      for (const el of [pathRef.current, dotRef.current]) {
+        el?.animate([{ transform: "none" }, { transform: `translateX(${dx}px)` }], {
+          duration: 420,
+          easing: IO3,
+          fill: "forwards",
+        });
+      }
     }
     // Главная впервые рисуется на этом месте (прямой заход) — дадим ей кадр.
-    const delay = direct ? 460 : 380;
+    const delay = (onScreen ? 0 : 380) + (direct ? 80 : 0);
     const f = makeFlyer(source.card, holder);
     const p = poses(f, vp());
-    const grow = { duration: 560, delay, fill: "both" } as const;
-    const fly = f.el.animate([{ transform: p.dot }, { transform: p.card }], {
-      ...grow,
-      easing: OUT3,
-    });
-    f.el.animate(outOfDot(f.o), grow);
+    let fly: Animation;
+    if (onScreen && cover && cr) {
+      // С места обложки: копия (разметка — как у карточки на главной) сначала накрывает обложку.
+      cover.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: "forwards" });
+      const from = `translate(${(cr.left + cr.width / 2 - f.box.x - f.box.w / 2).toFixed(1)}px, ${(cr.top + cr.height / 2 - f.box.y - f.box.h / 2).toFixed(1)}px) scale(${(cr.width / f.box.w).toFixed(4)}) perspective(1200px) rotateY(0deg)`;
+      fly = f.el.animate([{ transform: from }, { transform: p.card }], {
+        duration: FLY,
+        delay,
+        easing: IO3,
+        fill: "both",
+      });
+      const badge = f.el.lastElementChild as HTMLElement | null;
+      if (badge?.style.opacity === "0") {
+        badge.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FLY, delay, fill: "both" });
+      }
+    } else {
+      const grow = { duration: 560, delay, fill: "both" } as const;
+      fly = f.el.animate([{ transform: p.dot }, { transform: p.card }], { ...grow, easing: OUT3 });
+      f.el.animate(outOfDot(f.o), grow);
+    }
     for (const el of [stageRef.current, headerRef.current]) {
       el?.animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: 320,
-        delay,
+        delay: delay + (onScreen ? 160 : 0),
         easing: "ease-out",
         fill: "forwards",
       });
@@ -529,7 +585,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     if (source.caption) {
       source.caption.animate([{ opacity: 0, transform: "translateY(-12px)" }, {}], {
         duration: 320,
-        delay: delay + 400,
+        delay: delay + (onScreen ? 500 : 400),
         easing: "ease-out",
         fill: "backwards",
       });
@@ -549,6 +605,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     flyerRef.current?.replaceChildren();
     S.phase = "closed";
     S.source = null;
+    S.fly = null;
     S.fromHome = false;
     S.geo = null;
     unlockHome();
@@ -560,21 +617,33 @@ export function CaseLayer({ initial }: { initial?: string }) {
     after?.();
   };
 
-  // Следующий кейс: маленькая карточка уходит в точку, текст гаснет, линия остаётся; адрес
-  // меняется на месте (запись истории та же — «назад» ведёт на главную). Без движения — затухание.
+  // Следующий кейс («ещё проект →» под формой): текст гаснет, линия и точка остаются, из точки
+  // выходит обложка нового кейса; адрес меняется на месте (запись истории та же — «назад» ведёт на
+  // главную). Без движения — затухание. Адрес — задачей после кадра нажатия (смена адреса
+  // перерисовывает дерево Next), подмена — как только текст погас (сначала только первый экран).
   const goNext = () => {
     if (S.phase !== "open" || !slug || S.swapping) return;
     const content = contentRef.current;
-    const holder = flyerRef.current;
-    if (!content || !holder) return;
+    if (!content) return;
     const n = nextCase(slug).slug;
     S.swapping = true;
-    // Своё состояние без служебного Next (__NA): так Next узнаёт о новом адресе.
-    window.history.replaceState({ whiteinksCase: n, fromHome: S.fromHome }, "", caseHref(n));
-    document.title = titleOf(n);
+    S.t0 = performance.now();
+    requestAnimationFrame(() =>
+      window.setTimeout(() => {
+        // Своё состояние без служебного Next (__NA): так Next узнаёт о новом адресе.
+        window.history.replaceState({ whiteinksCase: n, fromHome: S.fromHome }, "", caseHref(n));
+        document.title = titleOf(n);
+      }, 0),
+    );
+    // Выход теперь — на карточку нового кейса: прежнюю вернуть на главную, новую найдёт placeHome().
+    S.hide?.cancel();
+    S.hide = null;
+    S.capFade?.cancel();
+    S.capFade = null;
+    S.source = null;
     const swap = (enter: "swap" | "swapFade") => () => {
-      holder.replaceChildren();
       S.enter = enter;
+      setFull(enter === "swapFade");
       setSlug(n);
     };
     if (S.reduced) {
@@ -583,57 +652,26 @@ export function CaseLayer({ initial }: { initial?: string }) {
         .finished.then(swap("swapFade"), () => {});
       return;
     }
-    const anims: Animation[] = [];
-    const card = content.querySelector<HTMLElement>("[data-ncard]");
-    const dot = dotRef.current;
-    if (card && dot) {
-      // Летит копия поверх слоя: сама карточка гаснет вместе с текстом.
-      const r = card.getBoundingClientRect();
-      const d = dot.getBoundingClientRect();
-      const el = card.cloneNode(true) as HTMLElement;
-      Object.assign(el.style, {
-        position: "absolute",
-        left: `${r.left}px`,
-        top: `${r.top}px`,
-        width: `${r.width}px`,
-        margin: "0",
-      });
-      holder.append(el);
-      card.style.visibility = "hidden";
-      const tx = d.left + d.width / 2 - (r.left + r.width / 2);
-      const ty = d.top + d.height / 2 - (r.top + r.height / 2);
-      anims.push(
-        el.animate(
-          [
-            { transform: "none" },
-            {
-              transform: `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${(12 / r.width).toFixed(4)})`,
-            },
-          ],
-          { duration: 620, easing: IN3, fill: "forwards" },
-        ),
-        el.animate(intoDot(1), { duration: 620, fill: "forwards" }),
-      );
-    }
-    for (const el of sections()) {
-      anims.push(
-        el.animate([{ opacity: 1 }, { opacity: 0 }], {
-          duration: 360,
-          delay: 100,
-          fill: "forwards",
-        }),
-      );
-    }
-    Promise.all(anims.map((a) => a.finished)).then(swap("swap"), () => {});
+    const fades = sections().map((el) =>
+      el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: "forwards" }),
+    );
+    Promise.all(fades.map((a) => a.finished)).then(swap("swap"), () => {});
   };
 
   const act: CaseActions = {
     close: () => close(),
     next: () => goNext(),
-    // Заявка из кейса — окно заявки поверх кейса (components/ui/BriefModal): растёт из нажатой
-    // «Обсудить проект», закрыли — снова в кейсе, на той же кнопке.
-    discuss: (e) => openBrief(e.currentTarget),
-    prices: () => close(() => goToStation(PRICES, lenisRef.current)),
+    // «Обсудить проект» в шапке: форма в конце кейса на экране — курсор в её поле «телефон»; иначе —
+    // окно заявки поверх кейса (components/ui/BriefModal): растёт из нажатой кнопки, закрыли —
+    // снова в кейсе, на той же кнопке.
+    discuss: (e) => {
+      const input = contentRef.current?.querySelector<HTMLInputElement>('input[name="phone"]');
+      const r = input?.getBoundingClientRect();
+      const top = headerRef.current?.getBoundingClientRect().bottom ?? 0;
+      if (input && r && r.top > top && r.bottom < window.innerHeight)
+        input.focus({ preventScroll: true });
+      else openBrief(e.currentTarget);
+    },
   };
   const fn = useRef({ open, leave, show, update, relayout, restIn, act });
   fn.current = { open, leave, show, update, relayout, restIn, act };
@@ -650,7 +688,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
   }, [lenis, S]);
 
   useEffect(() => {
-    S.reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const onOpen = (e: Event) => fn.current.open((e as CustomEvent<CaseOpenDetail>).detail);
     // «Назад» и «вперёд» браузера: ушли с кейса — закрыть; пришли на кейс — открыть.
     const onPop = () => {
@@ -677,9 +714,12 @@ export function CaseLayer({ initial }: { initial?: string }) {
   useLayoutEffect(() => {
     if (!slug) return;
     if (S.phase === "closed") {
-      // Прямой заход по ссылке (или «назад» на запись кейса со страницы вне главной).
+      // Прямой заход по ссылке, перезагрузка на кейсе или «назад» на запись кейса со страницы вне
+      // главной. fromHome из history.state тут не берём: запись главной перед кейсом — от прежней
+      // загрузки, history.back() открыл бы главную заново, с заставкой. Выход — как при прямом
+      // заходе: в туннель к карточке кейса.
       S.phase = "open";
-      S.fromHome = !!window.history.state?.fromHome;
+      S.fromHome = false;
       lockHome();
       inertHome(true);
     }
@@ -687,9 +727,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
     const scroller = scrollRef.current;
     if (scroller) scroller.scrollTop = 0;
     fn.current.relayout();
-    S.word = "Работы";
-    const box = labelRef.current;
-    if (box && box.textContent !== "Работы") box.innerHTML = "<span>Работы</span>";
     fn.current.update();
     const enter = S.enter;
     S.enter = null;
@@ -809,7 +846,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <div className={styles.ghost} />
               <div ref={inkRef} className={styles.ink} />
             </div>
-            <CaseView c={c} next={nextCase(c.slug)} act={act} full={full} />
+            <CaseView c={c} act={act} full={full} />
           </article>
         </div>
         <span ref={dotRef} className={styles.dot} aria-hidden="true" />
@@ -818,13 +855,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
         <a className={styles.logo} href={HOME_HREF} onClick={back(act.close)}>
           white inks.
         </a>
-        <span
-          ref={labelRef}
-          className={styles.label}
-          aria-hidden="true"
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: слово ведёт label() — React его не перерисовывает
-          dangerouslySetInnerHTML={{ __html: "<span>Работы</span>" }}
-        />
         <button type="button" className={styles.cta} onClick={act.discuss}>
           Обсудить проект
         </button>

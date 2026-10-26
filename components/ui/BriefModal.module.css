@@ -1,5 +1,5 @@
 /* Окно заявки (BriefModal.tsx). Белая карточка с рамкой 1,5px у кнопки; рамку и белое рисуют
-   две фигуры из шести частей (.shape), поля — как в конверте Сцены 6. Второй круг — общий invert
+   две фигуры из шести частей (.shape), поля — общая форма (BriefForm). Второй круг — общий invert
    на html (слой — обычный fixed в body, фильтр корня на него действует). Над слоем — только курсор
    сайта (z-index 1000). */
 .layer {
@@ -8,8 +8,6 @@
   z-index: 80;
   color: var(--color-fg);
   --muted: rgba(10, 10, 10, 0.58);
-  --dim: rgba(10, 10, 10, 0.5);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -114,20 +112,12 @@
   rotate: -45deg;
 }
 
-.scroll {
-  display: grid;
+/* Форма (BriefForm) — вся высота карточки под заголовком: поля прокручиваются, «Отправить» — внизу. */
+.form {
+  display: flex;
   flex: 1 1 auto;
-  gap: 24px;
-  align-content: start;
+  flex-direction: column;
   min-height: 0;
-  padding: 6px 12px 2px 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-}
-
-.scroll::-webkit-scrollbar {
-  display: none;
 }
 
 .lead {
@@ -141,307 +131,9 @@
   white-space: nowrap;
 }
 
-.foot {
-  flex: none;
-  padding: 24px 12px 0 0;
-}
-
-/* ---------- Поля — как в конверте Сцены 6 ---------- */
-.field {
-  position: relative;
-  min-width: 0;
-}
-
-.label {
-  display: block;
-  font-size: 0.875rem;
-  line-height: 1.3;
-  color: var(--muted);
-  transition: color 0.2s;
-}
-
-.field:focus-within > .label {
-  color: var(--color-fg);
-}
-
-.input {
-  display: block;
-  width: 100%;
-  height: 46px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: inset 0 -1.5px 0 var(--color-fg);
-  color: inherit;
-  font-size: 1.375rem;
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
-  outline: none;
-  transition: box-shadow 0.2s var(--ease-out);
-}
-
-.input:focus-visible,
-.input[aria-invalid="true"] {
-  box-shadow: inset 0 -3px 0 var(--color-fg);
-}
-
-.mask {
-  position: relative;
-  display: grid;
-}
-
-.mask > * {
-  grid-area: 1 / 1;
-}
-
-.mask .input {
-  width: 0;
-  min-width: 100%;
-}
-
-.ghost {
-  display: flex;
-  align-items: center;
-  font-size: 1.375rem;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
-  white-space: pre;
-  color: var(--dim);
-  pointer-events: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.ghost i {
-  font-style: normal;
-  color: transparent;
-}
-
-.pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.pill {
-  position: relative;
-  display: inline-flex;
-  cursor: pointer;
-}
-
-.pill input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.pill span {
-  display: inline-flex;
-  align-items: center;
-  height: 40px;
-  padding: 0 18px;
-  border: 1.5px solid var(--color-fg);
-  border-radius: 999px;
-  background: var(--color-bg);
-  font-size: 0.9375rem;
-  white-space: nowrap;
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-
-.pill input:checked + span {
-  background: var(--color-fg);
-  color: var(--color-bg);
-}
-
-.pill input:focus-visible + span {
+.close:focus-visible {
   outline: 2px solid var(--color-fg);
   outline-offset: 3px;
-}
-
-@media (hover: hover) {
-  .pill:hover input:not(:checked) + span {
-    background: rgba(10, 10, 10, 0.05);
-  }
-}
-
-/* «Другое» — строка пути: пунктир, по нему пишут. */
-.other {
-  display: block;
-  width: 100%;
-  margin-top: 12px;
-  padding: 0;
-  border: 0;
-  background: radial-gradient(
-      circle at 50% calc(100% - 1px),
-      rgba(10, 10, 10, 0.34) 1px,
-      transparent 1.4px
-    )
-    0 0 / 8px 26px local;
-  color: inherit;
-  font-size: 1.0625rem;
-  line-height: 26px;
-  outline: none;
-  resize: none;
-  scrollbar-width: none;
-}
-
-.other:focus {
-  background-image: radial-gradient(
-    circle at 50% calc(100% - 1px),
-    var(--color-fg) 1px,
-    transparent 1.4px
-  );
-}
-
-.other::placeholder {
-  color: var(--dim);
-}
-
-.consent {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  cursor: pointer;
-}
-
-.consent a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.check {
-  display: grid;
-  place-content: center;
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  border: 1.5px solid var(--color-fg);
-  border-radius: 4px;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  appearance: none;
-}
-
-.check::after {
-  content: "";
-  width: 9px;
-  height: 5px;
-  border: solid var(--color-bg);
-  border-width: 0 0 2px 2px;
-  translate: 0 -1px;
-  rotate: -45deg;
-  scale: 0;
-  transition: scale 0.2s var(--ease-out);
-}
-
-.check:checked {
-  background: var(--color-fg);
-}
-
-.check:checked::after {
-  scale: 1;
-}
-
-.check[aria-invalid="true"] {
-  box-shadow: 0 0 0 1px var(--color-fg);
-}
-
-/* «Отправить» — чёрная пилюля во всю ширину, как главные кнопки сайта. */
-.send {
-  width: 100%;
-  height: 52px;
-  padding: 0 26px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--color-fg);
-  color: var(--color-bg);
-  font-size: 1rem;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.send:disabled {
-  cursor: progress;
-}
-
-.send:focus-visible,
-.close:focus-visible,
-.link:focus-visible,
-.check:focus-visible {
-  outline: 2px solid var(--color-fg);
-  outline-offset: 3px;
-}
-
-.error {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-top: 6px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.error::before {
-  content: "";
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  translate: 0 -1px;
-}
-
-.trap {
-  position: absolute;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-}
-
-/* ---------- Ушло ---------- */
-.done {
-  padding: 6px 12px 0 0;
-  font-size: 1rem;
-  line-height: 1.45;
-  color: var(--muted);
-}
-
-.done strong,
-.done a {
-  color: var(--color-fg);
-  font-weight: inherit;
-}
-
-.done a {
-  text-decoration: none;
-}
-
-.link {
-  margin-top: 6px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-fg);
-  font-size: 0.875rem;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-  cursor: pointer;
 }
 
 /* ---------- Телефон: карточка — почти весь экран (по видимой части, над клавиатурой) ---------- */
@@ -455,47 +147,7 @@
     height: calc(var(--vvh, 100dvh) - 16px);
   }
 
-  .scroll {
-    gap: 22px;
-  }
-
   .lead {
-    font-size: 0.875rem;
-  }
-
-  .foot {
-    padding-top: 16px;
-  }
-
-  .input {
-    height: 44px;
-  }
-
-  .input,
-  .ghost {
-    font-size: 1.1875rem;
-  }
-
-  .pill span {
-    height: 44px;
-    padding: 0 14px;
-  }
-
-  .other {
-    font-size: 1rem;
-    line-height: 24px;
-    background-size: 8px 24px;
-  }
-
-}
-
-@media (max-width: 389px) {
-  .pills {
-    gap: 6px;
-  }
-
-  .pill span {
-    padding: 0 11px;
     font-size: 0.875rem;
   }
 }

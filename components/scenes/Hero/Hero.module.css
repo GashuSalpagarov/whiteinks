@@ -641,6 +641,13 @@
   animation-play-state: paused;
 }
 
+/* Открыт кейс (html[data-case-open], components/case): главная под ним стоит — слайды и пульс
+   точки на паузе, после выхода продолжают с того же места. */
+:global(html[data-case-open]) .drop,
+:global(html[data-case-open]) .dot.on .bar::after {
+  animation-play-state: paused;
+}
+
 @keyframes barFill {
   to {
     transform: none;
