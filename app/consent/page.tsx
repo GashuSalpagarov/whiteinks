@@ -16,7 +16,7 @@ export default function ConsentPage() {
   return (
     <main className={styles.page}>
       <Link href="/" className={styles.back}>
-        ← white inks.
+        ← White Inks.
       </Link>
       <h1 className={styles.title}>Согласие на обработку персональных данных</h1>
       <p className={styles.meta}>

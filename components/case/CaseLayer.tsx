@@ -853,7 +853,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
       </div>
       <header key="header" ref={headerRef} className={styles.header}>
         <a className={styles.logo} href={HOME_HREF} onClick={back(act.close)}>
-          white inks.
+          White Inks.
         </a>
         <button type="button" className={styles.cta} onClick={act.discuss}>
           Обсудить проект

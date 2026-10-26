@@ -47,8 +47,16 @@ export const STATIONS: Station[] = [
   // стоит (телефон, Scene5.tsx): начало и конец стоянки совпадают — верх каталога под шапкой.
   { scene: "scene5", word: "Сколько стоит", f: 0.2, land: (el) => pin(el).end - 2 },
   { scene: "scene6", word: "Заявка", f: 0.1, land: (el) => anchor(el) },
-  // Футер встал внизу — начало зоны петли: петля не начинается.
-  { scene: "footer", word: "Контакты", f: 0.45, land: (el) => pin(el).start },
+  // Подвал — только потолок пути для карты и меню (pathProgress); пунктом меню и подписью на карте
+  // не бывает: контактов в нём нет. land — строка подвала над чёрным, верх чёрного на 0,6 экрана:
+  // до конца страницы ещё 0,1 экрана, петля не замкнута и прыжка нет (Footer.tsx).
+  {
+    scene: "footer",
+    word: "Контакты",
+    f: 0.45,
+    land: (el, h) =>
+      top(el) + ((el.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0) - 0.6 * h,
+  },
 ];
 
 const found: (HTMLElement | null)[] = STATIONS.map(() => null);

@@ -9,7 +9,7 @@ export default function NotFound() {
   return (
     <main className={styles.page}>
       <Link href="/" className={styles.back}>
-        ← white inks.
+        ← White Inks.
       </Link>
       <h1 className={styles.title}>Такой страницы нет</h1>
       <p className={styles.text}>

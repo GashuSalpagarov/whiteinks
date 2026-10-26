@@ -1,6 +1,6 @@
 /* Чек-лист этапов: строки «номер · название» без рамок. Впереди — бледные, текущая — крупнее
-   (--grow), пройденные зачёркнуты линией 1.5px (--strike). Раскладку сцены (data-mode, data-low
-   на её кадре) задаёт Scene4.tsx. */
+   (--grow), пройденные зачёркнуты линией 1.5px (--strike). Раскладку сцены (data-mode на её
+   кадре) задаёт Scene4.tsx. */
 .list {
   --row: 54px;
   --big: 1.6;
@@ -56,11 +56,6 @@
   transform: scaleX(var(--strike, 0));
 }
 
-/* Зачёркивание номера — только на низком телефоне, где названий нет. */
-.strikeN {
-  display: none;
-}
-
 /* Телефон и короткий ландшафт: строки мельче. */
 :is([data-mode="tall"], [data-mode="short"]) .list {
   --row: 30px;
@@ -76,27 +71,19 @@
   font-size: 15px;
 }
 
-/* Низкий телефон: строкой и только номера — зачёркнутые, текущий крупнее и чёрный. */
-[data-low="true"] .list {
-  --row: 26px;
-  --big: 1.3;
-  display: flex;
-  gap: 14px;
+/* Телефон и вертикальный планшет: дорога точки идёт по чек-листу между номерами и названиями,
+   строка на этап (высоту строки --row пишет Scene4.tsx). */
+[data-mode="tall"] .list {
+  --big: 1.2;
 }
 
-[data-low="true"] .row {
-  transform-origin: 50% 50%;
+[data-mode="tall"] .w {
+  font-size: 16px;
 }
 
-[data-low="true"] .n {
-  width: auto;
-  font-size: 14px;
-}
-
-[data-low="true"] .w {
-  display: none;
-}
-
-[data-low="true"] .strikeN {
-  display: block;
+/* Номер — слева от дороги точки, прижат к ней; зазор под дорогу — 28px (точка 12px). */
+[data-mode="tall"] .n {
+  width: 20px;
+  margin-right: 28px;
+  text-align: right;
 }

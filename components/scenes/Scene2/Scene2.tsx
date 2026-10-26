@@ -78,16 +78,18 @@ function layout(w: number, h: number, heights: number[], below: number[]): Layou
     // Телефонная раскладка (как мобильный блок Scene2.module.css): блоки широкие, колоколу между ними
     // места нет. Точка идёт «серпантином»: в 13vw от края (±37vw), пока напротив неё пара блоков,
     // и между парами переходит на другую сторону. Верхний блок пары встаёт, когда переход пройден
-    // на 0.85, нижний — через просвет 0.06 экрана; у края точка держится до низа пары и элемента
-    // под ней со стороны трассы (below) и ещё 0.02 экрана — элемент снаружи, у края экрана, точка
-    // минует уже выше него. Из центра и в центр — как на десктопе: стыки с Hero и Scene 3 те же.
+    // на 0.85, нижний — через просвет 0.06 экрана, не меньше 50px (в просвете — значки gap из
+    // Scene2Art, на низком экране им иначе не хватит места); у края точка держится до низа пары
+    // и элемента под ней со стороны трассы (below) и ещё 0.02 экрана — элемент снаружи, у края
+    // экрана, точка минует уже выше него. Из центра и в центр — как на десктопе: стыки с Hero
+    // и Scene 3 те же.
     let y = 20 - 0.07 * h; // точка на phase 0
     let cross = 0.19 * h;
     for (let k = 0; k < 4; k++) {
       const side = k % 2 ? 37 : -37;
       keys.push([phase(y + cross), side]);
       const top = y + 0.85 * cross;
-      tops.push(top, top + heights[2 * k] + 0.06 * h);
+      tops.push(top, top + heights[2 * k] + Math.max(0.06 * h, 50));
       y = tops[2 * k + 1] + heights[2 * k + 1] + below[2 * k + 1] + 0.02 * h;
       keys.push([phase(y), side]);
       // Не короче 120px: элемент над верхним блоком следующей пары стоит у края, от которого
@@ -100,7 +102,13 @@ function layout(w: number, h: number, heights: number[], below: number[]): Layou
 }
 
 // Скорость элемента пункта (Scene2Art) — доля подъёма блока при появлении, у каждого места своя.
-const ART_DEPTH: Record<Slot, number> = { topOut: 0.06, out: 0.1, bottom: 0.12, in: 0.08 };
+const ART_DEPTH: Record<Slot, number> = {
+  topOut: 0.06,
+  out: 0.1,
+  bottom: 0.12,
+  in: 0.08,
+  gap: 0.08,
+};
 
 type Block = {
   title: string;
@@ -179,17 +187,17 @@ function getDropX(scrollVh: number, keys: [number, number][]): number {
   return 0;
 }
 
-// Блок проявляется, как только въехал снизу на экран (top, px) — с подъёмом на 24px: впереди
-// видно, что дальше. Потом остаётся и уезжает вверх вместе со страницей — под шапку
-// (на телефоне — с её полосой, Hero.module.css).
-function getBlock(top: number, h: number): { opacity: number; rise: number } {
-  const appear = Math.max(0, Math.min(1, (0.92 * h - top) / (0.26 * h)));
-  return { opacity: appear, rise: (1 - appear) * 24 };
-}
+// Блок проявляется, как только въехал снизу на экран: верх блока на APPEAR экрана — прозрачный
+// и на RISE px ниже места, ещё через APPEAR_LEN экрана прокрутки — на месте. Впереди видно, что
+// дальше. Потом остаётся и уезжает вверх вместе со страницей — под шапку (на телефоне — с её
+// полосой, Hero.module.css).
+const APPEAR = 0.92;
+const APPEAR_LEN = 0.26;
+const RISE = 24;
 
 // Трасса целиком, в координатах страницы при прокрутке 0: точка на месте s (vh, прокрутка +
-// dropLift) стоит в (50vw + getDropX(s), 50vh + s + 20px). Строится вместе с раскладкой, на экране
-// её двигает transform, а видна она только выше точки (Scene2.module.css, .trail).
+// dropLift) стоит в (50vw + getDropX(s), 50vh + s + 20px). Строится вместе с раскладкой и лежит
+// трафаретом в потоке страницы (Scene2.module.css, .trail): едет вместе с текстом.
 function buildTrail(w: number, h: number, { keys, end }: Layout): string {
   // Начало — конец линии Hero (точка покоя, 93vh): вместе они читаются как одна линия. 20px —
   // сдвиг точки вниз после Hero (--drop-offset).
@@ -220,23 +228,24 @@ function buildTrail(w: number, h: number, { keys, end }: Layout): string {
   return d;
 }
 
+// Ход по прокрутке: анимация (WAAPI), у которой время — прокрутка страницы, px от from до from + dur.
+// Где есть ScrollTimeline, её ведёт сам браузер в такт прокрутке — как и саму страницу, даже если
+// главный поток к кадру не успел. Где нет — время ставит общий проход (seek).
+type Scrub = { anim: Animation; from: number; dur: number; t: number };
+
 export function Scene2() {
   const sectionRef = useRef<HTMLElement>(null);
   const trailRef = useRef<HTMLDivElement>(null);
-  const trailSvgRef = useRef<SVGSVGElement>(null);
+  const inkRef = useRef<HTMLDivElement>(null);
   const fadeRef = useRef<HTMLDivElement>(null);
-  const threadRef = useRef<HTMLDivElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
   const bridgeRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     const trail = trailRef.current;
+    const ink = inkRef.current;
     const fade = fadeRef.current;
-    const trailSvg = trailSvgRef.current;
-    const thread = threadRef.current;
-    const path = pathRef.current;
-    if (!section || !trail || !fade || !trailSvg || !thread || !path) return;
+    if (!section || !trail || !ink || !fade) return;
     const blockEls = [...section.querySelectorAll<HTMLElement>("aside")];
     const artEls = blockEls.map((el, i) =>
       [...el.querySelectorAll<HTMLElement>(`.${styles.art} > *`)].map((art, j) => ({
@@ -255,9 +264,41 @@ export function Scene2() {
       written.set(el, last);
       el.style.setProperty(prop, value);
     };
+
+    // Всё, что идёт за прокруткой, — ходы по ней (Scrub): точка, чернила, появление блоков. Так
+    // на кадр нет записей из прохода, а точка не сходит с изгиба, который едет вместе с текстом.
+    const timeline =
+      "ScrollTimeline" in window ? new ScrollTimeline({ source: document.documentElement }) : null;
+    if (!timeline) trail.classList.add(styles.onScreen);
+    let scrubs: Scrub[] = [];
+    const scrub = (el: Element, frames: Keyframe[], from: number, to: number, fill: FillMode) => {
+      const dur = Math.max(1, to - from);
+      const anim = timeline
+        ? el.animate(frames, {
+            timeline,
+            rangeStart: `${from}px`,
+            rangeEnd: `${from + dur}px`,
+            fill,
+          })
+        : el.animate(frames, { duration: dur, fill });
+      if (!timeline) anim.pause();
+      const s = { anim, from, dur, t: Number.NaN };
+      scrubs.push(s);
+      return s;
+    };
+    const seek = (s: Scrub, y: number) => {
+      const t = Math.max(0, Math.min(s.dur, y - s.from));
+      if (t === s.t) return;
+      s.t = t;
+      s.anim.currentTime = t;
+    };
+
     let drop: HTMLElement | null = null;
+    let dotScrub: Scrub | null = null;
     let layoutKey = "";
     let L: Layout = { tops: [], keys: [[0, 0]], end: 0 };
+    let trailTop = 0; // верх трафарета на странице, px
+    let trailEnd = 0; // прокрутка, с которой трафарет весь выше экрана
     let bridgeKey = "";
     let lastY = 0;
     const update = () => {
@@ -266,24 +307,25 @@ export function Scene2() {
       const h = viewportH();
       if (!h) return; // иначе scrollVh = NaN
       const scrollY = window.scrollY;
-      const scrollVh = (scrollY / h) * 100;
-      const phone = phoneLayout();
-      // Точка и трасса — целыми пикселями экрана, чтобы линия не размывалась.
+      // Точка и чернила — целыми пикселями экрана, чтобы линия не размывалась.
       const dpr = window.devicePixelRatio || 1;
       const px = (v: number) => Math.round(v * dpr) / dpr;
-      // Вход из Hero: точка ниже своего места на lift; её место на пути — dotVh (как прокрутка).
-      const lift = px(dropLift(scrollY, h));
-      const dotVh = ((scrollY + lift) / h) * 100;
-      const moved = scrollY > 0;
 
       // Сначала замеры, потом записи: замер после записи заново пересчитывал бы стили.
       const rect = section.getBoundingClientRect();
       const heights = blockEls.map((el) => el.offsetHeight);
+      const sectionTop = Math.round((rect.top + scrollY) * 100) / 100;
+
+      // Сдвиги точки — на самой точке (она в вёрстке Hero). Место точки — центр экрана + 20px,
+      // как в Сцене 3.
+      if (!drop?.isConnected) {
+        drop = document.querySelector<HTMLElement>(`.${heroStyles.drop}`);
+        layoutKey = "";
+      }
 
       // Раскладка — на новый размер экрана и высоты блоков (догрузился шрифт), не каждый кадр:
-      // места блоков, высота секции — до входа в Сцену 3, трасса — путь целиком, дальше только
-      // сдвиг вверх вместе со страницей (transform без перерисовки).
-      const key = `${w} ${h} ${heights.join(" ")}`;
+      // места блоков, высота секции — до входа в Сцену 3, трафарет трассы и ходы по прокрутке.
+      const key = `${w} ${h} ${sectionTop} ${heights.join(" ")}`;
       if (key !== layoutKey) {
         layoutKey = key;
         // На телефоне элемент .bottom — под блоком со стороны трассы (Scene2.module.css).
@@ -298,19 +340,105 @@ export function Scene2() {
         L = layout(w, h, heights, below);
         for (const [i, top] of L.tops.entries()) put(blockEls[i], "top", `${top}px`);
         put(section, "height", `${((43 + L.end + TAIL) * h) / 100}px`);
-        put(trailSvg, "height", `${((93 + L.end) * h) / 100 + 40}px`);
-        path.setAttribute("d", buildTrail(w, h, L));
-      }
-      // Секция целиком выше экрана — блоки тоже, их не трогаем.
-      const blocksGone = rect.bottom < 0;
-      const tops = L.tops.map((top) => rect.top + top);
+        for (const s of scrubs) s.anim.cancel();
+        scrubs = [];
 
-      // Сдвиги точки — переменными на самой точке (она в вёрстке Hero), а не на корне: меняются
-      // почти каждый кадр. Место точки — центр экрана + 20px, как в Сцене 3.
-      if (!drop?.isConnected) drop = document.querySelector<HTMLElement>(`.${heroStyles.drop}`);
-      if (drop) {
-        put(drop, "--drop-x", `${getDropX(dotVh, L.keys)}vw`);
-        put(drop, "--drop-y", `${lift}px`);
+        // Трафарет: трасса от конца линии Hero и дальше прямая по центру — до точки на входе
+        // в Сцену 3, когда линия над ней уже растворилась. Лежит в потоке страницы — изгибы
+        // едут вместе с текстом; видна трасса там, где под трафаретом чернила (.ink).
+        const endVh = 43 + L.end;
+        trailTop = Math.floor(0.93 * h) - 4;
+        const bottom = Math.ceil(((50 + endVh + TAIL) * h) / 100) + 60;
+        const height = bottom - trailTop;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" viewBox="0 ${trailTop} ${w} ${height}"><path d="${buildTrail(w, h, L)} V${bottom}" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        if (timeline) put(trail, "top", `${trailTop - sectionTop}px`);
+        put(trail, "height", `${height}px`);
+        put(trail, "mask-size", `${w}px ${height}px`);
+        put(trail, "mask-image", `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+        trailEnd = bottom;
+
+        // Точка: с прокрутки 0 до конца трассы идёт по изгибу (getDropX), на входе из Hero она
+        // ниже места на lift. Дальше — по центру, на своём месте. Чернила обрезаны по ней же.
+        // Кадры — через 8px прокрутки: между ними прямая, от изгиба — меньше 0,5px.
+        const liftEnd = 2 * (0.43 * h - 20) + 0.07 * h; // dropLift: s + e
+        const dotEnd = Math.max(liftEnd, (endVh * h) / 100);
+        const steps = (end: number) => {
+          const n = Math.ceil(end / 8);
+          return Array.from({ length: n + 1 }, (_, i) => (end * i) / n);
+        };
+        const dotFrames = steps(dotEnd).map((y) => {
+          const lift = px(dropLift(y, h));
+          const x = (getDropX(((y + lift) / h) * 100, L.keys) * w) / 100;
+          return { translate: `calc(-50% + ${x.toFixed(2)}px) calc(-50% + ${20 + lift}px)` };
+        });
+        dotScrub = drop ? scrub(drop, dotFrames, 0, dotEnd, "both") : null;
+        if (timeline)
+          scrub(
+            ink,
+            steps(liftEnd).map((y) => ({ transform: `translateY(${px(dropLift(y, h))}px)` })),
+            0,
+            liftEnd,
+            "both",
+          );
+
+        // Растворение: слой с маской (.fade) за FADE прокрутки едет от верха экрана (край маски
+        // над экраном) до точки — к входу в Сцену 3 линии над точкой уже нет. Назад — всё обратно.
+        const fadeFrom = ((endVh + TAIL - FADE) * h) / 100;
+        const dot = h / 2 + 20;
+        scrub(
+          fade,
+          [
+            { transform: `translateY(${-px(EDGE * h)}px)` },
+            { transform: `translateY(${px(dot)}px)` },
+          ],
+          fadeFrom,
+          fadeFrom + (FADE * h) / 100,
+          "both",
+        );
+
+        // Блок: прозрачность и подъём при появлении, элементы пункта (Scene2Art) — на свою долю
+        // подъёма. После хода блок — в своём стиле: на месте, непрозрачный (до первого прохода
+        // он прозрачный, Scene2.module.css).
+        for (const [i, el] of blockEls.entries()) {
+          put(el, "opacity", "1");
+          const from = sectionTop + L.tops[i] - APPEAR * h;
+          const to = from + APPEAR_LEN * h;
+          scrub(
+            el,
+            [
+              { opacity: 0, transform: `translateY(${RISE}px)` },
+              { opacity: 1, transform: "translateY(0px)" },
+            ],
+            from,
+            to,
+            "backwards",
+          );
+          for (const art of artEls[i])
+            scrub(
+              art.el,
+              [{ translate: `0 ${RISE * art.depth}px` }, { translate: "0 0" }],
+              from,
+              to,
+              "backwards",
+            );
+        }
+      }
+
+      // Страницу тянут вниз за верх (iOS): прокрутка меньше нуля, ход по ней стоит на нуле —
+      // точка едет со страницей, как стояла: ход снят, сдвиг — переменной (Hero.module.css).
+      if (drop && dotScrub) {
+        const pulled = scrollY < 0;
+        const held = dotScrub.anim.playState === "idle";
+        if (pulled) {
+          if (!held) dotScrub.anim.cancel();
+          put(drop, "--drop-y", `${px(dropLift(scrollY, h))}px`);
+        } else if (held) {
+          if (timeline) dotScrub.anim.play();
+          else {
+            dotScrub.anim.pause();
+            dotScrub.t = Number.NaN;
+          }
+        }
         // Пульс в покое (Hero.module.css): размах плавно сходит на нет за первые BREATH px
         // прокрутки и так же возвращается наверху; без размаха пульс на паузе — не тикает.
         const breath = smooth(Math.max(0, Math.min(1, 1 - scrollY / BREATH)));
@@ -319,87 +447,65 @@ export function Scene2() {
       }
       setVar("--drop-offset", "20px");
 
-      // Трасса — с первого пикселя прокрутки; слой обрезан по точке (lift — пока она ниже своего
-      // места, трасса в слое — на столько же выше). Конец трассы, ушедший за верх экрана, дальше
-      // не двигаем.
-      put(trail, "visibility", moved ? "visible" : "hidden");
-      if (moved) {
-        const shift = px(scrollY);
-        const endVh = 43 + L.end;
-        const endY = ((50 + endVh) * h) / 100 + 20; // конец трассы в странице
-        const dot = h / 2 + 20;
-        // Растворение: слой с маской (.fade) — на d от верха экрана, трасса и нить в нём —
-        // на d обратно. До FADE — край маски над экраном, к входу в Сцену 3 — у точки.
-        const f = Math.max(0, Math.min(1, ((shift / h) * 100 - (endVh + TAIL - FADE)) / FADE));
-        const d = px((dot + EDGE * h) * f - EDGE * h);
-        put(fade, "transform", `translateY(${d}px)`);
-        put(trail, "transform", `translateY(${lift}px)`);
-        put(trailSvg, "transform", `translateY(${-Math.min(shift, endY + 20) - d - lift}px)`);
-        // Нить: верх — у конца трассы (ушедшего за верх экрана — у верха), низ обрезан по центру точки.
-        const top = px(Math.max(0, Math.min(dot, endY - shift)));
-        put(thread, "transform", `translateY(${top - d}px)`);
+      // Трасса — с первого пикселя прокрутки.
+      put(trail, "visibility", scrollY > 0 ? "visible" : "hidden");
+      // Без ScrollTimeline ходы ведёт проход, и точка сходила бы с изгиба, который едет со
+      // страницей: трафарет тогда на экране (.onScreen) и уезжает вверх отсюда же, вместе с
+      // точкой, как прежде; чернила в нём — на столько же вниз.
+      if (!timeline) {
+        const shift = Math.min(px(scrollY), trailEnd);
+        put(trail, "transform", `translateY(${trailTop - shift}px)`);
+        put(ink, "transform", `translateY(${shift - trailTop + px(dropLift(scrollY, h))}px)`);
+        for (const s of scrubs) if (s !== dotScrub || scrollY >= 0) seek(s, Math.max(0, scrollY));
+
+        // Нахлёст на стыке: начало трассы ещё и в слое страницы, вместе с линией Hero. При
+        // прокрутке мимо Lenis (палец, клавиатура) трафарет на экране на кадр отстаёт — отрезок
+        // закрывает щель. Лежит на прямом участке трассы (20px и прелюдия до колена; на телефоне
+        // колено сразу), не ниже точки, на 1px уже линии — в покое не виден. Вверх щели нет —
+        // и отрезка нет.
+        const up = scrollY < lastY;
+        lastY = scrollY;
+        const dotVh = ((scrollY + px(dropLift(scrollY, h))) / h) * 100;
+        const straight = 20 + ((phoneLayout() ? 0 : PRELUDE - 1) * h) / 100;
+        const reach = Math.min(straight, ((dotVh - 43) * h) / 100 + 20);
+        // top по смыслу постоянен, но дробный шум менял бы d каждый кадр — округляем до 0,1px.
+        const top = Math.round((0.93 * h - sectionTop) * 10) / 10;
+        const end = Math.round((top + reach) * 10) / 10;
+        const bridge = scrollY > 0 && !up && reach > 0 ? `M${w / 2} ${top} V${end}` : "";
+        if (bridgeRef.current && bridge !== bridgeKey) {
+          bridgeKey = bridge;
+          bridgeRef.current.setAttribute("d", bridge);
+        }
       }
 
-      // Блок: прозрачность и подъём при появлении, элементы пункта (Scene2Art) — на свою долю
-      // подъёма. Блок дальше полэкрана от экрана не трогаем. Покачивание — только пока пункт
-      // с элементами (до ~160px за его рамкой) на экране.
-      for (let i = 0; i < BLOCKS.length && !blocksGone; i++) {
-        const { opacity, rise } = getBlock(tops[i], h);
-        const el = blockEls[i];
-        const top = tops[i] + rise;
-        const seen = opacity > 0 && top < h + 160 && top + heights[i] > -160;
-        put(el, "--art-play", seen ? "running" : "paused");
-        if (top > 1.5 * h || top + heights[i] < -0.5 * h) continue;
-        put(el, "opacity", `${opacity}`);
-        put(el, "transform", `translateY(${rise}px)`);
-        for (const art of artEls[i]) put(art.el, "translate", `0 ${rise * art.depth}px`);
-      }
-
-      // Нахлёст на стыке: начало трассы ещё и в слое страницы, вместе с линией Hero. При прокрутке
-      // мимо Lenis (палец, клавиатура) fixed-трасса на кадр отстаёт — отрезок закрывает щель.
-      // Лежит на прямом участке трассы (20px и прелюдия до колена; на телефоне колено сразу), не
-      // ниже точки, на 1px уже линии — в покое не виден. Вверх щели нет — и отрезка нет.
-      const up = scrollY < lastY;
-      lastY = scrollY;
-      const straight = 20 + ((phone ? 0 : PRELUDE - 1) * h) / 100;
-      const reach = Math.min(straight, ((dotVh - 43) * h) / 100 + 20);
-      // top по смыслу постоянен, но дробный шум менял бы d каждый кадр — округляем до 0,1px.
-      const top = Math.round((((93 - scrollVh) * h) / 100 - rect.top) * 10) / 10;
-      const end = Math.round((top + reach) * 10) / 10;
-      const bridge = moved && !up && reach > 0 ? `M${w / 2} ${top} V${end}` : "";
-      if (bridgeRef.current && bridge !== bridgeKey) {
-        bridgeKey = bridge;
-        bridgeRef.current.setAttribute("d", bridge);
+      // Покачивание элементов пункта — только пока пункт (до ~160px за его рамкой) на экране
+      // и уже проявился. Секция целиком выше экрана — блоки тоже, их не трогаем.
+      for (let i = 0; i < BLOCKS.length && rect.bottom >= 0; i++) {
+        const top = rect.top + L.tops[i];
+        const appear = (APPEAR * h - top) / (APPEAR_LEN * h);
+        const seen = appear > 0 && top < h + 160 && top + heights[i] > -160;
+        put(blockEls[i], "--art-play", seen ? "running" : "paused");
       }
     };
 
     // Прыжок петли футера наверх (LOOP_EVENT, прыжок — в том же вызове сразу за событием) идёт
     // посреди кадра, когда scroll этого кадра уже разослан: кадр показал бы старое состояние —
-    // отрезок у стыка с Hero и блок у низа экрана. Общий проход — сразу после прыжка.
+    // трассу у стыка с Hero. Общий проход — сразу после прыжка.
     const onLoop = () => queueMicrotask(syncScroll);
     window.addEventListener(LOOP_EVENT, onLoop);
     const off = onScroll(section, update);
     return () => {
       window.removeEventListener(LOOP_EVENT, onLoop);
       off();
+      for (const s of scrubs) s.anim.cancel();
     };
   }, []);
 
   return (
     <section ref={sectionRef} className={styles.scene2} data-scene="scene2">
       <div ref={trailRef} className={styles.trail}>
-        <div ref={fadeRef} className={styles.fade}>
-          <svg ref={trailSvgRef} aria-hidden="true">
-            <path
-              ref={pathRef}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <div ref={threadRef} className={styles.thread} />
+        <div ref={inkRef} className={styles.ink}>
+          <div ref={fadeRef} className={styles.fade} />
         </div>
       </div>
       <svg className={styles.bridge} aria-hidden="true">
@@ -423,8 +529,11 @@ export function Scene2() {
                 // biome-ignore lint/suspicious/noArrayIndexKey: состав элементов постоянный
                 key={j}
                 className={`${styles[art.slot]} ${art.phone === false ? styles.noPhone : ""}`}
-                // Покачивание — у каждого элемента со своим сдвигом по фазе.
-                style={{ animationDelay: `${-(((i * 3 + j) * 1.7) % 5)}s`, ...art.style }}
+                // Покачивание — у каждого элемента со своим сдвигом по фазе (группа значков — с общим).
+                style={{
+                  animationDelay: `${-(((i * 3 + (art.sync ?? j)) * 1.7) % 5)}s`,
+                  ...art.style,
+                }}
               >
                 {art.el}
               </div>

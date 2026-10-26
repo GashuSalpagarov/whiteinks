@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLenis } from "@/app/providers";
-import { BRIEF_CONFIG } from "@/lib/brief";
-import { phoneLayout } from "@/lib/phoneLayout";
 import { pathHandoff } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Footer.module.css";
@@ -17,18 +15,14 @@ export const LOOP_FROM_MS = 2000;
 // Футер доигрывает переход (петля → круг Hero): HeroScrollLock держит прокрутку до LOOP_EVENT.
 export const HOLD_EVENT = "whiteinks:hold";
 
-// Прокрутка у конца зоны стихла (и палец отпущен) — переход доигрывается сам. Быстрый свайп
-// долетает до конца, но начнётся всё только после остановки: петля уже видна целиком.
+// Прокрутка в конце стихла (и палец отпущен) — переход доигрывается сам. Быстрый свайп долетает
+// до конца, но начнётся всё только после остановки: петля уже видна целиком.
 const SETTLE_MS = 160;
-// Доигрывание, мс: от петли наружу растекаются чернила — фон вокруг круга заливается до углов
-// экрана (FLOOD_MS), круг остаётся светлым; если круг Hero сбоку от линии (телефон), залитый
-// круг съезжает к нему (SHIFT_MS); HOLD_MS — и прыжок.
-const FLOOD_MS = 620;
-const SHIFT_MS = 520;
+// Доигрывание, мс: петля заливается светлым кругом, линия и точка гаснут (FILL_MS); чёрное
+// поднимается на весь экран, а круг — на место круга Hero (RISE_MS); HOLD_MS — и прыжок.
+const FILL_MS = 300;
+const RISE_MS = 620;
 const HOLD_MS = 60;
-
-// Контакты — ЗАГЛУШКИ, одно место на весь сайт: BRIEF_CONFIG в lib/brief.ts.
-const { telegram, email } = BRIEF_CONFIG;
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
@@ -39,115 +33,101 @@ const invert = (rgb: string) =>
     .map((v) => 255 - Number(v))
     .join(", ")})`;
 
-// Круг интро Hero на экране после прыжка наверх (scrollY = 0) — как .pill в Hero.module.css:
-// в телефонной раскладке Hero (телефон и планшет в портрете) — 140px в (74%, --y1), --y1 — от
-// общей высоты экрана (--ih); иначе — 180px в центре Hero.
+// Круг интро Hero на экране после прыжка наверх (scrollY = 0): место и размер самого .pill —
+// translate(-50%, -50%) ставит её центр в left/top, — без своей копии формулы Hero.
 function heroCircle() {
   const hero = document.querySelector<HTMLElement>('[data-scene="hero"]');
-  const w = window.innerWidth;
-  const top = hero ? hero.getBoundingClientRect().top + window.scrollY : 0;
-  if (phoneLayout()) {
-    const h = viewportH();
-    const y1 = h * 0.3 + Math.max(h * -0.03, h * 0.22 - w * 0.352);
-    return { x: w * 0.74, y: top + y1, r: 70 };
-  }
-  return { x: w / 2, y: top + (hero?.offsetHeight ?? window.innerHeight) / 2, r: 90 };
+  const pill = hero?.querySelector<HTMLElement>(':scope > div[aria-hidden="true"]');
+  if (!hero || !pill) return { x: window.innerWidth / 2, y: viewportH() / 2, r: 90 };
+  return {
+    x: hero.offsetLeft + pill.offsetLeft,
+    y: hero.offsetTop + pill.offsetTop,
+    r: pill.offsetWidth / 2,
+  };
 }
 
-// Последний экран пути: белый футер в нижней части экрана, линия пути спускается по центру
-// и кончается точкой (пунктир или чернила — как путь Сцены 6 над ним, Footer.module.css).
-// Дальше зона, где футер стоит внизу, а петля рисуется на линии пути — размером с круг интро
-// Hero следующего круга и на его высоте: точка по прокрутке отступает по своей линии к верху
-// петли (линия за ней втягивается) и обводит её; пунктир круга проступает, как только она вошла
-// на окружность. Петля замкнулась и прокрутка стихла — круг остаётся светлым, а от петли наружу
-// растекаются чернила и заливают фон до краёв экрана, всё прочее гаснет; если круг Hero сбоку
-// (телефон), залитый круг съезжает к нему. Это уже первый кадр Hero следующего круга: светлый
-// круг на тёмном в перевёрнутой палитре. Прыжок: палитра переворачивается (html[data-palette],
-// см. globals.css), страница — наверх, Hero продолжает интро с «вдоха» этого круга — на экране
-// не меняется ничего. Reduced motion: зоны нет, футер — конец страницы, «↺ замкнуть круг».
+// Конец пути. Под заявкой — белый воздух и строка: политика и согласие слева, © справа, ось пути
+// между ними свободна (.end). Ниже — чёрный подвал на полэкрана (перевёрнутая палитра, .next):
+// начало нового круга. Линия пути входит в него по центру, точка идёт по ней с постоянной
+// скоростью и к концу страницы обводит петлю размером с круг интро Hero. Прокрутка стихла — петля
+// заливается светлым кругом, чёрное поднимается на весь экран, а круг — на место круга Hero: это
+// первый кадр следующего круга, и прыжок: палитра переворачивается (html[data-palette],
+// globals.css), страница — наверх, Hero продолжает интро с «вдоха». Путь идёт со страницей
+// (fixed — только слои доигрывания, прокрутка тогда закрыта): при прокрутке пальцем точка и
+// линия не расходятся. Назад — так же, прокруткой. Reduced motion: перехода нет, линия
+// кончается точкой в воздухе, в чёрном подвале — «↺ замкнуть круг».
 export function Footer() {
   const sectionRef = useRef<HTMLElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const dotRef = useRef<HTMLSpanElement>(null);
-  const contactsRef = useRef<HTMLDivElement>(null);
-  const loopRef = useRef<SVGSVGElement>(null);
-  const diskRef = useRef<HTMLSpanElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const nextRef = useRef<HTMLDivElement>(null);
   const floodRef = useRef<HTMLSpanElement>(null);
-  const [copied, setCopied] = useState(false);
+  const diskRef = useRef<HTMLSpanElement>(null);
   const lenis = useLenis();
 
   useEffect(() => {
     const section = sectionRef.current;
-    const stage = stageRef.current;
-    const dot = dotRef.current;
-    const contacts = contactsRef.current;
-    const loop = loopRef.current;
-    const disk = diskRef.current;
+    const end = endRef.current;
+    const next = nextRef.current;
     const flood = floodRef.current;
-    if (!section || !stage || !dot || !contacts || !loop || !disk || !flood) return;
-    const ghost = loop.querySelector("circle");
-    const trace = loop.querySelector("path");
-    const pen = loop.querySelector(`.${styles.pen}`);
-    const line = stage.querySelector<HTMLElement>(`.${styles.line}`);
-    if (!ghost || !trace || !pen || !line) return;
+    const disk = diskRef.current;
+    if (!section || !end || !next || !flood || !disk) return;
+    const endDot = end.querySelector<HTMLElement>(`.${styles.dot}`);
+    const endInk = end.querySelector<HTMLElement>(`.${styles.line} > span`);
+    const nextDot = next.querySelector<HTMLElement>(`.${styles.dot}`);
+    const nextInk = next.querySelector<HTMLElement>(`.${styles.line} > span`);
+    const ghost = next.querySelector("circle");
+    const trace = next.querySelector("path");
+    if (!endDot || !endInk || !nextDot || !nextInk || !ghost || !trace) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let last = "";
     let jumped = false;
     let playing = false;
     let touching = false;
     let settle = 0;
-    let lastZ = 0;
     let viewport = "";
-    let arrived = "";
-    // Геометрия на экране, пока футер стоит внизу (sticky): d — точка футера, c — петля (центр
-    // на линии, радиус r — как у круга Hero), hx — центр круга Hero по горизонтали, e — верх
-    // петли, где точка входит в неё, back — сколько точка отступает по линии до e, fade — петля
-    // ляжет на подпись.
+    // Геометрия. end — белый воздух со строкой; home — место точки без transform (от верха
+    // футера), dy — оно же на экране, когда футер у низа экрана: высота стыка для Сцены 6 (--hand)
+    // и запас, если она её не задала; rest — место точки без анимаций. next — чёрный подвал:
+    // петля — центр (cx, cy) и радиус r круга Hero, lt — её верх; P — длина пути от верха футера
+    // до конца петли.
     const g = {
-      dx: 0,
+      endH: 0,
+      nextH: 0,
+      home: 0,
       dy: 0,
+      rest: 0,
       cx: 0,
       cy: 0,
       r: 0,
-      hx: 0,
-      ey: 0,
-      back: 0,
-      fade: false,
-      ry: 0, // место точки в футере (от его верха)
+      lt: 0,
+      ring: 0,
+      P: 0,
     };
 
     const layout = () => {
       const h = viewportH();
-      const fh = stage.offsetHeight;
       const c = heroCircle();
-      g.dx = dot.offsetLeft + dot.offsetWidth / 2;
-      g.dy = h - fh + dot.offsetTop + dot.offsetHeight / 2;
-      g.ry = dot.offsetTop + dot.offsetHeight / 2;
-      // Петля — всегда на линии, по центру экрана: на десктопе там и круг Hero, на телефоне он
-      // сбоку — к нему съезжает уже залитый круг (close).
-      g.cx = g.dx;
-      g.cy = c.y;
+      g.endH = end.offsetHeight;
+      g.nextH = next.offsetHeight;
+      g.home = endDot.offsetTop + endDot.offsetHeight / 2;
+      g.dy = h - g.endH + g.home;
+      g.rest = 0.6 * (end.querySelector<HTMLElement>(`.${styles.fine}`)?.offsetTop ?? g.endH);
+      g.cx = next.clientWidth / 2;
       g.r = c.r;
-      g.hx = c.x;
-      g.ey = g.cy - g.r;
-      g.back = Math.max(0, g.dy - g.ey);
+      // Петля — посередине чёрного.
+      g.cy = g.nextH / 2;
+      g.lt = Math.max(0, g.cy - g.r);
+      g.ring = 2 * Math.PI * g.r;
+      g.P = g.endH + g.lt + g.ring;
+      section.style.setProperty("--lt", `${g.lt}px`);
       ghost.setAttribute("cx", `${g.cx}`);
       ghost.setAttribute("cy", `${g.cy}`);
       ghost.setAttribute("r", `${g.r}`);
       // По часовой от верха петли.
       trace.setAttribute(
         "d",
-        `M${g.cx} ${g.ey} A${g.r} ${g.r} 0 1 1 ${g.cx} ${g.cy + g.r} A${g.r} ${g.r} 0 1 1 ${g.cx} ${g.ey}`,
+        `M${g.cx} ${g.lt} A${g.r} ${g.r} 0 1 1 ${g.cx} ${g.cy + g.r} A${g.r} ${g.r} 0 1 1 ${g.cx} ${g.lt}`,
       );
-      // Подпись — в координатах экрана, пока футер стоит внизу.
-      const s = stage.getBoundingClientRect();
-      const k = contacts.getBoundingClientRect();
-      const top = k.top - s.top + h - fh;
-      g.fade =
-        k.right > g.cx - g.r - 4 &&
-        k.left < g.cx + g.r + 4 &&
-        top + k.height > g.cy - g.r - 4 &&
-        top < g.cy + g.r + 4;
     };
 
     const togglePalette = () => {
@@ -156,13 +136,12 @@ export function Footer() {
       else root.dataset.palette = "inverted";
     };
 
-    // Слои перехода — в исходное: после прыжка футер внизу страницы, а круг уже в Hero.
+    // В исходное: после прыжка футер внизу страницы, а круг уже в Hero.
     const restore = () => {
       playing = false;
       last = "";
       section.classList.remove(styles.closing);
-      section.removeAttribute("data-loop");
-      for (const el of [disk, flood]) for (const a of el.getAnimations()) a.cancel();
+      for (const el of [flood, disk]) for (const a of el.getAnimations()) a.cancel();
     };
 
     const teleport = () => {
@@ -179,54 +158,46 @@ export function Footer() {
       }
     };
 
-    // Петля замкнулась: доигрываем сами (WAAPI), прокрутку держит HeroScrollLock. Чернила
-    // (.flood, обратный фону цвет — фон Hero следующего круга) растут от наружного края петли до
-    // самого дальнего угла экрана и встают под обводку — она сливается с ними. Круг (.disk) над
-    // ними — от внутреннего края обводки до петли; его цвет из цвета бумаги становится обратным
-    // цветом линии — ровно цветом круга Hero следующего круга. Круг Hero сбоку (телефон) —
-    // залитый круг съезжает к нему; экран уже весь в чернилах.
+    // Петля замкнулась и прокрутка стихла (прокрутку держит HeroScrollLock, HOLD_EVENT): петля
+    // заливается светлым кругом, линия и точка гаснут (CSS, .closing); потом чёрное поднимается
+    // с верха подвала на весь экран (.flood), а круг (.disk) — на место круга Hero. Только
+    // opacity и transform. Цвета — обратные фону и линии: ровно фон и круг Hero следующего круга.
     const close = () => {
       if (playing || jumped) return;
       playing = true;
       jumped = true;
       window.dispatchEvent(new Event(HOLD_EVENT));
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const far = Math.hypot(Math.max(g.cx, w - g.cx), Math.max(g.cy, h - g.cy)) + 2;
-      // Место — раскладкой (left/top, дробные px — как у круга Hero), анимируются масштаб
-      // и сдвиг к месту: в конце круг отрисован так же, как у Hero, без пересэмплирования слоя.
-      const place = (el: HTMLElement, x: number, r: number) => {
-        el.style.left = `${x - r}px`;
-        el.style.top = `${g.cy - r}px`;
-        el.style.width = `${2 * r}px`;
-        el.style.height = `${2 * r}px`;
-      };
-      const dx = g.cx - g.hx;
-      const at = (k: number, x = 0) => `translateX(${x}px) scale(${k})`;
-      const shift = Math.abs(dx) > 0.5 ? SHIFT_MS : 0;
-      const total = FLOOD_MS + shift + HOLD_MS;
-      const cs = getComputedStyle(section);
-      const paper = cs.backgroundColor;
-      const ink = invert(cs.color);
-      place(flood, g.cx, far);
-      place(disk, g.hx, g.r);
+      const c = heroCircle();
+      const n = next.getBoundingClientRect();
+      const dx = n.left + g.cx - c.x;
+      const dy = n.top + g.cy - c.y;
+      const k = g.r / c.r;
+      const total = FILL_MS + RISE_MS + HOLD_MS;
+      const a = FILL_MS / total;
+      const b = (FILL_MS + RISE_MS) / total;
+      const ease = "cubic-bezier(0.65, 0, 0.35, 1)";
+      disk.style.left = `${c.x - c.r}px`;
+      disk.style.top = `${c.y - c.r}px`;
+      disk.style.width = `${2 * c.r}px`;
+      disk.style.height = `${2 * c.r}px`;
+      disk.style.backgroundColor = invert(getComputedStyle(section).color);
       section.classList.add(styles.closing);
-      flood.animate([{ transform: at((g.r + 2) / far) }, { transform: at(1) }], {
-        duration: FLOOD_MS,
-        easing: "cubic-bezier(0.5, 0, 0.3, 1)",
-        fill: "forwards",
-      });
+      const at = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${k})`;
+      flood.animate(
+        [
+          { offset: 0, transform: `translateY(${n.top.toFixed(2)}px)` },
+          { offset: a, transform: `translateY(${n.top.toFixed(2)}px)`, easing: ease },
+          { offset: b, transform: "translateY(0px)" },
+          { offset: 1, transform: "translateY(0px)" },
+        ],
+        { duration: total, fill: "forwards" },
+      );
       const fill = disk.animate(
         [
-          { offset: 0, transform: at((g.r - 2) / g.r, dx), backgroundColor: paper },
-          {
-            offset: FLOOD_MS / total,
-            transform: at(1, dx),
-            backgroundColor: ink,
-            easing: "cubic-bezier(0.65, 0, 0.35, 1)",
-          },
-          { offset: (FLOOD_MS + shift) / total, transform: at(1), backgroundColor: ink },
-          { offset: 1, transform: at(1), backgroundColor: ink },
+          { offset: 0, opacity: 0, transform: at },
+          { offset: a, opacity: 1, transform: at, easing: ease },
+          { offset: b, opacity: 1, transform: "translate(0px, 0px) scale(1)" },
+          { offset: 1, opacity: 1, transform: "translate(0px, 0px) scale(1)" },
         ],
         { duration: total, fill: "forwards" },
       );
@@ -235,93 +206,59 @@ export function Footer() {
 
     const update = () => {
       if (playing) return;
-      const rect = section.getBoundingClientRect();
       const h = viewportH();
-      const fh = stage.offsetHeight;
-      // Футер встаёт низом экрана, когда верх секции — на stuck. Зона — всё, что секция длиннее
-      // футера: столько он стоит внизу, а точка рисует петлю.
-      const stuck = h - fh;
-      const zone = rect.height - fh;
-      const scrolled = stuck - rect.top;
-      const z = zone > 0 ? clamp01(scrolled / zone) : 0;
-
-      // Resize посреди зоны: страница сменила длину, и браузер сдвинул скролл (у края — сразу
-      // в конец зоны, то есть в прыжок). Возвращаем ту же долю зоны и в этом проходе не прыгаем.
-      // Панель браузера на телефоне долю не меняет — тогда и скролл не трогаем.
-      const vp = `${window.innerWidth}x${h}`;
-      if (vp !== viewport) {
-        const was = viewport;
+      const vh = window.innerHeight;
+      // Смена экрана (и панели браузера на телефоне) — перемеряем; в этом проходе не прыгаем.
+      const vp = `${window.innerWidth}x${h}x${vh}`;
+      const resized = vp !== viewport;
+      if (resized) {
         viewport = vp;
         layout();
         last = "";
-        const y = window.scrollY + rect.top - stuck + lastZ * zone;
-        // Нативно, не через Lenis: его граница прокрутки после resize ещё старая.
-        if (was && lastZ > 0 && Math.abs(y - window.scrollY) > 1) {
-          window.scrollTo(0, y);
-          return;
-        }
       }
-      lastZ = z;
-      if (z < 0.5) jumped = false;
+      const rect = section.getBoundingClientRect();
+      const top = rect.top;
 
-      // Вход: точка пути переходит сюда из Сцены 6 на высоте pathHandoff.y и, пока футер въезжает,
-      // идёт по его линии к своему месту (встал — она на месте); позади неё — чернила, впереди —
-      // пунктир. Граница сцен ещё ниже этой высоты — точка в Сцене 6, здесь её нет. Без анимаций
-      // — точка на месте, линия в чернилах.
+      // Точка пути переходит сюда из Сцены 6 на высоте pathHandoff.y и идёт по линии с постоянной
+      // скоростью — через воздух мимо строки в чёрный подвал и по петле: к концу страницы петля
+      // замкнута. Ловит, когда верх футера дошёл до её низа, и, пока он проходит через неё
+      // (радиус 6px), она стоит там же, где её держит Сцена 6: половины совпадают. Позади
+      // точки — чернила, впереди — пунктир. Без анимаций — точка в воздухе, линия до неё в
+      // чернилах.
       const y6 = Number.isFinite(pathHandoff.y) ? pathHandoff.y : g.dy;
-      // Ловит, когда верх футера дошёл до низа точки (радиус 6px): пока он проходит через точку, её
-      // низ — здесь (верх режет край футера), а верх ещё рисует Сцена 6 — точка целая. Пока так,
-      // точка стоит на высоте y6, как у Сцены 6, и место — с точностью до 0,1px: половины не
-      // расходятся; к своему месту она идёт, когда верх футера прошёл её верх.
-      const k = y6 - 6 <= stuck ? 1 : clamp01((y6 - 6 - rect.top) / (y6 - 6 - stuck));
-      const at = reduced
-        ? g.ry
-        : rect.top > y6 + 6
-          ? -7
-          : Math.min(g.ry, y6 + (g.dy - y6) * k - rect.top);
-      const came = at < -6 ? "-" : at.toFixed(1);
-      if (came !== arrived) {
-        arrived = came;
-        dot.style.opacity = at < -6 ? "0" : "";
-        section.toggleAttribute("data-in", at >= 0);
-        dot.style.transform =
-          at < -6 || at >= g.ry ? "" : `translateY(${(at - g.ry).toFixed(1)}px)`;
-        line.style.setProperty("--ink", `${Math.max(0, Math.round(at))}px`);
+      const fin = vh - g.endH - g.nextH; // верх футера в конце страницы
+      const caught = reduced || top <= y6 + 6;
+      const d = y6 - top;
+      const p = reduced
+        ? g.rest
+        : Math.min(g.P, d < 6 ? d : 6 + ((g.P - 6) * (d - 6)) / Math.max(1, y6 - fin - 6));
+      const q = p - g.endH; // в чёрном подвале
+      const turn = clamp01((q - g.lt) / g.ring);
+      const ang = turn * 2 * Math.PI;
+      const nx = q > g.lt ? g.r * Math.sin(ang) : 0;
+      const ny = q > g.lt ? g.cy - g.r * Math.cos(ang) : q;
+      const key = `${caught}|${p.toFixed(1)}`;
+      if (key !== last) {
+        last = key;
+        const show = caught ? "1" : "0";
+        endDot.style.opacity = show;
+        nextDot.style.opacity = show;
+        endDot.style.transform = `translateY(${(p - g.home).toFixed(1)}px)`;
+        nextDot.style.transform = `translate(${nx.toFixed(1)}px, ${ny.toFixed(1)}px)`;
+        // Чернила — долей высоты линии (scaleY от верха); в воздухе линия на 2px заходит в
+        // Сцену 6 — стык без волосяного просвета.
+        const inkEnd = reduced ? 1 : caught ? clamp01((p + 2) / (g.endH + 2)) : 0;
+        const inkNext = caught && g.lt > 0 ? clamp01(q / g.lt) : 0;
+        endInk.style.transform = `scaleY(${inkEnd.toFixed(4)})`;
+        nextInk.style.transform = `scaleY(${inkNext.toFixed(4)})`;
+        trace.style.strokeDashoffset = `${1 - turn}`;
       }
 
-      // Путь точки по прогрессу зоны, с постоянной скоростью: сначала назад по линии до верха
-      // петли (линия за ней втягивается), потом по кругу по часовой. --cut — на сколько укорочена
-      // линия.
-      const z1 = reduced ? 0 : z;
-      const ring = 2 * Math.PI * g.r;
-      const s = z1 * (g.back + ring);
-      const cut = Math.min(s, g.back);
-      const turn = clamp01((s - g.back) / ring);
-      const a = turn * 2 * Math.PI;
-      const px = s <= g.back ? g.dx : g.cx + g.r * Math.sin(a);
-      const py = s <= g.back ? g.dy - s : g.cy - g.r * Math.cos(a);
-      // Низ линии на экране: над футером она — ::before секции, её режем снизу (--clip).
-      // Футер до зоны едет со страницей, в зоне стоит на stuck.
-      const lineEnd = Math.max(rect.top, stuck) + (g.dy - stuck) - cut;
-      const clip = Math.max(0, rect.bottom - lineEnd);
-      const cap = g.fade ? 1 - clamp01((z1 - 0.02) / 0.1) : 1;
-      const next = `${z1}|${clip}`;
-      if (next !== last) {
-        last = next;
-        section.toggleAttribute("data-loop", z1 > 0);
-        section.style.setProperty("--cut", `${cut}px`);
-        section.style.setProperty("--clip", `${clip}px`);
-        section.style.setProperty("--turn", `${turn}`);
-        // Пунктир круга — только когда точка вошла на окружность: проступает за первые 8% обвода.
-        section.style.setProperty("--ghost-o", `${clamp01(turn / 0.08)}`);
-        section.style.setProperty("--cap", `${cap}`);
-        pen.setAttribute("cx", `${px}`);
-        pen.setAttribute("cy", `${py}`);
-      }
-
-      // Конец зоны (≥ 1px до низа страницы) — один переход на круг, когда прокрутка стихла.
+      // Конец страницы (≤ 1px до низа) — один переход на круг, когда прокрутка стихла. Ушли назад
+      // так, что верх чёрного ниже трёх четвертей экрана, — переход снова возможен.
+      if (top + g.endH > 0.75 * h) jumped = false;
       window.clearTimeout(settle);
-      if (reduced || jumped || zone <= 0 || scrolled < zone - 1) return;
+      if (reduced || jumped || resized || rect.bottom > vh + 1) return;
       settle = window.setTimeout(() => {
         if (!touching) close();
       }, SETTLE_MS);
@@ -356,59 +293,45 @@ export function Footer() {
     window.scrollTo(0, 0);
   };
 
-  // Почта — копируется; не вышло (нет доступа к буферу) — открываем письмо.
-  const copyEmail = async () => {
-    try {
-      await navigator.clipboard.writeText(email);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      window.location.href = `mailto:${email}`;
-    }
-  };
-
   return (
-    <section ref={sectionRef} className={styles.footer} data-scene="footer" aria-label="Контакты">
-      <div ref={stageRef} className={styles.stage}>
-        <span className={styles.line} aria-hidden="true" />
-        <span ref={dotRef} className={styles.dot} aria-hidden="true" />
-        <div ref={contactsRef} className={styles.contacts}>
-          <a
-            href={`https://t.me/${telegram.replace(/^@/, "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Telegram {telegram} <span aria-hidden="true">↗</span>
-          </a>
-          <button type="button" className={styles.mail} onClick={copyEmail} aria-live="polite">
-            {copied ? "почта скопирована" : email}
-          </button>
-          <button type="button" className={styles.again} onClick={again}>
-            ↺ замкнуть круг
-          </button>
-        </div>
+    <section ref={sectionRef} className={styles.footer} data-scene="footer" aria-label="Подвал">
+      {/* Воздух под заявкой и строка. Точка — первая 12px: по ней Сцена 6 считает стык
+          (footerHome в Scene6.tsx). */}
+      <div ref={endRef} className={styles.end}>
+        <span className={styles.line} aria-hidden="true">
+          <span />
+        </span>
+        <span className={styles.dot} aria-hidden="true" />
         <p className={styles.fine}>
-          <Link href="/privacy" prefetch={false}>
-            Политика обработки персональных данных
-          </Link>
-          {/* Название документа целиком; на телефоне — «ПД»: иначе подвал в три строки. */}
-          <Link href="/consent" prefetch={false}>
-            Согласие на обработку <span className={styles.long}>персональных данных</span>
-            <span className={styles.short}>ПД</span>
-          </Link>
+          <span className={styles.docs}>
+            <Link href="/privacy" prefetch={false}>
+              политика обработки персональных данных
+            </Link>
+            <Link href="/consent" prefetch={false}>
+              согласие на обработку персональных данных
+            </Link>
+          </span>
           <span className={styles.copy}>© 2026 White Inks</span>
         </p>
       </div>
-      {/* Петля — на экране (fixed), на линии пути, размером и высотой как круг Hero следующего
-          круга: пунктир пути, линия и точка. Координаты — в Footer.tsx (layout, update). */}
-      <svg ref={loopRef} className={styles.loop} aria-hidden="true">
-        <circle className={styles.ghost} />
-        <path className={styles.trace} pathLength={1} />
-        <circle className={styles.pen} r={6} />
-      </svg>
-      {/* Чернила вокруг петли и сам круг — масштаб, круг потом съезжает к кругу Hero. */}
+      {/* Доигрывание: чёрное на весь экран и круг Hero следующего круга (fixed, Footer.tsx). Между
+          воздухом и чёрным: первый блок футера читает Сцена 6, последний — карта пути. */}
       <span ref={floodRef} className={styles.flood} aria-hidden="true" />
       <span ref={diskRef} className={styles.disk} aria-hidden="true" />
+      {/* Чёрный подвал на полэкрана — начало нового круга: линия, петля, точка. */}
+      <div ref={nextRef} className={styles.next}>
+        <span className={styles.line} aria-hidden="true">
+          <span />
+        </span>
+        <svg className={styles.loop} aria-hidden="true">
+          <circle className={styles.ghost} />
+          <path className={styles.trace} pathLength={1} />
+        </svg>
+        <span className={styles.dot} aria-hidden="true" />
+        <button type="button" className={styles.again} onClick={again}>
+          ↺ замкнуть круг
+        </button>
+      </div>
     </section>
   );
 }

@@ -7,7 +7,7 @@ import styles from "./Case.module.css";
 
 // Разметка страницы кейса (вариант D2 «Рассказ», docs/12-case-page.md): ось у левого края, первый
 // экран (слева от линии номер и название, справа обложка с главной цифрой, под ней фраза) и главы
-// «о проекте → что сделали → результат → отзыв», в конце — форма заявки и «ещё проект →». Засечки глав и пунктов, номер
+// «о проекте → что сделали → результат (цифры и отзыв)», в конце — форма заявки и «ещё проект →». Засечки глав и пунктов, номер
 // главы и закреплённая подпись слева — в CSS. Ход по прокрутке (чернила, всплытие [data-rise]) и
 // вход (карточка туннеля встаёт в рамку обложки [data-cover], строки [data-hi] всплывают) —
 // CaseLayer.tsx.
@@ -237,8 +237,9 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
             </div>
           </Chapter>
 
-          {/* Обложка — на первом экране; здесь только цифры, над каждой линия. */}
-          <Chapter n={n++} word="результат" sub={c.resultsSource}>
+          {/* Обложка — на первом экране; здесь цифры 2×2 размером цифры туннеля, над каждой линия,
+              под ними источник и отзыв (своей главы у отзыва нет). */}
+          <Chapter n={n++} word="результат">
             <div className={styles.figs} data-rise>
               {c.results.map((r) => (
                 <div key={r.note}>
@@ -247,18 +248,16 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
                 </div>
               ))}
             </div>
+            <p className={styles.src} data-rise>
+              {c.resultsSource}
+            </p>
+            {c.quote && (
+              <figure className={styles.q} data-rise>
+                <p className={styles.quote}>{c.quote.text}</p>
+                <p className={styles.who}>{c.quote.who}</p>
+              </figure>
+            )}
           </Chapter>
-
-          {c.quote && (
-            <Chapter n={n++} word="отзыв">
-              <p className={styles.quote} data-rise>
-                {c.quote.text}
-              </p>
-              <p className={styles.who} data-rise>
-                {c.quote.who}
-              </p>
-            </Chapter>
-          )}
 
           <End c={c} act={act} />
         </>

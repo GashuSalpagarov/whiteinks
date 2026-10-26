@@ -14,10 +14,7 @@ export function StageList({ ref }: { ref: Ref<HTMLOListElement> }) {
     <ol ref={ref} className={styles.list}>
       {STEPS.map((step, i) => (
         <li key={step.word} className={styles.row} data-state="off">
-          <span className={styles.n}>
-            {num(i)}
-            <i className={`${styles.strike} ${styles.strikeN}`} />
-          </span>
+          <span className={styles.n}>{num(i)}</span>
           <span className={styles.w}>
             {step.word}
             <i className={styles.strike} />

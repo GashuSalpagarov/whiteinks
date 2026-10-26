@@ -1,240 +1,99 @@
-/* Футер — белый, как сцены до него, и не на весь экран, а на его нижнюю часть (--fh): линия
-   пути спускается по центру и кончается точкой, рядом — Telegram и почта, внизу мелкая
-   строка. Под футером зона --zone: футер стоит внизу экрана, а на линии пути рисуется петля
-   размером и высотой как круг Hero следующего круга (Footer.tsx).
-   z-index выше всех сцен и Hero: к прыжку экран — только фон футера и круг, без логотипа,
-   телефона и точки Hero, как кадр интро в момент «вдоха» круга. */
+/* Конец пути (Footer.tsx). Под заявкой — белый воздух и строка: политика и согласие слева, ©
+   справа, ось пути между ними свободна (.end). Ниже — чёрный подвал на полэкрана (.next): начало
+   нового круга, в нём петля размером с круг интро Hero. На доигрывании чёрное поднимается на весь
+   экран, круг — на место круга Hero: это первый кадр следующего круга — прыжок.
+   z-index выше всех сцен и Hero: к прыжку экран — только фон и круг, без логотипа, телефона и
+   точки Hero, как кадр интро в момент «вдоха» круга. */
 .footer {
-  /* Высота — от высоты экрана сцен (--ih, lib/scroll/onScroll), как у всех сцен: панели
-     браузера на телефоне футер и петлю не сдвигают. */
-  --fh: calc(var(--ih, 100dvh) * 0.6);
-  --zone: 100vh;
+  /* Воздух над строкой — доля экрана (--ih, lib/scroll/onScroll, как у сцен), не от высоты
+     Сцены 6: вместе с её нижним отступом от письма до строки около четверти экрана. */
+  --air: calc(var(--ih, 100svh) * 0.12);
+  /* Высота точки на экране, «когда футер пришёл» (футер у низа экрана), — прежняя: 0,65 экрана,
+     в телефонной раскладке 0,6. По ней Сцена 6 держит точку после конверта и считает стык со
+     Сценой 5 (footerHome в Scene6.tsx, phoneHold): высота точки в середине страницы от подвала не
+     зависит. Дальше по футеру точка идёт по-своему (Footer.tsx). */
+  --hand: 0.652;
   /* Пунктир пути «впереди» — как линия Сцены 6: точки 2px через 8px. */
   --ghost: radial-gradient(circle at 50% 1px, rgba(10, 10, 10, 0.32) 1px, transparent 1.5px) 0
     0 / 2px 8px repeat-y;
   position: relative;
   z-index: 5;
-  height: calc(var(--fh) + var(--zone));
   background: var(--color-bg);
   color: var(--color-fg);
 }
 
-/* Линия продолжает путь Сцены 6 — он кончается по центру её нижнего края — и кончается
-   точкой 12px. Точка пути приходит из Сцены 6 по прокрутке (Footer.tsx, lib/scroll/handoff.ts) и
-   идёт по этой линии к своему месту: позади неё — чернила 4px (--ink на .line), впереди — пунктир.
-   Без JS и без анимаций — линия в чернилах, точка на месте. */
-.line,
-.footer::before {
+/* Доигрывание: секция выше меню шапки (z-index 6) — бургер не проступает над чёрным, как и в
+   Hero на «вдохе». */
+.closing {
+  z-index: 7;
+}
+
+.end {
+  position: relative;
+  padding-top: var(--air);
+}
+
+/* Линия пути: пунктир, поверх — чернила 4px до точки (scaleY от верха из Footer.tsx). В воздухе
+   она на 2px заходит в Сцену 6 — стык без волосяного просвета. */
+.line {
   position: absolute;
   top: 0;
   left: calc(50% - 1px);
   width: 2px;
   background: var(--ghost);
+  pointer-events: none;
 }
 
-/* Пока футер стоит внизу, над ним открывается верх секции — линия идёт и там, без разрыва.
-   В зоне точка отступает по линии к петле — линия втягивается за ней: снизу её режет --clip
-   (над футером) и --cut (в футере). */
-.footer::before {
-  content: '';
-  bottom: 0;
-  clip-path: inset(0 0 var(--clip, 0px) 0);
-}
-
-/* Над вставшим футером точка уже прошла — там чернила. Точка вошла в футер (data-in) — сверху
-   на 2px в Сцену 6: стык двух отрезков линии не оставляет волосяного просвета. */
-.footer::before {
-  left: calc(50% - 2px);
-  width: 4px;
-  background: var(--color-fg);
-}
-
-.footer[data-in]::before {
-  top: -2px;
-}
-
-.stage {
-  --dot-y: 42%;
-  position: sticky;
-  top: calc(var(--ih, 100dvh) - var(--fh));
-  height: var(--fh);
-  overflow: hidden;
-  background: var(--color-bg);
-}
-
-.line {
-  height: max(0px, calc(var(--dot-y) - var(--cut, 0px)));
-}
-
-.line::after {
-  content: '';
+.line > span {
   position: absolute;
   inset: 0 -1px;
   background: var(--color-fg);
-  clip-path: inset(0 0 calc(100% - var(--ink, 100%)) 0);
+  transform: scaleY(0);
+  transform-origin: top;
 }
 
-/* Точка. В зоне (data-loop) её ведёт слой петли (.pen) — она уходит из футера. */
+.end .line {
+  top: -2px;
+  bottom: 0;
+}
+
+/* Точка пути (место — transform из Footer.tsx). В воздухе она первая 12px: по ней Сцена 6
+   находит стык — её место без transform отсчитано от низа воздуха со строкой: когда футер у низа
+   экрана, она на высоте --hand, какой бы высоты ни был белый блок. */
 .dot {
   position: absolute;
-  top: calc(var(--dot-y) - 6px);
   left: calc(50% - 6px);
   width: 12px;
   height: 12px;
   border-radius: 50%;
   background: var(--color-fg);
-}
-
-.footer[data-loop] .dot {
-  visibility: hidden;
-}
-
-/* Петля — на экране (fixed), на линии пути, размером и высотой как круг интро Hero следующего
-   круга: точка (.pen) отступает по линии к её верху и обводит её. Пунктир — путь «впереди»,
-   как .line и путь Сцены 6 (точки 2px через 8px), проявляется, когда точка вошла на окружность;
-   линия 4px рисуется по прогрессу зоны (--turn). Видна только в зоне (data-loop) и на
-   доигрывании. */
-.loop {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  visibility: hidden;
-}
-
-.footer[data-loop] .loop {
-  visibility: visible;
-}
-
-.ghost,
-.trace {
-  fill: none;
-  stroke-linecap: round;
-}
-
-.ghost {
-  stroke: rgba(10, 10, 10, 0.32);
-  stroke-width: 2;
-  stroke-dasharray: 0 8;
-  opacity: var(--ghost-o, 0);
-}
-
-.trace {
-  stroke: var(--color-fg);
-  stroke-width: 4;
-  stroke-dasharray: 1 2;
-  stroke-dashoffset: calc(1 - var(--turn, 0));
-}
-
-.pen {
-  fill: var(--color-fg);
-}
-
-/* Доигрывание (fixed, на экране, в центре петли; масштаб и сдвиг — WAAPI в Footer.tsx).
-   Чернила (.flood) растут от наружного края петли до углов экрана; круг Hero сбоку (телефон) —
-   залитый круг потом съезжает к нему. Цвет — обратный фону:
-   --color-bg через invert(1) — ровно фон Hero следующего круга в перевёрнутой палитре (и во
-   втором круге — двойная инверсия). Круг (.disk) над ними остаётся светлым: из цвета бумаги он
-   становится обратным цветом линии — цветом круга Hero следующего круга. Кадр до прыжка равен
-   кадру после — переворот палитры на экране ничего не меняет. */
-.flood,
-.disk {
-  position: fixed;
-  top: 0;
-  left: 0;
-  border-radius: 50%;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.flood {
-  background: var(--color-bg);
-  filter: invert(1);
-}
-
-.disk {
-  background: var(--color-bg);
-}
-
-/* Доигрывание: линия, подпись и мелкая строка уходят, на экране остаются только круг и чернила.
-   Секция — выше меню шапки (z-index 6): бургер не проступает над чернилами, как и в Hero на «вдохе». */
-.closing {
-  z-index: 7;
-}
-
-.closing .flood,
-.closing .disk {
-  visibility: visible;
-}
-
-.closing::before,
-.closing .line,
-.closing .contacts,
-.closing .fine {
   opacity: 0;
-  transition: opacity 0.3s ease-out 0.12s;
+  pointer-events: none;
 }
 
-/* Только без анимаций: сразу в начало. */
-.again {
-  display: none;
-  margin-top: 6px;
-  padding: 3px 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 0.8125rem;
-  color: rgba(10, 10, 10, 0.62);
-  cursor: pointer;
+.end .dot {
+  bottom: calc((1 - var(--hand)) * var(--ih, 100svh) - 6px);
 }
 
-/* Подпись справа от точки: первая строка — на её высоте. Если петля ляжет на неё (телефон
-   боком), подпись гаснет в начале зоны (--cap) и возвращается при прокрутке назад. */
-.contacts {
-  position: absolute;
-  opacity: var(--cap, 1);
-  top: calc(var(--dot-y) - 14px);
-  left: calc(50% + 30px);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  font-size: 1.0625rem;
-  line-height: 1.25;
-  white-space: nowrap;
-}
-
-.contacts a,
-.mail {
-  padding-block: 3px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.mail {
-  padding-inline: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 0.9375rem;
-  color: rgba(10, 10, 10, 0.62);
-  text-align: left;
-  cursor: pointer;
-}
-
+/* Строка — мелким, как остальной мелкий текст сайта: ссылки на документы строчными слева, ©
+   справа. Каждая половина не доходит до оси на 16px — там идут линия и точка. */
 .fine {
-  position: absolute;
-  right: 32px;
-  bottom: 24px;
-  left: 32px;
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 20px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0 32px 28px;
   font-size: 0.8125rem;
   line-height: 1.4;
   color: rgba(10, 10, 10, 0.62);
+}
+
+.docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  max-width: calc(50% - 16px);
 }
 
 .fine a {
@@ -243,17 +102,10 @@
 }
 
 .copy {
-  margin-left: auto;
+  max-width: calc(50% - 16px);
+  text-align: right;
 }
 
-.short {
-  display: none;
-}
-
-.contacts a:hover,
-.contacts a:focus-visible,
-.mail:hover,
-.mail:focus-visible,
 .again:hover,
 .again:focus-visible,
 .fine a:hover,
@@ -262,101 +114,169 @@
   text-underline-offset: 0.2em;
 }
 
+/* Чёрный подвал — полэкрана, в перевёрнутой палитре через invert(1): ровно фон и рисунок нового
+   круга (во втором круге — двойная инверсия, подвал белый). */
+.next {
+  position: relative;
+  height: calc(var(--ih, 100svh) * 0.5);
+  overflow: clip;
+  background: var(--color-bg);
+  filter: invert(1);
+}
+
+.next .line {
+  height: var(--lt, 0px);
+}
+
+.next .dot {
+  top: -6px;
+}
+
+.loop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.ghost,
+.trace {
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* Петля впереди точки — пунктиром, как путь; обведённое — чернилами 4px (stroke-dashoffset из
+   Footer.tsx). */
+.ghost {
+  stroke: rgba(10, 10, 10, 0.32);
+  stroke-width: 2;
+  stroke-dasharray: 0 8;
+}
+
+.trace {
+  stroke: var(--color-fg);
+  stroke-width: 4;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1;
+}
+
+/* Только без анимаций: в чёрном подвале — сразу в начало. */
+.again {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: none;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: rgba(10, 10, 10, 0.62);
+  white-space: nowrap;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+/* Доигрывание (fixed, на экране; сдвиг и масштаб — WAAPI в Footer.tsx). Чёрное (.flood) —
+   --color-bg через invert(1), как подвал, — поднимается с его верха на весь экран; круг (.disk) —
+   обратного линии цвета (Footer.tsx), как круг Hero следующего круга. */
+.flood,
+.disk {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.flood {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg);
+  filter: invert(1);
+}
+
+.disk {
+  border-radius: 50%;
+}
+
+.closing .flood,
+.closing .disk {
+  visibility: visible;
+}
+
+/* Петля заливается: линия, петля и точка гаснут — остаётся круг. */
+.closing .next .line,
+.closing .loop,
+.closing .next .dot {
+  opacity: 0 !important;
+  transition: opacity 0.3s ease-out;
+}
+
 /* Сенсорные экраны (телефон, планшет в портрете и телефон боком): у ссылок зона нажатия 44px —
    отступами. */
 @media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 560px) {
-  .contacts {
-    top: calc(var(--dot-y) - 22px);
-    gap: 0;
-  }
-
-  .contacts a,
-  .mail,
-  .again {
-    padding-block: 12px;
-  }
-
   .fine {
-    bottom: 12px;
+    padding-bottom: 15px;
+  }
+
+  .docs {
     gap: 0 20px;
   }
 
-  .fine a {
+  .fine a,
+  .copy,
+  .again {
     padding-block: 13px;
   }
-
-  .copy {
-    align-self: center;
-  }
 }
 
-/* Палец и инерция уносят дальше колеса: зона длиннее, чтобы быстрый свайп у футера не
-   долетал до перехода (он и так начинается, только когда прокрутка стихла). */
-@media (pointer: coarse) {
-  .footer {
-    --zone: 150vh;
-  }
-}
-
-/* Телефон боком: петля — во весь круг Hero (r 90px) на линии; подпись — справа от неё, иначе
-   петля легла бы на подпись и та гасла бы (Footer.tsx). */
-@media (min-width: 768px) and (max-height: 560px) {
-  .contacts {
-    left: calc(50% + 114px);
-  }
-}
-
-/* Телефон и планшет в портрете (lib/phoneLayout.ts): подпись — под точкой, по центру. */
+/* Телефон и планшет в портрете (lib/phoneLayout.ts): ссылки и © — столбиком, каждая ссылка в одну
+   строку на всю ширину. Ось пути проходит через слова: у ссылок подложка цвета фона на высоту
+   строки (background-clip: content-box), линия и точка уходят под неё и выходят в просветах между
+   строками — буквы не перечёркнуты. */
 @media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
   .footer {
-    --fh: calc(var(--ih, 100dvh) * 0.62);
-  }
-
-  .stage {
-    --dot-y: 36%;
-  }
-
-  .contacts {
-    top: calc(var(--dot-y) + 14px);
-    left: 50%;
-    align-items: center;
-    transform: translateX(-50%);
-  }
-
-  .mail {
-    text-align: center;
+    --hand: 0.6032;
   }
 
   .fine {
-    right: 20px;
-    left: 20px;
-    gap: 0 14px;
+    flex-direction: column;
+    padding-inline: 20px;
+  }
+
+  .docs {
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: none;
+  }
+
+  .fine a {
+    background: var(--color-bg);
+    background-clip: content-box;
   }
 
   .copy {
-    margin-left: 0;
+    max-width: none;
+    text-align: left;
   }
 }
 
-/* Телефон: название согласия — «ПД», иначе подвал в три строки; на планшете оно целиком. */
-@media (max-width: 767px) {
-  .long {
-    display: none;
-  }
-
-  .short {
-    display: inline;
-  }
-}
-
-/* Без анимаций: футер — конец страницы, без зоны и петли; в начало — строкой «↺ замкнуть круг». */
+/* Без анимаций: перехода нет — линия кончается точкой в воздухе, в чёрном подвале «↺ замкнуть
+   круг». */
 @media (prefers-reduced-motion: reduce) {
-  .footer {
-    height: var(--fh);
+  .next .line,
+  .next .dot,
+  .loop {
+    display: none;
   }
 
-  .footer::before {
-    display: none;
+  .end .line {
+    bottom: auto;
+    height: calc(var(--air) * 0.6 + 2px);
   }
 
   .again {

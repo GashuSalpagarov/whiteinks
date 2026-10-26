@@ -778,8 +778,8 @@
 /* ---------- Телефон ---------- */
 
 /* Телефон, планшет в портрете (lib/phoneLayout.ts) и телефон боком: поля 20px, конверт на всю
-   ширину, поля письма — столбиком. Подводка — поверх линии на белом: она уходит под неё и выходит
-   у конверта. */
+   ширину, поля письма — столбиком. Подводка — поверх линии: линия уходит под строки и выходит между
+   ними и у конверта. */
 @media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
   .scene6 {
     padding: 0 20px;
@@ -802,10 +802,9 @@
     font-size: 1rem;
   }
 
-  /* Снизу — больше экрана над вставшим футером: в кадре «Контакты» над ним только линия, без
-     обрезка конверта под шапкой. */
+  /* Снизу — как сверху: воздух до строки подвала даёт сам футер (Footer.module.css, --air). */
   .stage {
-    padding-block: 96px max(96px, calc(var(--ih, 100svh) * 0.42));
+    padding-block: 96px;
   }
 
   .head {
@@ -813,7 +812,18 @@
     padding-bottom: 20px;
   }
 
-  .head > * {
+  /* Подводка — над линией: у каждой строки узкая подложка цвета фона, линия уходит под текст и
+     выходит между строками (как у ссылок футера). */
+  .lead p {
+    display: inline;
+    background: var(--color-bg);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .lead .link {
+    display: block;
+    width: fit-content;
     background: var(--color-bg);
   }
 
@@ -852,7 +862,7 @@
     font-size: 1.1875rem;
   }
 
-  /* Пять пилюль — в два ряда и на 390: тогда сцена влезает в экран и стоит. */
+  /* Пять пилюль — в два ряда и на 390: тогда конверт влезает в экран. */
   .pill span {
     height: 44px;
     padding: 0 14px;
@@ -895,6 +905,102 @@
     bottom: 16px;
     left: 16px;
     font-size: 0.875rem;
+  }
+}
+
+/* Телефонная раскладка (lib/phoneLayout.ts): сборка конверта. До сигнала Scene6.tsx пишет на
+   элементы лежачий конверт: форма поднята на «карман», всё в ней, кроме кармана, — опущено обратно
+   (обрезка формы идёт по низу кармана), подложка — доля высоты от верха. С data-play конверт
+   доигрывает сам: стили сборки сняты, к покою ведут переходы — клапан пологим ложится и
+   переворачивается (--lid — его глубина из Scene6.tsx), открывается, письмо проступает, карман
+   опускается на место (--move — один такт для формы и всего, что сдвинуто обратно), поля — по
+   одному, кнопка. Нажатия письмо и кнопка ловят, когда доиграло (wait). */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
+  .tint {
+    transform-origin: 50% 0;
+  }
+
+  .scene6[data-play] {
+    --move: 0.9s var(--ease) 0.62s;
+  }
+
+  .scene6[data-play] .env,
+  .scene6[data-play] .tint {
+    transition: transform var(--move);
+  }
+
+  .scene6[data-play] .back,
+  .scene6[data-play] .outline {
+    transition:
+      transform var(--move),
+      opacity 0.3s ease;
+  }
+
+  .scene6[data-play] .flapClosed {
+    transition: translate var(--move);
+    animation: lid 0.62s var(--ease);
+  }
+
+  .scene6[data-play] .flapOpen {
+    transition:
+      translate var(--move),
+      scale 0.32s var(--ease-out) 0.5s;
+  }
+
+  .scene6[data-play] .cut {
+    transition: opacity 0.3s ease 0.55s;
+  }
+
+  .scene6[data-play] .sheet {
+    transition:
+      transform var(--move),
+      opacity 0.25s ease 0.45s,
+      translate 0.4s var(--ease);
+    animation: wait 1.8s;
+  }
+
+  .scene6[data-play] .field,
+  .scene6[data-play] [role="radiogroup"] {
+    transition:
+      opacity 0.4s ease 0.55s,
+      transform 0.5s var(--ease-out) 0.55s;
+  }
+
+  .scene6[data-play] .field + .field {
+    transition-delay: 0.8s;
+  }
+
+  .scene6[data-play] [role="radiogroup"] {
+    transition-delay: 1.05s;
+  }
+
+  .scene6[data-play] .act {
+    transition:
+      opacity 0.3s ease 1.35s,
+      transform 0.4s var(--ease-out) 1.35s;
+    animation: wait 1.8s;
+  }
+}
+
+@keyframes lid {
+  0% {
+    scale: 1 0;
+  }
+
+  40%,
+  62% {
+    scale: 1 var(--lid, 0.35);
+  }
+
+  100% {
+    scale: 1 0;
+  }
+}
+
+@keyframes wait {
+  from,
+  to {
+    pointer-events: none;
   }
 }
 

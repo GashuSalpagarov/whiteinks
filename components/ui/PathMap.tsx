@@ -20,21 +20,22 @@ const PATH =
 const MARKS = [16, 82, 154, 226, 297, 368, 440];
 // Подписи — на метках, «Начало» — у центра круга Hero. Зона нажатия — от середины до середины
 // между соседними подписями, без дыр и наложений: [от, до, подпись].
-const AT = [10, ...MARKS.slice(1)];
+// Подвала (последней станции, петли) в списке нет: контактов в нём нет — петля только конец пути.
+const NAMES = ["Начало", ...STATIONS.filter((s) => s.scene !== "footer").map((s) => s.word)];
+const AT = [10, ...MARKS.slice(1, NAMES.length)];
 const ZONES = AT.map((c, n) => [
   n ? (AT[n - 1] + c) / 2 : 0,
   n < AT.length - 1 ? (c + AT[n + 1]) / 2 : H,
   c,
 ]);
-const NAMES = ["Начало", ...STATIONS.map((s) => s.word)];
 // Значок станции i — на её метке: рисуется вокруг y = 0 и сдвигается на место.
 const mark = (i: number) => `translate(0 ${MARKS[i + 1]})`;
 
 // Карта пути слева: та же линия, что идёт по сайту, в миниатюре. Позади точки — чернила, впереди —
 // пунктир; значки сцен, до которых дошли, — чернилами. Наведение или Tab открывает лист с
-// названиями; клик — пролёт Lenis к станции (lib/stations.ts). Нет на Hero (там пункты шапки) и в
-// зоне петли футера; уже 1024px, ниже 600px по высоте и в телефонной раскладке (планшет в портрете)
-// — нет совсем (там меню в бургере).
+// названиями; клик — пролёт Lenis к станции (lib/stations.ts). Нет на Hero (там пункты шапки) и
+// над чёрным подвалом — началом нового круга (Footer.tsx); уже 1024px, ниже 600px по высоте и в
+// телефонной раскладке (планшет в портрете) — нет совсем (там меню в бургере).
 export function PathMap() {
   const rootRef = useRef<HTMLElement>(null);
   const inkRef = useRef<SVGPathElement>(null);
@@ -50,6 +51,8 @@ export function PathMap() {
     const glyphs = [...root.querySelectorAll<SVGElement>("[data-i]")];
     const buttons = [...root.querySelectorAll<HTMLButtonElement>("button")];
     let footer: Element | null = null;
+    let mapH = 0;
+    let mapKey = "";
     let lengths: number[] = [];
     let on = false;
     let k = Number.NaN;
@@ -77,12 +80,19 @@ export function PathMap() {
       const h = viewportH();
       if (!h) return;
       if (!footer?.isConnected) footer = document.querySelector('[data-scene="footer"]');
-      // Видна, когда ушли пункты шапки (как в HeaderMenu — 10% экрана), и до зоны петли футера.
+      const key = `${window.innerWidth}x${h}`;
+      if (key !== mapKey) {
+        mapKey = key;
+        mapH = root.offsetHeight;
+      }
+      // Видна, когда ушли пункты шапки (как в HeaderMenu — 10% экрана), и пока чёрный подвал
+      // (последний блок футера) ниже карты: на чёрном её не видно.
+      const black = footer?.lastElementChild ?? footer;
       const show =
         wide.matches &&
         !phoneLayout() &&
         window.scrollY > 0.1 * h &&
-        (footer?.getBoundingClientRect().top ?? h) > 0.35 * h;
+        (black?.getBoundingClientRect().top ?? h) > 0.5 * h + mapH / 2;
       if (show !== on) {
         on = show;
         root.classList.toggle(styles.on, on);
@@ -147,7 +157,7 @@ export function PathMap() {
           <rect x={4} y={-6} width={16} height={12} rx={1.5} />
           <path d="M4.5 -5L12 1L19.5 -5" />
         </g>
-        {/* Контакты — петля в конце пути (круг Hero следующего круга). */}
+        {/* Петля в конце пути (круг Hero следующего круга) — без подписи. */}
         <circle className={styles.glyph} data-i={5} transform={mark(5)} cx={12} r={7} />
         <circle ref={dotRef} className={styles.dot} r={5.5} transform="translate(12 16)" />
       </svg>

@@ -29,38 +29,34 @@ export function Providers({ children }: { children: ReactNode }) {
       return;
     }
 
-    // ПРОТОТИП ?scroll=slow: касания ведёт Lenis, свайп уводит в 1,5 раза меньше. Без параметра —
-    // как было. Убрать: блок от q до trail и ...(slow) ниже. &m=0.75 в адресе — подбор на телефоне.
-    // Скорость для инерции — по пальцу за последние 100 мс: своя у Lenis берётся из последнего
-    // кадра и под нагрузкой скачет в разы. Инерция — (скорость·50·m)^1,5 px: на замере ближе всего
-    // к родной, умноженной на m.
-    const q = new URLSearchParams(location.search);
-    const slow = q.get("scroll") === "slow";
-    const m = Number(q.get("m") ?? 0.67);
+    // Касания тоже ведёт Lenis (syncTouch): страница, точка и линии сдвигаются в одном кадре, как на
+    // колесе, — при родной прокрутке пальцем слои, которые двигает JS, отставали на кадр. Свайп
+    // уводит в 1,5 раза меньше родного (TOUCH). Скорость для инерции — по пальцу за последние 100 мс:
+    // своя у Lenis берётся из последнего кадра и под нагрузкой скачет в разы. Инерция —
+    // (скорость·50·TOUCH)^1,5 px: на замере ближе всего к родной, умноженной на TOUCH.
+    const TOUCH = 0.67;
     const trail: [number, number][] = [];
     const instance = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - 2 ** (-10 * t)),
       smoothWheel: true,
-      touchMultiplier: 1.4,
-      ...(slow && {
-        syncTouch: true,
-        touchMultiplier: m,
-        touchInertiaExponent: 1.5,
-        prevent: (node: HTMLElement) => node instanceof HTMLTextAreaElement,
-        virtualScroll: ({ event: e }) => {
-          if (!("touches" in e)) return true;
-          if (e.type === "touchstart") trail.length = 0;
-          if (e.type !== "touchend") trail.push([e.timeStamp, e.touches[0]?.clientY ?? 0]);
-          else {
-            const [t1, y1] = trail[trail.length - 1] ?? [0, 0];
-            const [t0, y0] = trail.find(([t]) => t1 - t < 100) ?? [0, 0];
-            const v = t1 > t0 && e.timeStamp - t1 < 100 ? (y0 - y1) / (t1 - t0) : 0;
-            instance.velocity = v * 50 * m;
-          }
-          return true;
-        },
-      }),
+      syncTouch: true,
+      touchMultiplier: TOUCH,
+      touchInertiaExponent: 1.5,
+      // Поле «Другое» (textarea) крутится само, страница при этом стоит.
+      prevent: (node: HTMLElement) => node instanceof HTMLTextAreaElement,
+      virtualScroll: ({ event: e }) => {
+        if (!("touches" in e)) return true;
+        if (e.type === "touchstart") trail.length = 0;
+        if (e.type !== "touchend") trail.push([e.timeStamp, e.touches[0]?.clientY ?? 0]);
+        else {
+          const [t1, y1] = trail[trail.length - 1] ?? [0, 0];
+          const [t0, y0] = trail.find(([t]) => t1 - t < 100) ?? [0, 0];
+          const v = t1 > t0 && e.timeStamp - t1 < 100 ? (y0 - y1) / (t1 - t0) : 0;
+          instance.velocity = v * 50 * TOUCH;
+        }
+        return true;
+      },
     });
 
     setLenis(instance);
@@ -74,8 +70,8 @@ export function Providers({ children }: { children: ReactNode }) {
     });
 
     // В raf Lenis только ведёт плавную прокрутку, а запускает её всегда scrollTo — и колёсико,
-    // и кнопки. Поэтому кадры просим, пока она идёт, а в покое цикл спит (на телефоне он иначе
-    // жёг бы батарею впустую). Будит его scrollTo. Касания и клавиши — нативная прокрутка.
+    // и касания, и кнопки. Поэтому кадры просим, пока она идёт, а в покое цикл спит (на телефоне
+    // он иначе жёг бы батарею впустую). Будит его scrollTo. Клавиши — нативная прокрутка.
     let rafId = 0;
     const raf = (time: number) => {
       instance.raf(time);

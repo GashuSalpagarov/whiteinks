@@ -367,7 +367,7 @@ export default function PrivacyPage() {
   return (
     <main className={styles.page}>
       <Link href="/" className={styles.back}>
-        ← white inks.
+        ← White Inks.
       </Link>
       <h1 className={styles.title}>Политика обработки персональных данных</h1>
       <p className={styles.meta}>

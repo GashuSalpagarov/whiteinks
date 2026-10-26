@@ -9,54 +9,50 @@
   z-index: 3;
 }
 
-/* Трасса: путь целиком (Scene2.tsx, buildTrail) уезжает вверх вместе со страницей — transform
- * у svg, своим слоем, без перерисовки. Видна только выше точки: слой обрезан по её центру
- * (центр экрана + 20px, --drop-offset; на входе из Hero точка ниже — слой сдвинут за ней
- * transform-ом), обрез прячется под точкой. */
+/* Трасса — трафарет в потоке страницы: маска с путём целиком и прямой от его конца вниз
+ * (Scene2.tsx, buildTrail) едет вместе с текстом — её двигает сама прокрутка. Видна трасса там,
+ * где под трафаретом чернила (.ink). */
 .trail {
-  position: fixed;
-  top: 0;
+  position: absolute;
   left: 0;
   z-index: 3;
   width: 100%;
-  height: calc(var(--ih, 100vh) / 2 + 20px);
-  overflow: hidden;
   color: var(--color-fg);
   pointer-events: none;
   visibility: hidden;
+  mask-repeat: no-repeat;
+}
+
+/* Без ScrollTimeline трафарет — на экране, вверх его сдвигает проход (Scene2.tsx). */
+.onScreen {
+  position: fixed;
+  top: 0;
   will-change: transform;
 }
 
-.trail svg {
+/* Чернила — на экране, от верха до центра точки (центр экрана + 20px): трасса видна только выше
+ * точки, обрез прячется под ней. На входе из Hero точка ниже — чернила сдвинуты за ней. */
+.ink {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  max-width: none;
-  overflow: visible;
+  height: calc(var(--ih, 100vh) / 2 + 20px);
+  overflow: hidden;
   will-change: transform;
 }
 
-/* Растворение линии над точкой в конце сцены (Scene2.tsx): у верха слоя маска — мягкий край
- * в четверть экрана (EDGE), выше — пусто. Слой едет вниз (transform), трасса и нить в нём —
- * на столько же вверх: маска не перерисовывается. Высота — до точки, когда край над экраном. */
+/* Растворение линии над точкой в конце сцены (Scene2.tsx): у верха заливки маска — мягкий край
+ * в четверть экрана (EDGE), выше — пусто. Заливка едет вниз (transform), маска не
+ * перерисовывается. Высота — до точки, когда край над экраном. */
 .fade {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: calc(var(--ih, 100vh) * 0.75 + 20px);
-  mask-image: linear-gradient(transparent, #000 calc(var(--ih, 100vh) * 0.25));
-  will-change: transform;
-}
-
-/* Нить от конца трассы до точки (Scene2.tsx): 4px, как трасса; низ обрезан слоем по центру точки. */
-.thread {
-  position: absolute;
-  top: 0;
-  left: calc(50% - 2px);
-  width: 4px;
-  height: 100%;
-  border-radius: 2px;
   background: currentColor;
-  transform: translateY(100%);
+  mask-image: linear-gradient(transparent, #000 calc(var(--ih, 100vh) * 0.25));
   will-change: transform;
 }
 
@@ -73,7 +69,9 @@
   overflow: visible;
 }
 
-/* Место (top), прозрачность и подъём при появлении — из Scene2.tsx, прямо на блоке. */
+/* Место (top) — из Scene2.tsx, прямо на блоке; прозрачность и подъём при появлении — ход по
+ * прокрутке там же. До первого прохода блок прозрачный: без места он стоит у верха секции,
+ * и элементы над ним попали бы на первый экран — под заставку. */
 .block {
   position: absolute;
   width: 28vw;
@@ -160,7 +158,8 @@
 
 /* Места: у верхнего блока пары — сверху снаружи, снаружи и сбоку у трассы; у нижнего —
  * снаружи, снизу и сбоку у трассы. «Снаружи» — к краю экрана, от трассы. В просвете пары
- * ничего нет: он узкий. Скорость у каждого места своя (ART_DEPTH в Scene2.tsx). */
+ * ничего нет: он узкий (на телефоне там значки .gap). Скорость у каждого места своя
+ * (ART_DEPTH в Scene2.tsx). */
 .topOut {
   right: 0;
   bottom: calc(100% + max(2.6em, 24px));
@@ -174,6 +173,12 @@
 .bottom {
   top: calc(100% + 3.4em);
   left: 42%;
+}
+
+/* Значки в промежутках между услугами — только на телефоне (ниже, max-width: 767px); место,
+ * наклон и фаза — у элемента (GAP в Scene2Art.tsx). */
+.gap {
+  display: none;
 }
 
 .in {
@@ -287,6 +292,14 @@
   .block4,
   .block8 {
     left: 20px;
+  }
+}
+
+/* Значки в промежутках — только на телефоне: на планшете в портрете колонка шире, теги
+ * в одну строку доходят до значков, а сами значки там мелкие — как раньше, без них. */
+@media (max-width: 767px) {
+  .gap {
+    display: block;
   }
 }
 

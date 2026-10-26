@@ -61,9 +61,15 @@ export const TOTAL_TERM = corp.weeks ? formatWeeks(...corp.weeks) : "";
 // пусто. Встала — из точки сразу растёт первая карточка, а подводка и строки чек-листа всплывают;
 // дальше точка идёт по стопке вниз, под карточками.
 const ENTRY = 1;
-const STAGE = 0.4; // этап: карточка встаёт (первая — растёт из точки), веер раскрывается
-const OUTRO = 0.4; // веер раскрыт; точка доходит по стопке до стыка со Сценой 5
-export const TOTAL_SCREENS = ENTRY + N * STAGE + OUTRO;
+// Темп: stage — этап (карточка встаёт, первая — растёт из точки, веер раскрывается), outro —
+// веер раскрыт, «Запуск» зачёркивается, точка доходит до стыка со Сценой 5. Телефон и
+// вертикальный планшет — быстрее: кадр стоит 1,6 экрана, а не 2,4; этап там — строка чек-листа,
+// точка проходит её за stage экрана, и этап ведёт она (Scene4.tsx).
+export type Pace = { stage: number; outro: number };
+export const PACE: Pace = { stage: 0.4, outro: 0.4 };
+export const PACE_TALL: Pace = { stage: 0.28, outro: 0.2 };
+export const screensOf = (p: Pace) => ENTRY + N * p.stage + p.outro;
+export const TOTAL_SCREENS = screensOf(PACE);
 
 // Доли этапа. Первая половина — движение: карточка встаёт (первая растёт из точки за GROW_FIRST —
 // 0,2 экрана, как вылет карточки туннеля Сцены 3). Дальше — пауза. Подпись этапа сменяется с его
@@ -81,12 +87,12 @@ const smooth = (t: number) => t * t * (3 - 2 * t);
 // Что происходит при этом s: stage — текущий этап (−1 — до первого), u — доля этапа,
 // lead — доля входа сцены (точка от места покоя под сеткой Сцены 3 плывёт в центр первой
 // карточки), out — доля выхода.
-export function sceneAt(s: number) {
+export function sceneAt(s: number, p: Pace = PACE) {
   const lead = clamp01(s / ENTRY);
-  const t = (s - ENTRY) / STAGE;
+  const t = (s - ENTRY) / p.stage;
   if (t < 0) return { stage: -1, u: 0, lead, out: 0 };
   if (t < N) return { stage: Math.floor(t), u: t - Math.floor(t), lead, out: 0 };
-  return { stage: N - 1, u: 1, lead, out: clamp01((s - ENTRY - N * STAGE) / OUTRO) };
+  return { stage: N - 1, u: 1, lead, out: clamp01((s - ENTRY - N * p.stage) / p.outro) };
 }
 export type Scene = ReturnType<typeof sceneAt>;
 
@@ -107,6 +113,26 @@ export function growAt({ stage, u, out }: Scene, still: boolean): number {
 
 // Подпись этапа i (блок справа) видна, пока идёт его этап.
 export const captionOn = (i: number, { stage }: Scene) => i === stage;
+
+// Телефон: подпись сменяется прокруткой, без переходов по времени. roll — сдвиг срока в его окне
+// в высотах строки («счётчик»): 0 — на месте, 1 — ещё внизу, −1 — ушёл вверх; show — прозрачность
+// «делаем / получаете», shift — их сдвиг (−1..1): прошлый этап уходит вверх и гаснет, новый
+// приходит снизу. Без движения — сразу итог.
+const ROLL: [number, number] = [0, 0.25];
+const META_OUT: [number, number] = [0, 0.12];
+const META_IN: [number, number] = [0.08, 0.28];
+export function captionRoll(i: number, { stage, u }: Scene, still: boolean) {
+  if (i === stage) {
+    const a = stage === 0 || still ? 1 : smooth(seg(u, META_IN));
+    const r = stage === 0 || still ? 1 : smooth(seg(u, ROLL));
+    return { roll: 1 - r, show: a, shift: 1 - a };
+  }
+  if (i === stage - 1 && !still) {
+    const b = smooth(seg(u, META_OUT));
+    return { roll: -smooth(seg(u, ROLL)), show: 1 - b, shift: -b };
+  }
+  return { roll: i > stage ? 1 : -1, show: 0, shift: 0 };
+}
 
 // Строка чек-листа этапа i: off — впереди, on — текущий, done — пройден; grow — насколько
 // текущая крупнее (растёт, пока встаёт её карточка; прошлая так же сжимается); strike — доля
@@ -141,7 +167,8 @@ export function stageProgress(i: number, { stage, u, out }: Scene, still: boolea
 // кадр, который въезжает со страницей, — по пути шла бы назад. Тогда сглаживание мягче, ровно
 // чтобы не быстрее страницы; на телефоне и десктопе подъём меньше — как было.
 export function dropAt({ stage, u, lead, out }: Scene, rise = 0, h = 1) {
-  const walk = stage < 0 ? 0 : (STAGE * (stage + u) + OUTRO * out) / (N * STAGE + OUTRO);
+  const p = PACE; // широкий экран и короткий ландшафт; телефон ведёт точку сам (Scene4.tsx)
+  const walk = stage < 0 ? 0 : (p.stage * (stage + u) + p.outro * out) / (N * p.stage + p.outro);
   const g = seg(lead, GLIDE);
   const soft = rise > 0 ? clamp01(2 * (((GLIDE[1] - GLIDE[0]) * ENTRY * h) / rise - 1)) : 1;
   return { glide: g + soft * (smooth(g) - g), walk };

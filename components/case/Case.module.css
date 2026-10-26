@@ -468,10 +468,11 @@
   white-space: nowrap;
 }
 
+/* Цифра результата — размером цифры туннеля (как главная цифра первого экрана). */
 .fig {
-  font-size: clamp(36px, 3.35vw, 60px);
-  letter-spacing: -0.045em;
-  line-height: 1;
+  font-size: clamp(56px, 5.6vw, 104px);
+  letter-spacing: -0.05em;
+  line-height: 0.95;
   white-space: nowrap;
 }
 
@@ -481,15 +482,22 @@
   line-height: 1.4;
 }
 
-.big,
-.quote {
+.big {
   font-size: clamp(20px, 1.6vw, 26px);
   line-height: 1.4;
   letter-spacing: -0.01em;
 }
 
+/* Отзыв — в главе «результат», под цифрами и источником. */
+.q {
+  margin: 64px 0 0 !important;
+}
+
 .quote {
-  max-width: 30em;
+  max-width: 22em;
+  font-size: clamp(24px, 2.1vw, 34px);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
 }
 
 .who,
@@ -500,7 +508,7 @@
 }
 
 .who {
-  margin-top: 12px !important;
+  margin-top: 14px !important;
 }
 
 .note {
@@ -593,16 +601,28 @@
   color: var(--text2);
 }
 
-/* Цифры результата — строкой, над каждой линия (как у фактов «как было»). */
+/* Цифры результата — сеткой 2×2 в колонке текста, над каждой линия (как у фактов «как было»),
+   под ними — источник («данные клиента»). */
 .figs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 48px 40px;
 }
 
 .figs > div {
   padding-top: 16px;
   border-top: 1.5px solid var(--color-fg);
+}
+
+.figs .small {
+  margin-top: 12px;
+}
+
+.src {
+  margin-top: 20px !important;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--muted);
 }
 
 /* ---------- карточка-паспарту, как в Сцене 3 ---------- */
@@ -823,12 +843,19 @@
   }
 
   .fig {
-    font-size: 36px;
+    font-size: 44px;
   }
 
-  .big,
-  .quote {
+  .big {
     font-size: 19px;
+  }
+
+  .q {
+    margin-top: 44px !important;
+  }
+
+  .quote {
+    font-size: 22px;
   }
 
   .h2 {

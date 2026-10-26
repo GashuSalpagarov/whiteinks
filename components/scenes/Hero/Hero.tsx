@@ -18,17 +18,21 @@ import { HeroSlides } from "./HeroSlides";
 function buildFallPath(w: number, h: number): string {
   const x = w / 2;
   // Телефон и планшет в портрете (phoneLayout, как мобильный блок Hero.module.css): текст слева,
-  // линия справа — от круга (74vw, y1) к пику 79vw на 60% и плавно к той же точке покоя (50vw, 93%).
-  // y1 — как --y1 в CSS: около 30% высоты, на вытянутых экранах ниже, на коротких выше —
-  // пустота над текстом и под ним до CTA примерно поровну. После пика линия ещё держится
-  // справа (ручка 0.13 высоты), чтобы на коротких экранах не задеть подзаголовок.
+  // линия справа — от круга (74vw, y1) к пику 79vw и плавно к той же точке покоя (50vw, 93%).
+  // y1 — как --y1 в CSS: текст одним блоком у низа, низ CTA на 24px выше точки покоя (кегль
+  // заголовка — как --title-size). Пик — на 0.55 пути вниз; после него линия держится справа
+  // (ручка 0.6 спуска) мимо подзаголовка и индикатора и входит в точку покоя вертикально
+  // (ручка 0.394 спуска).
   if (phoneLayout()) {
-    const y1 = h * 0.3 + Math.max(h * -0.03, h * 0.22 - w * 0.352);
-    const yp = h * 0.6;
+    const end = h * 0.93;
+    const title = Math.min(w * 0.112, h * 0.09);
+    const y1 = Math.max(end - 240 - 3.05 * title, 64 + 0.77 * title);
+    const yp = y1 + (end - y1) * 0.55;
+    const s = end - yp;
     return [
       `M${w * 0.74} ${y1}`,
       `C${w * 0.74} ${y1 + (yp - y1) * 0.4} ${w * 0.79} ${yp - (yp - y1) * 0.33} ${w * 0.79} ${yp}`,
-      `C${w * 0.79} ${yp + h * 0.13} ${x} ${h * 0.8} ${x} ${h * 0.93}`,
+      `C${w * 0.79} ${yp + s * 0.6} ${x} ${end - s * 0.394} ${x} ${end}`,
     ].join(" ");
   }
   // Пики изгиба (касательная там вертикальна) — на высоте «цифровые» (58%, 0.6 размаха
@@ -138,7 +142,7 @@ export function Hero() {
         <HeroScrollLock />
 
         <div className={styles.pill} aria-hidden="true" />
-        <span className={styles.studioLabel}>white inks.</span>
+        <span className={styles.studioLabel}>White Inks.</span>
 
         <svg className={styles.line} aria-hidden="true">
           <path className={styles.lineStroke} d={fallPath || undefined} pathLength={1} />
@@ -163,7 +167,7 @@ export function Hero() {
 
       {/* Шапка — вне слоя Hero (у него z-index 2): так она встаёт над сценами. */}
       <header ref={headerRef} className={`${styles.header} ${ready ? styles.ready : ""}`}>
-        <span className={styles.logo}>white inks.</span>
+        <span className={styles.logo}>White Inks.</span>
         <HeaderNav />
         <a className={styles.phone} href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, "")}`}>
           {BRIEF_CONFIG.phone}

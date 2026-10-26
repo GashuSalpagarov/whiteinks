@@ -5,21 +5,29 @@ import type { CSSProperties, ReactNode } from "react";
 // скругления 4–6. Декор не должен выглядеть нажимаемым: без кнопок, полей ввода и призывов.
 // Координаты viewBox — пиксели при ширине 1440; размер — в em слоя (.art).
 // Место (slot) — вокруг текста, см. Scene2.module.css; phone: false — не показывать на телефоне.
-export type Slot = "topOut" | "out" | "bottom" | "in";
-export type Art = { slot: Slot; el: ReactNode; phone?: false; style?: CSSProperties };
+// Слот gap — значки в промежутках между услугами, только на телефоне до 767px (GAP в конце файла);
+// sync — качаться одной фазой с элементом номер sync того же пункта.
+export type Slot = "topOut" | "out" | "bottom" | "in" | "gap";
+export type Art = {
+  slot: Slot;
+  el: ReactNode;
+  phone?: false;
+  style?: CSSProperties;
+  sync?: number;
+};
 
 const K = "#0a0a0a";
 const G = { fill: K, fillOpacity: 0.16 };
 const line = { stroke: K, strokeWidth: 1.5 };
 
 // no-invert (globals.css): на втором круге (перевёрнутая палитра) элементы — в своих цветах,
-// как картинки; переворачиваются только текст, трасса и фон.
-function Svg({ w, h, children }: { w: number; h: number; children: ReactNode }) {
+// как картинки; переворачиваются только текст, трасса и фон. k — масштаб без перерисовки.
+function Svg({ w, h, k = 1, children }: { w: number; h: number; k?: number; children: ReactNode }) {
   return (
     <svg
       className="no-invert"
-      width={`${w / 10}em`}
-      height={`${h / 10}em`}
+      width={`${(w * k) / 10}em`}
+      height={`${(h * k) / 10}em`}
       viewBox={`0 0 ${w} ${h}`}
       aria-hidden="true"
     >
@@ -426,3 +434,319 @@ export const ART: Art[][] = [
     },
   ],
 ];
+
+// ---------- Значки в промежутках между услугами (только телефон, слот gap) ----------
+// Три размера при слое 7px: S 24px — метки и наклейки, M 44px — круги и плитки, L 80–88px —
+// карточки. Стоят группами внахлёст: внутри пары — у правого края колонки; в переходе между
+// парами — под верхней парой, вместе с её нынешним элементом, пока трасса ещё у своего края
+// (над следующей парой, где трасса подходит, — пауза). Наклон — только у наклеек S.
+
+// Пастель соседней услуги, о которой значок, — как --accent пунктов в Scene2.module.css.
+const PEACH = "#f7dccb";
+const MINT = "#d3ebdd";
+const LILAC = "#dddaf5";
+const CREAM = "#f4ebc3";
+
+// Круг M: рисунок — в сетке 44, как у Round.
+const Disc = ({ bg, children }: { bg: string; children: ReactNode }) => (
+  <Svg w={60} h={60} k={1.05}>
+    <circle cx={30} cy={30} r={29.25} fill={bg} {...line} />
+    <g transform="scale(1.3636)">{children}</g>
+  </Svg>
+);
+
+// Пятиконечная звезда отзыва.
+const star = (cx: number, cy: number) =>
+  Array.from({ length: 10 }, (_, k) => {
+    const a = (Math.PI / 5) * k - Math.PI / 2;
+    const r = k % 2 ? 3.2 : 7;
+    return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+  }).join(" ");
+
+const ICON = {
+  // S
+  badge: (
+    <Svg w={34} h={34}>
+      <circle cx={17} cy={17} r={16.25} fill={K} />
+      <text x={17} y={23} fontSize={17} fontWeight={600} fill="#fff" textAnchor="middle">
+        1
+      </text>
+    </Svg>
+  ),
+  check: (
+    <Svg w={34} h={34}>
+      <circle cx={17} cy={17} r={16.25} fill="currentColor" {...line} />
+      <path
+        d="M10.5 17.5l4.5 4.5 8.5-9"
+        fill="none"
+        stroke={K}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  ),
+  cursor: (
+    <Svg w={26} h={34}>
+      <path
+        transform="scale(1.3)"
+        d="M2.5 2.5v19l5-4.6 3.4 7.4 3.4-1.5-3.4-7.3h6.6z"
+        fill={K}
+        stroke="#fff"
+        strokeWidth={1.15}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  ),
+  drop: (
+    <Svg w={26} h={34}>
+      <path
+        d="M13 1.5S2.25 13.5 2.25 21.5a10.75 10.75 0 0 0 21.5 0C23.75 13.5 13 1.5 13 1.5z"
+        fill="currentColor"
+        {...line}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  ),
+  spark: (
+    <Svg w={34} h={34}>
+      <path
+        d="M17 1.5c1 9.4 5.1 13.5 14.5 14.5C22.1 17 18 21.1 17 30.5 16 21.1 11.9 17 2.5 16 11.9 15 16 10.9 17 1.5z"
+        fill={K}
+      />
+    </Svg>
+  ),
+  up: (
+    <Svg w={34} h={34}>
+      <circle cx={17} cy={17} r={16.25} fill="#fff" {...line} />
+      <path
+        d="M11 23l12-12M14.5 11H23v8.5"
+        fill="none"
+        stroke={K}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  ),
+  // M
+  cart: (
+    <Disc bg="currentColor">
+      <path
+        d="M11.5 13h4l3.6 14.5h12.4l3-10.3H17"
+        fill="none"
+        stroke={K}
+        strokeWidth={1.3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={20.5} cy={32} r={1.9} fill={K} />
+      <circle cx={29.5} cy={32} r={1.9} fill={K} />
+    </Disc>
+  ),
+  pie: (
+    <Svg w={60} h={60} k={1.05}>
+      <circle cx={30} cy={30} r={29.25} fill="#fff" {...line} />
+      <path
+        d="M30 30V.75A29.25 29.25 0 0 1 55.33 44.63z"
+        fill="currentColor"
+        {...line}
+        strokeLinejoin="round"
+      />
+      <path d="M30 30L55.33 44.63A29.25 29.25 0 0 1 30 59.25z" fill={K} />
+    </Svg>
+  ),
+  pen: (
+    <Svg w={90} h={56}>
+      <path d="M8 48C14 18 76 18 82 48" fill="none" {...line} />
+      <path d="M23 18.5h44" {...line} />
+      <circle cx={23} cy={18.5} r={3.5} fill="currentColor" {...line} />
+      <circle cx={67} cy={18.5} r={3.5} fill="currentColor" {...line} />
+      {[
+        [41.5, 15],
+        [4.5, 44.5],
+        [78.5, 44.5],
+      ].map(([x, y]) => (
+        <rect key={x} x={x} y={y} width={7} height={7} fill="#fff" {...line} />
+      ))}
+    </Svg>
+  ),
+  type: (
+    <Svg w={64} h={58}>
+      <rect width={64} height={58} rx={6} fill="currentColor" />
+      <Label x={10} y={34} size={24} anchor="start">
+        Aa
+      </Label>
+      <rect x={10} y={43} width={28} height={4} rx={2} {...G} />
+    </Svg>
+  ),
+  app: (
+    <Svg w={62} h={62}>
+      <rect x={0.75} y={0.75} width={60.5} height={60.5} rx={14} fill="currentColor" {...line} />
+      <text x={31} y={41} fontSize={27} fontWeight={600} fill={K} textAnchor="middle">
+        W
+      </text>
+    </Svg>
+  ),
+  bot: (
+    <Disc bg="currentColor">
+      <rect
+        x={12.5}
+        y={16}
+        width={19}
+        height={14}
+        rx={4}
+        fill="#fff"
+        stroke={K}
+        strokeWidth={1.1}
+      />
+      <circle cx={18.5} cy={23} r={1.7} fill={K} />
+      <circle cx={25.5} cy={23} r={1.7} fill={K} />
+      <path d="M22 16v-3.5" stroke={K} strokeWidth={1.1} strokeLinecap="round" />
+      <circle cx={22} cy={11.5} r={1.5} fill={K} />
+    </Disc>
+  ),
+  gear: (
+    <Disc bg="#fff">
+      <circle
+        cx={22}
+        cy={22}
+        r={10.5}
+        fill="none"
+        stroke={K}
+        strokeWidth={3}
+        strokeDasharray="3.3 4.95"
+      />
+      <circle cx={22} cy={22} r={8} fill="currentColor" stroke={K} strokeWidth={1.6} />
+      <circle cx={22} cy={22} r={2.6} fill={K} />
+    </Disc>
+  ),
+  code: (
+    <Svg w={70} h={54}>
+      <rect width={70} height={54} rx={6} fill="currentColor" />
+      <path
+        d="M25 19l-9 8 9 8M45 19l9 8-9 8M38 15l-6 24"
+        fill="none"
+        stroke={K}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  ),
+  // L
+  rating: (
+    <Svg w={120} h={44}>
+      <rect x={0.75} y={0.75} width={118.5} height={42.5} rx={8} fill="#fff" {...line} />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <polygon key={i} points={star(18 + i * 19, 17)} fill={i < 4 ? K : "currentColor"} />
+      ))}
+      <rect x={11} y={31} width={58} height={4} rx={2} {...G} />
+    </Svg>
+  ),
+  kpi: (
+    <Svg w={114} h={66}>
+      <rect x={0.75} y={0.75} width={112.5} height={64.5} rx={8} fill="#fff" {...line} />
+      <text x={14} y={33} fontSize={20} fontWeight={600} fill={K}>
+        +24%
+      </text>
+      <path d="M90 28l7-8 7 8" fill="none" {...line} strokeLinecap="round" strokeLinejoin="round" />
+      <rect x={14} y={45} width={86} height={7} rx={3.5} fill="currentColor" />
+    </Svg>
+  ),
+  layout: (
+    <Svg w={120} h={56}>
+      <rect x={0.75} y={0.75} width={118.5} height={54.5} rx={8} fill="#fff" {...line} />
+      <rect x={10} y={10} width={46} height={36} rx={4} fill="currentColor" />
+      <rect x={64} y={10} width={46} height={15} rx={4} {...G} />
+      <rect x={64} y={31} width={46} height={15} rx={4} {...G} />
+    </Svg>
+  ),
+  note: (
+    <Svg w={124} h={46}>
+      <rect x={0.75} y={0.75} width={122.5} height={44.5} rx={10} fill="#fff" {...line} />
+      <rect x={9} y={9} width={28} height={28} rx={7} fill="currentColor" />
+      <rect x={45} y={13} width={56} height={5} rx={2.5} fill={K} />
+      <rect x={45} y={26} width={40} height={4} rx={2} {...G} />
+    </Svg>
+  ),
+};
+
+// Место: t/b — px от нижнего/верхнего края блока (top/bottom: calc(100% + …)), l/r — px от края
+// колонки в координатах слоя: у блоков слева слой отражён, «справа» на экране пишется как l,
+// а наклон (turn) — с обратным знаком. sync — фаза покачивания группы (см. Art).
+type At = { t?: number; b?: number; l?: number; r?: number; turn?: number };
+const gap = (el: ReactNode, { t, b, l, r, turn }: At, sync: number, color?: string): Art => ({
+  slot: "gap",
+  el,
+  sync,
+  style: {
+    top: t === undefined ? undefined : `calc(100% + ${t}px)`,
+    bottom: b === undefined ? undefined : `calc(100% + ${b}px)`,
+    left: l === undefined ? undefined : `${l}px`,
+    right: r === undefined ? undefined : `${r}px`,
+    rotate: turn ? `${turn}deg` : undefined,
+    color,
+  },
+});
+
+// В конец пунктов: номера нынешних элементов не меняются (по ним берёт элементы Сцена 5).
+const GAP: [number, Art[]][] = [
+  // Сайты → Магазины: отзыв, корзина и счётчик — под «Сайтами», у правого края
+  [
+    0,
+    [
+      gap(ICON.rating, { t: 1, r: 40 }, 3, MINT),
+      gap(ICON.cart, { t: -8, r: 8 }, 3, MINT),
+      gap(ICON.badge, { t: -14, r: 0 }, 3),
+    ],
+  ],
+  // Магазины → Аналитика: под «Магазинами» к карточке товара (нынешней) слева — показатель
+  // продаж и диаграмма, на её углу — наклейка «оплачено»
+  [
+    1,
+    [
+      gap(ICON.kpi, { t: 32, r: 40 }, 0, LILAC),
+      gap(ICON.pie, { t: 33, r: 112 }, 0, LILAC),
+      gap(ICON.check, { t: 12, r: 0, turn: -8 }, 0),
+    ],
+  ],
+  // Аналитика → UX/UI: макет, кривая поверх него и курсор на её узле
+  [
+    2,
+    [
+      gap(ICON.layout, { t: -6, l: 40 }, 3, CREAM),
+      gap(ICON.pen, { t: -6, l: 0 }, 3, CREAM),
+      gap(ICON.cursor, { t: 7, l: 14 }, 3),
+    ],
+  ],
+  // UX/UI → Брендинг: под «UX/UI» между рамкой и образцами (нынешними) — шрифт и капля цвета
+  [
+    3,
+    [
+      gap(ICON.type, { t: 26, r: 92 }, 0, PEACH),
+      gap(ICON.drop, { t: 50, r: 128, turn: -10 }, 0, PEACH),
+    ],
+  ],
+  // Брендинг → Приложения: уведомление, значок приложения и счётчик
+  [
+    4,
+    [
+      gap(ICON.note, { t: -2, r: 34 }, 3, MINT),
+      gap(ICON.app, { t: -8, r: 6 }, 3, MINT),
+      gap(ICON.badge, { t: -14, r: 0 }, 3),
+    ],
+  ],
+  // Приложения → ИИ: под «Приложениями» к телефону (нынешнему) — бот и искра
+  [5, [gap(ICON.bot, { t: 34, r: 24 }, 0, LILAC), gap(ICON.spark, { t: 22, r: 60 }, 0)]],
+  // ИИ → Поддержка: код, шестерёнка и рост
+  [
+    6,
+    [
+      gap(ICON.code, { t: -5, l: 34 }, 3, CREAM),
+      gap(ICON.gear, { t: -8, l: 0 }, 3, CREAM),
+      gap(ICON.up, { t: -13, l: 70 }, 3),
+    ],
+  ],
+];
+for (const [i, arts] of GAP) ART[i].push(...arts);

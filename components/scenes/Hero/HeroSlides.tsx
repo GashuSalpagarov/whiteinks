@@ -92,7 +92,7 @@ const LAYOUTS: readonly Layout[] = [
         [0, 4 / 3, 0],
         [2, 1, 6],
       ],
-      edge: [20, 32],
+      edge: [12, 19],
     },
   },
   {
@@ -107,7 +107,7 @@ const LAYOUTS: readonly Layout[] = [
         [0, 1, 1],
         [2, 4 / 3, 7],
       ],
-      edge: [32, 20],
+      edge: [19, 12],
     },
   },
   {
@@ -122,7 +122,7 @@ const LAYOUTS: readonly Layout[] = [
         [0, 3 / 2, -1],
         [1, 3 / 5, 5],
       ],
-      edge: [24, 36],
+      edge: [14, 22],
     },
   },
   {
@@ -137,7 +137,7 @@ const LAYOUTS: readonly Layout[] = [
         [0, 5 / 4, 0],
         [1, 3 / 4, 6],
       ],
-      edge: [36, 24],
+      edge: [22, 14],
     },
   },
 ];
@@ -246,11 +246,12 @@ function desktop(W: number, H: number, lead: Box, cta: Box, dots: Box, { desk }:
 }
 
 // Телефон. Над заголовком — веер из трёх карт, как в руке: у карт одна высота, пропорции
-// и порядок — по слайду. Средняя спереди, по центру; боковые под ней (их внутренние 30% ширины
+// и порядок — по слайду. Средняя спереди, по центру; боковые под ней (их внутренние 55% ширины
 // уходят под среднюю), чуть ниже и повёрнуты наружу. Веер целиком, с повёрнутыми углами, — от
 // отступа слева до отступа справа (edge) и от 12px под полосой шапки (72px) до 12px над
-// заголовком; размер — наибольший, при котором он туда помещается, а остаток — поровну по
-// краям. Мельче 48px по высоте — без картинок (короткий экран).
+// заголовком; размер — наибольший, при котором он туда помещается. Остаток по ширине — поровну
+// по краям, по высоте — сверху: веер прижат к заголовку, весь блок стоит у низа экрана.
+// Мельче 48px по высоте — без картинок (короткий экран).
 function phone(W: number, title: number, { phone: p }: Layout): Rect[] {
   const out: Rect[] = [null, null, null];
   const [eL, eR] = p.edge;
@@ -259,7 +260,7 @@ function phone(W: number, title: number, { phone: p }: Layout): Rect[] {
   const room = W - eL - eR;
   // Веер при высоте карты 1: центры карт относительно средней и полуразмеры с учётом поворота.
   const [l, m, r] = p.fan;
-  const cx = [-m[1] / 2 - 0.2 * l[1], 0, m[1] / 2 + 0.2 * r[1]];
+  const cx = [-m[1] / 2 + 0.05 * l[1], 0, m[1] / 2 - 0.05 * r[1]];
   const cy = [0.06, 0, 0.06];
   const half = p.fan.map(([, a, turn]) => {
     const t = (Math.abs(turn) * Math.PI) / 180;
@@ -272,7 +273,7 @@ function phone(W: number, title: number, { phone: p }: Layout): Rect[] {
   const h = Math.min(room / (right - left), band / (lower - upper));
   if (h < 48) return out;
   const x0 = eL + (room - (right - left) * h) / 2 - left * h;
-  const y0 = top + (band - (lower - upper) * h) / 2 - upper * h;
+  const y0 = top + band - lower * h;
   p.fan.forEach(([i, a, turn], k) => {
     out[i] = [x0 + (cx[k] - a / 2) * h, y0 + (cy[k] - 0.5) * h, a * h, h, turn, k === 1 ? 2 : 1];
   });

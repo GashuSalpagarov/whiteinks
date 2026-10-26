@@ -3,6 +3,7 @@
 import { type CSSProperties, useEffect, useRef } from "react";
 import { ART } from "@/components/scenes/Scene2";
 import { type BriefPreset, openBrief } from "@/lib/brief";
+import { phoneLayout } from "@/lib/phoneLayout";
 import { formatFrom, fromPrice, fromWeeks, TYPES, type TypeId } from "@/lib/pricing";
 import { phoneHold } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
@@ -147,6 +148,10 @@ const GAP = 24; // px, поле у низа экрана: каталог пом�
 // каталогу — RISE px на px прокрутки, как в Сцене 6) до высоты входа в письмо и держится на ней.
 const LOW = 0.9;
 const RISE = 0.6;
+// Телефонная раскладка: карточка проявляется, когда вошла в экран целиком — её низ поднялся до
+// SEE видимой высоты, — и всё проявление идёт на экране; складывается, только уйдя целиком за
+// нижний край.
+const SEE = 0.95;
 
 // Точка письма Сцены 6 — 12px на её линии. Ищем по размеру, не по классу: сцену скоро переделают;
 // не нашли — точка падает за низ этой секции.
@@ -158,8 +163,9 @@ const letterDot = () =>
 // Сцена 5 — прайс мозаикой: в верхнем ряду два дорогих типа во всю половину, во втором — четыре
 // сайта по одной клетке, от дорогого к дешёвому, в третьем — слева от линии приложения, справа
 // помесячные услуги; на плитках — элементы услуг из Сцены 2. Рамок нет —
-// клетки делят линии 1,5, а средний разделитель — линия пути (продолжение Сцены 4). Выбирать
-// ничего не нужно — заявка дальше, в Сцене 6.
+// клетки делят линии 1,5, а средний разделитель — линия пути (продолжение Сцены 4). На телефоне —
+// лента: карточки по очереди слева и справа от линии (Scene5.module.css). Выбирать ничего не
+// нужно — заявка дальше, в Сцене 6.
 export function Scene5() {
   const sectionRef = useRef<HTMLElement>(null);
   const inkRef = useRef<HTMLDivElement>(null);
@@ -189,17 +195,18 @@ export function Scene5() {
     if (!section || !ink || !dot || !inner || !tiles || !terms) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const items = [...tiles.children] as HTMLElement[];
-    // Отметки на линии в координатах каталога: верх плитки — её появление (data-in), низ — линия
-    // под ней (data-out). Путь точки по каталогу: c0 — где её ловят (у верха секции), speed — px
+    // Отметки на линии в координатах каталога: верх плитки — её появление (data-in; на телефоне
+    // появление — по низу, end), низ — линия под ней (data-out). Путь точки по каталогу: c0 — где её ловят (у верха секции), speed — px
     // каталога на px прокрутки, чтобы к концу стоянки дойти до низа каталога. Пересчёт — на смену
     // экрана и высоты каталога.
     let key = "";
-    let marks: { el: HTMLElement; name: "in" | "out"; at: number }[] = [];
+    let marks: { el: HTMLElement; name: "in" | "out"; at: number; end: number }[] = [];
     let termsAt = 0; // верх условий под мозаикой — там они появляются
     let target: HTMLElement | null = null;
     let c0 = 0;
     let speed = 1;
     let flow = false; // каталог выше экрана и Сцена 6 не стоит — каталог не стоит
+    let ahead = false; // и телефонная раскладка: карточки проявляются на экране, не за точкой
     let inkF = "";
     let dotCss = "";
     section.dataset.armed = "";
@@ -211,6 +218,7 @@ export function Scene5() {
       const innerH = inner.offsetHeight;
       const fits = innerH <= h - HEADER - 2 * GAP;
       flow = !fits && Number.isFinite(phoneHold.y);
+      ahead = flow && phoneLayout();
       // Не помещается — встаёт низом над полем у низа экрана; почти помещается — так, чтобы
       // верхний ряд не лез под шапку. Не стоит (flow) — top под шапкой: туда приводит «Сколько
       // стоит» из меню (lib/stations.ts).
@@ -237,8 +245,8 @@ export function Scene5() {
       marks = items.flatMap((el) => {
         const r = el.getBoundingClientRect();
         return [
-          { el, name: "in" as const, at: r.top - top },
-          { el, name: "out" as const, at: r.bottom - top },
+          { el, name: "in" as const, at: r.top - top, end: (ahead ? r.bottom : r.top) - top },
+          { el, name: "out" as const, at: r.bottom - top, end: r.bottom - top },
         ];
       });
       termsAt = terms.offsetTop; // без сдвига появления (translate)
@@ -246,22 +254,29 @@ export function Scene5() {
     };
 
     // Появление по положению точки d (px от верха секции): что точка прошла — показано, что выше
-    // неё — сложено (если REVERSIBLE). Пишем только изменившееся.
+    // неё — сложено (если REVERSIBLE). see — докуда проявляются плитки (по end) и условия, keep —
+    // докуда показанная плитка не складывается (по верху): по умолчанию та же точка. Пишем только
+    // изменившееся.
     const set = (el: HTMLElement, name: string, on: boolean) => {
       if (name in el.dataset === on || (!on && !REVERSIBLE)) return;
       if (on) el.dataset[name] = "";
       else delete el.dataset[name];
     };
-    const paint = (d: number) => {
-      for (const m of marks) set(m.el, m.name, d >= m.at);
-      // Условия — когда точка дошла до них, и уже не гаснут: показанное не прячется.
-      if (d >= termsAt) set(terms, "in", true);
+    const paint = (d: number, see = d, keep = see) => {
+      for (const m of marks) {
+        if (m.name === "out") set(m.el, "out", d >= m.at);
+        else if ("in" in m.el.dataset) set(m.el, "in", keep >= m.at);
+        else set(m.el, "in", see >= m.end);
+      }
+      // Условия — когда дошли до них, и уже не гаснут: показанное не прячется.
+      if (see >= termsAt) set(terms, "in", true);
     };
 
     const update = () => {
       // Замеры — до записей.
       const h = viewportH();
       const w = window.innerWidth;
+      const vh = window.innerHeight; // видимая высота сейчас (у viewportH она замирает)
       if (!h) return;
       const k = `${w}x${h}x${inner.offsetHeight}x${phoneHold.y}`;
       if (k !== key) {
@@ -324,7 +339,12 @@ export function Scene5() {
       }
       const d = y - rect.top; // точка в координатах секции
 
-      paint(reduced ? Number.POSITIVE_INFINITY : y - ft);
+      // Телефонная раскладка (каталог не стоит): точка держится на ~0,8 экрана, и всё ниже неё
+      // было бы пусто, а на ходу пустела бы половина экрана — карточки проявляются, войдя в экран
+      // (SEE); точка отмечает их, проводя черту под каждой (data-out).
+      if (reduced) paint(Number.POSITIVE_INFINITY);
+      else if (ahead) paint(y - ft, SEE * vh - ft, vh - ft);
+      else paint(y - ft);
 
       const f = reduced || (merged && !flow) ? "1" : clamp01(d / rect.height).toFixed(4);
       if (f !== inkF) {
@@ -379,7 +399,11 @@ export function Scene5() {
                   ))}
                 </div>
                 <h3 className={styles.name}>{t.title}</h3>
-                <p className={styles.includes}>{t.includes}</p>
+                {/* На телефоне — одна короткая строка (CSS). */}
+                <p className={styles.includes}>
+                  <span className={styles.full}>{t.includes}</span>
+                  <span className={styles.short}>{t.short}</span>
+                </p>
                 {/* Помесячные (без срока) — цена как есть, под ней «в месяц». */}
                 <p className={styles.price}>{t.weeks ? fromPrice(t.base) : formatFrom(t.base)}</p>
                 <p className={styles.term}>{t.weeks ? fromWeeks(t.weeks) : "в месяц"}</p>

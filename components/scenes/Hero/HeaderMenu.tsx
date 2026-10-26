@@ -7,9 +7,11 @@ import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import { goToStation, pathProgress, STATIONS } from "@/lib/stations";
 import styles from "./Hero.module.css";
 
-// Пункты — станции пути (lib/stations.ts), переход — пролётом к станции. В строке шапки — четыре
-// главные: все шесть в неё не помещаются на 1024px; все — в панели бургера и на карте пути слева.
-const NAV = STATIONS.flatMap((s, i) => (s.scene === "scene4" || s.scene === "scene6" ? [] : [i]));
+// Пункты — станции пути (lib/stations.ts), переход — пролётом к станции. Подвал — последняя
+// станция — пунктом не бывает: контактов в нём нет. В строке шапки — три главные: все пять в неё
+// не помещаются на 1024px; все — в панели бургера и на карте пути слева.
+const MENU = STATIONS.filter((s) => s.scene !== "footer");
+const NAV = MENU.flatMap((s, i) => (s.scene === "scene4" || s.scene === "scene6" ? [] : [i]));
 
 // Пункты в шапке — вверху страницы на широком экране. --i — порядок для очереди ухода и возврата.
 export function HeaderNav() {
@@ -134,8 +136,11 @@ export function HeaderMenu({ header }: { header: RefObject<HTMLElement | null> }
           точкой 12px. Выбор — закрыть панель и лететь; фокус — обратно на бургер. Последней
           строкой — телефон: в шапке его место на время пути занимает кнопка к письму. */}
       <nav id={panelId} className={styles.panel} aria-label="Меню">
-        <ol className={styles.thread} style={{ "--k": Math.max(0, station) } as CSSProperties}>
-          {STATIONS.map((s, i) => (
+        <ol
+          className={styles.thread}
+          style={{ "--k": Math.min(Math.max(0, station), MENU.length - 1) } as CSSProperties}
+        >
+          {MENU.map((s, i) => (
             <li key={s.scene}>
               <button
                 type="button"

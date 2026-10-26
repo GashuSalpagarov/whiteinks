@@ -224,6 +224,11 @@
   color: var(--muted);
 }
 
+/* Короткая строка описания — только на телефоне (ниже). */
+.short {
+  display: none;
+}
+
 .price {
   grid-area: price;
   padding-top: 16px;
@@ -476,111 +481,156 @@
   }
 }
 
-/* Телефон и планшет в портрете (lib/phoneLayout.ts): две колонки, «Уникальный» и «Магазин» — во
-   всю ширину, дальше пары. Средний разделитель — сама линия пути, как на широком экране: в широких
-   клетках текст слева от неё, рисунок справа; точка идёт по ней на виду. */
+/* Телефон и планшет в портрете (lib/phoneLayout.ts) — лента: крупные карточки по очереди слева и
+   справа от линии пути. Каждая занимает два ряда сетки, следующая начинается с её второго ряда —
+   на полкарточки ниже, по высоте заходит за неё, а одна над другой не наезжают. В карточке —
+   рисунок, название, одна короткая строка и цена; срок скрыт, у помесячных — «в месяц». Точка идёт
+   по линии на виду и проводит черту под каждой карточкой. */
 @media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: none;
     grid-template-areas:
-      "unique unique"
-      "shop shop"
+      "unique ."
+      "unique shop"
+      "corp shop"
       "corp ai"
+      "builder ai"
       "builder landing"
+      "app landing"
       "app tma"
-      "support seo";
+      "support tma"
+      "support seo"
+      ". seo";
   }
 
+  /* Поля: до линии пути — 18px (она 4px), у края экрана — 10px (с полем страницы — 30px). */
   .tile {
-    padding: 16px 14px;
+    display: grid;
+    grid-template:
+      "top" auto
+      "name" auto
+      "includes" auto
+      "price" auto
+      "term" auto
+      / minmax(0, 1fr);
+    align-content: start;
+    align-self: start;
+    padding: 24px 18px 26px 10px;
+  }
+
+  .shop,
+  .ai,
+  .landing,
+  .tma,
+  .seo {
+    padding: 24px 10px 26px 18px;
   }
 
   .terms > span {
-    padding: 0 14px;
+    padding: 0 18px 0 10px;
   }
 
-  .unique {
-    padding-top: 0;
+  .terms > span + span {
+    padding: 0 10px 0 18px;
   }
 
-  /* Линии под широкими клетками и под парами, кроме последней, между клетками пар. Растут от
-     центра. */
-  .unique::after,
-  .shop::after {
-    transform-origin: 50% 50%;
-  }
-
-  .corp::after,
-  .builder::after,
-  .app::after {
+  /* Под карточкой — черта от линии пути к краю экрана, её проводит точка. Заранее на её месте —
+     пунктир, как у линии пути впереди точки (::before; вертикальных линий на телефоне нет). */
+  .tile::after {
     content: "";
     transform-origin: 100% 50%;
   }
 
-  .ai::after,
-  .tma::after {
+  .tile::before {
     content: "";
+    top: auto;
+    right: auto;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: radial-gradient(circle at 1px 50%, rgba(10, 10, 10, 0.32) 1px, transparent 1.5px) 0
+      0 / 8px 2px repeat-x;
+  }
+
+  .shop::after,
+  .ai::after,
+  .landing::after,
+  .tma::after,
+  .seo::after {
     transform-origin: 0 50%;
   }
 
-  /* Вертикальных линий нет: между клетками пар — линия пути. */
-  .tile::before {
-    content: none;
+  .tile .art {
+    grid-area: top;
+    align-self: start;
+    float: none;
+    margin: 0 0 16px;
+    font-size: 8.6px;
   }
 
-  .unique > :not(.art),
-  .shop > :not(.art) {
-    max-width: calc(50% - 12px);
-  }
-
-  .art {
-    font-size: 8px;
-  }
-
-  /* Рисунок над названием поднят на поле плитки — к линии над ней. */
-  @container (width < 260px) {
-    .art {
-      bottom: 16px;
-    }
-  }
-
-  .unique .art,
-  .shop .art {
-    margin: 0 0 0 16px;
-    font-size: 10px;
-  }
-
-  .name {
-    font-size: 0.9375rem;
-  }
-
-  .includes {
-    font-size: 0.8125rem;
-  }
-
-  .price {
-    padding-top: 12px;
-  }
-
-  .term {
-    font-size: 0.8125rem;
-  }
-
-  .unique .name,
-  .shop .name {
+  .tile .name {
     font-size: 1.0625rem;
   }
 
-  .unique .includes,
-  .shop .includes {
+  .tile .includes {
     font-size: 0.8125rem;
   }
 
-  /* Цена — в половине клетки: от её ширины, не больше 30px. */
-  .unique .price,
-  .shop .price {
-    padding-top: 14px;
-    font-size: min(30px, 7.4cqw);
+  .full {
+    display: none;
+  }
+
+  .short {
+    display: inline;
+  }
+
+  .tile .price {
+    padding-top: 12px;
+    font-size: 1.375rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .term {
+    display: none;
+  }
+
+  .support .term,
+  .seo .term {
+    display: block;
+    font-size: 0.8125rem;
+  }
+
+  /* Проявление — на экране (SEE в Scene5.tsx): пока карточка входит снизу, она бледная (каркас) и
+     на 24px ниже; войдя целиком, поднимается на место и проявляется за 0,6 с, рисунок — следом,
+     из 0,92. Пунктир под ней виден всё время. */
+  @media (prefers-reduced-motion: no-preference) {
+    .tile > :nth-child(n) {
+      transition:
+        opacity 0.6s cubic-bezier(0.25, 0.6, 0.25, 1),
+        translate 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+        scale 0.7s cubic-bezier(0.34, 1.45, 0.64, 1),
+        transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tile > .art:nth-child(n) {
+      transition-delay: 0.08s, 0.08s, 0.08s, 0s;
+    }
+
+    .scene5[data-armed] .tile:not([data-in]) > * {
+      opacity: 0.1;
+      translate: 0 24px;
+    }
+
+    .scene5[data-armed] .tile:not([data-in]) > .art {
+      translate: 0 24px;
+      scale: 0.92;
+    }
+
+    .scene5[data-armed] .tile:not([data-in])::before {
+      scale: none;
+    }
   }
 }

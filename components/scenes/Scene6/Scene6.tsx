@@ -27,6 +27,7 @@ import {
   useBrief,
 } from "@/lib/brief";
 import { caretAt, formatPhone, PHONE_MASK, PHONE_PREFIX, phoneEdit } from "@/lib/phone";
+import { phoneLayout } from "@/lib/phoneLayout";
 import { pathHandoff, phoneHold } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Scene6.module.css";
@@ -39,6 +40,13 @@ type Errors = { phone?: string; consent?: string; form?: string };
 // выезжает письмо, поля — по одному.
 // Стоянка (с мышью, если сцена влезает в экран): сцена — экран, ещё RUN экрана она стоит
 // (sticky). Без стоянки (сенсорный или низкий экран) сцена едет как обычно.
+// Телефонная раскладка (lib/phoneLayout.ts) — без стоянки и со своей сборкой: по ходу точки из неё
+// рисуется лежачий конверт — контур, подложка, бумага (по высоте ничего не ходит). Бумага легла
+// (PLAY) — конверт доигрывает сам переходами CSS (data-play): пологий клапан ложится и открывается,
+// карман опускается на место, письмо выходит на всю высоту формы, поля — по одному, кнопка. Дальше
+// он к прокрутке не привязан: назад не складывается, поле под клавиатурой не двигается, рывков от
+// прокрутки пальцем нет. Складывается заново, только когда сцена целиком ушла под экран (этого не
+// видно), — на следующем проходе (и на новом круге пути) играет снова. Точка и линия — как всегда.
 const RUN = 1.1;
 // Стык со Сценой 5: её точка сливается с этой у нижнего края экрана и сразу идёт дальше; если
 // каталог выше экрана (телефон) — на высоте phoneHold.y (lib/scroll/handoff.ts), а не у края.
@@ -64,6 +72,14 @@ const T = {
   field: [0.8, 0.92], // поля — по одному, через 0,04
   act: [0.9, 1], // согласие и кнопка
 } satisfies Record<string, Span>;
+// Телефон: доли того же хода (без стоянки) — до сигнала PLAY, дальше конверт доигрывает сам.
+const PH = {
+  edge: [0, 0.35], // контур лежачего конверта из точки
+  edgeOut: [0.37, 0.45],
+  tint: [0.12, 0.35],
+  fill: [0.25, 0.42], // спинка и карман
+} satisfies Record<string, Span>;
+const PLAY = 0.45;
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -242,6 +258,9 @@ export function Scene6() {
     let end = 0; // где точка на экране после стоянки (и без неё) — там она уходит в футер
     let edgeL = 0; // длина половины контура
     let slide = 0; // письмо до выезда — в кармане
+    let low = 0; // телефон: на сколько карман лежачего конверта выше своего места
+    let plateH = 0; // высота подложки — от неё её доля у лежачего конверта
+    let played = false; // телефон: конверт доиграл (или играет) и к прокрутке не привязан
     // Строка «Другое» открыта — письмо выдвинуто на lift (одна строка) и ещё на line за каждую
     // следующую, если они идут вверх (absorb), до max строк; как в CSS у .sheet[data-other].
     let lift = 0;
@@ -255,9 +274,10 @@ export function Scene6() {
     const layout = (h: number) => {
       // Конверт закрыт — раскладку не трогаем: подводка выросла, но сцена не сдвигается.
       if (!section.classList.contains(styles.closed)) {
-        // Закрепляем, если сцена целиком влезает в экран (под шапкой 72px); без анимаций — нет.
+        // Закрепляем, если сцена целиком влезает в экран (под шапкой 72px); без анимаций и в
+        // телефонной раскладке — нет.
         const contentH = head.offsetHeight + letter.offsetHeight;
-        pinned = !reduced && fine && contentH + 96 <= h;
+        pinned = !reduced && !phoneLayout() && fine && contentH + 96 <= h;
         section.toggleAttribute("data-pin", pinned);
         stage.style.paddingTop = pinned ? `${Math.max(72, Math.round((h - contentH) / 2))}px` : "";
         const W = env.offsetWidth;
@@ -266,12 +286,21 @@ export function Scene6() {
         apex = letter.offsetTop + env.offsetTop;
         rim = apex + F;
         bottom = apex + H;
+        // Телефон: лежачий конверт — ширина × 0,7 (не ниже кармана с запасом); его карман выше
+        // своего места на low. На планшете он и так лежачий — low = 0.
+        const phone = phoneLayout();
+        const body = Math.min(H - F, Math.max(pocket.offsetHeight + 30, Math.round(0.7 * W)));
+        low = phone ? H - F - body : 0;
+        const B = H - low;
         // Контур — по рамке спинки (её середина в 0,75px от края): половина — из точки на верхнем
-        // крае вбок, вниз и по дну до середины, вторая — её зеркало.
+        // крае вбок, вниз и по дну до середины, вторая — её зеркало. На телефоне — до дна лежачего.
         svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-        edge.setAttribute("d", `M${W / 2} ${F + 0.75}H0.75V${H - 0.75}H${W / 2}`);
+        edge.setAttribute("d", `M${W / 2} ${F + 0.75}H0.75V${B - 0.75}H${W / 2}`);
         edgeUse.setAttribute("transform", `matrix(-1 0 0 1 ${W} 0)`);
-        edgeL = W + H - F - 3;
+        edgeL = W + B - F - 3;
+        // Глубина клапана, когда конверт доигрывает (доля высоты закрытого из CSS): 0,45 лежачего.
+        if (phone) env.style.setProperty("--lid", ((0.45 * body) / (0.6 * (H - F))).toFixed(3));
+        plateH = tint.offsetHeight;
         edge.style.strokeDasharray = `${edgeL}`;
         slide = Math.max(0, H - pocket.offsetHeight - sheet.offsetTop + 12);
         const cs = getComputedStyle(sheet);
@@ -358,6 +387,32 @@ export function Scene6() {
       rise(act, seg(p, T.act), 10);
     };
 
+    // Телефон до сигнала: лежачий конверт по ходу точки — контур, подложка, бумага. Форма поднята
+    // на low, всё в ней, кроме кармана, — опущено обратно: обрезка формы (overflow: clip) идёт по
+    // низу кармана и прячет письмо ниже него. Клапан, письмо, поля и кнопка ждут сигнала. Подводка
+    // не проявляется: она над линией, и полупрозрачная пропустила бы линию по буквам.
+    const fold = (p: number) => {
+      clean = false;
+      put(edge, "stroke-dashoffset", (edgeL * (1 - seg(p, PH.edge))).toFixed(1));
+      put(svg, "opacity", p > 0 ? (1 - seg(p, PH.edgeOut)).toFixed(3) : "0");
+      fade(tint, seg(p, PH.tint));
+      put(tint, "transform", `scaleY(${plateH > 0 ? ((plateH - low) / plateH).toFixed(4) : 1})`);
+      const fill = seg(p, PH.fill);
+      fade(back, fill);
+      fade(pocket, fill);
+      put(env, "transform", `translateY(${-low}px)`);
+      for (const el of [back, sheet, svg]) put(el, "transform", `translateY(${low}px)`);
+      // Клапаны — свойством translate: оно снаружи их scale, и сдвиг не масштабируется.
+      put(flapOpen, "translate", `0 ${low}px`);
+      put(flapClosed, "translate", `0 ${low}px`);
+      put(flapOpen, "scale", "1 0");
+      fade(cut, 0);
+      put(sheet, "opacity", "0");
+      put(sheet, "pointer-events", "none");
+      for (const f of fields) rise(f, 0, 14);
+      rise(act, 0, 10);
+    };
+
     const update = () => {
       const h = viewportH();
       const k = `${window.innerWidth}x${h}`;
@@ -374,17 +429,32 @@ export function Scene6() {
 
       // Сборка — по ходу точки от верхнего края конверта: со стоянкой — сквозь весь конверт,
       // без неё — за SPAN экрана. Отправил — всё как в покое.
+      const phone = phoneLayout();
       const final = reduced || engagedRef.current || section.classList.contains(styles.closed);
       const p = final ? 1 : (at - rim) / (pinned ? bottom + 8 - rim : SPAN * h);
-      apply(p, (h - rect.top) / h);
+      const u = (h - rect.top) / h;
+      // Телефон: на PLAY конверт доигрывает сам — стили сборки сняты, к покою ведут переходы CSS
+      // (data-play). Складывается заново, только когда сцена целиком под экраном.
+      const play = phone && !final;
+      if (play && rect.top >= h && played) {
+        played = false;
+        section.removeAttribute("data-play");
+      } else if (play && rect.top < h && p >= PLAY && !played) {
+        played = true;
+        section.setAttribute("data-play", "");
+      }
+      if (play && !played) fold(p);
+      else apply(phone ? 1 : p, u);
       // Поля сложились — фокус из них уходит: печать не попадёт в невидимое поле и не потянет к
       // нему страницу. Введённое остаётся.
-      folded = p < T.field[0];
+      folded = play ? !played : p < T.field[0];
       if (folded && env.contains(document.activeElement))
         (document.activeElement as HTMLElement).blur();
       // Над конвертом точка — поверх подводки. В конверте — под бумагой, как и линия: поля и
       // кнопку не пересекает. Пока бумага не проявилась, точка видна сквозь неё и ведёт сборку.
-      const drawing = at < apex - 6;
+      // В телефонной раскладке подводка уже на месте — точка уходит под неё вместе с линией,
+      // иначе была бы над текстом, а линия под ним — оторванной.
+      const drawing = !phone && at < apex - 6;
       if (drawing !== section.hasAttribute("data-drawing"))
         section.toggleAttribute("data-drawing", drawing);
 
@@ -434,10 +504,18 @@ export function Scene6() {
       if (folded) section.scrollIntoView();
     };
     env.addEventListener("focusin", onFocusIn);
+    // Телефон: доиграл (письмо дождалось конца) — переходы больше не нужны: дальше всё как в покое,
+    // и закрытие после отправки идёт своими переходами.
+    const onPlayed = (e: AnimationEvent) => {
+      if (e.target === sheet) section.removeAttribute("data-play");
+    };
+    section.addEventListener("animationend", onPlayed);
     const off = onScroll(section, update);
     return () => {
       off();
       env.removeEventListener("focusin", onFocusIn);
+      section.removeEventListener("animationend", onPlayed);
+      section.removeAttribute("data-play");
       ro.disconnect();
       updateRef.current = () => {};
     };

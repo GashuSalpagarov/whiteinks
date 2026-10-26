@@ -24,18 +24,6 @@
   margin: 0;
 }
 
-/* Портрет: подводка, чек-лист и подпись идут поперёк линии пути — под ними белая подложка,
-   линия уходит под текст. Место задаёт Scene4.tsx, прозрачность — вместе с подводкой. */
-.panel {
-  background: var(--color-bg);
-  opacity: 0;
-  visibility: hidden;
-}
-
-.sticky:not([data-mode="tall"]) .panel {
-  display: none;
-}
-
 /* Подводка — первая строка слева; название сцены — подписью в шапке (components/ui/SceneLabel). */
 .lead {
   font-size: 16px;
@@ -139,11 +127,6 @@
   opacity: 0.62;
 }
 
-/* Название этапа — только на низком телефоне (ниже): там в чек-листе одни номера. */
-.capTitle {
-  display: none;
-}
-
 .meta {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -164,19 +147,23 @@
   white-space: nowrap;
 }
 
+.term span {
+  display: block;
+}
+
 .note {
   margin-top: 8px;
   font-size: 15px;
 }
 
-/* Точка сцены — копия общей .drop (Hero): 12px, цвет текста. Положение — transform из
-   Scene4.tsx от левого верхнего угла экрана. Под кадром сцены, как и линия: идёт по стопке под
-   карточками, белая кромка карточки обрывает линию. */
+/* Точка сцены — копия общей .drop (Hero): 12px, цвет текста. Лежит в кадре, как и линия:
+   положение — transform из Scene4.tsx от левого верхнего угла кадра, в тех же координатах, что
+   и линия, — под пальцем они не расходятся. Над линией, под карточками (у них z-index от 10):
+   идёт по стопке под карточками, белая кромка карточки обрывает линию. */
 .dot {
-  position: fixed;
   top: 0;
   left: 0;
-  z-index: 0;
+  z-index: 1;
   width: 12px;
   height: 12px;
   margin: -6px 0 0 -6px;
@@ -223,15 +210,51 @@
   font-size: 13px;
 }
 
-.sticky[data-low="true"] .note {
-  display: none;
+
+/* Телефон: дорога точки с изгибами. Трафарет — маска из SVG (путь пишет Scene4.tsx при смене
+   размера экрана), под ним чернила — слой цвета текста: их низ — на высоте точки (scaleY от верха),
+   выше точки дорога прорисована. */
+.trail {
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
 }
 
-.sticky[data-low="true"] .capTitle {
+.trail > div {
+  position: absolute;
+  inset: 0;
+  background: var(--color-fg);
+  transform-origin: top;
+  transform: scaleY(0);
+  opacity: 0;
+  will-change: transform;
+}
+
+/* Телефон и вертикальный планшет: веер сверху, под ним чек-лист вдоль дороги точки (номера слева
+   от неё, названия справа) и подпись правее него (места — из Scene4.tsx). Смена этапа — только прокруткой, без переходов по
+   времени: подпись видна целиком, её части пишет Scene4.tsx — срок прокручивается «счётчиком»
+   в своём окне, «делаем / получаете» сменяются сдвигом; карточка въезжает справа непрозрачной. */
+.sticky[data-mode="tall"] .caption {
+  opacity: 1;
+  visibility: visible;
+  translate: none;
+  transition: none;
+}
+
+.sticky[data-mode="tall"] .card {
+  transition: none;
+}
+
+.sticky[data-mode="tall"] .term {
+  overflow: hidden;
+  font-size: min(32px, calc(var(--ih, 100vh) * 0.045));
+  line-height: 1.2;
+}
+
+.sticky[data-mode="tall"] .meta {
   display: block;
-  margin-bottom: 6px;
-  font-size: 24px;
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  line-height: 1.1;
+  margin-top: 14px;
+}
+
+.sticky[data-mode="tall"] .meta dd {
+  margin-bottom: 8px;
 }

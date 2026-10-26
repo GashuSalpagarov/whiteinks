@@ -15,11 +15,13 @@ export type TypeId =
 
 // base — цена среднего размера без дополнений, weeks — его срок. Помесячные услуги — без срока:
 // base у них — цена в месяц как есть.
-// includes — что входит: ЗАГЛУШКИ, тексты выставит владелец.
+// includes — что входит: ЗАГЛУШКИ, тексты выставит владелец. short — то же одной короткой
+// строкой (каталог на телефоне), только слова из includes.
 export const TYPES: {
   id: TypeId;
   title: string;
   includes: string;
+  short: string;
   base: number;
   weeks?: [number, number];
 }[] = [
@@ -27,6 +29,7 @@ export const TYPES: {
     id: "landing",
     title: "Лендинг",
     includes: "Дизайн и вёрстка, адаптив, формы заявок, аналитика",
+    short: "Дизайн и вёрстка",
     base: 450,
     weeks: [4, 6],
   },
@@ -34,6 +37,7 @@ export const TYPES: {
     id: "builder",
     title: "На конструкторе",
     includes: "Сборка на Tilda или Webflow и обучение — дальше правите сами",
+    short: "Tilda или Webflow",
     base: 350,
     weeks: [3, 5],
   },
@@ -41,6 +45,7 @@ export const TYPES: {
     id: "corp",
     title: "Корпоративный",
     includes: "Структура, дизайн и разработка: услуги, кейсы, команда",
+    short: "Услуги и кейсы",
     base: 1000,
     weeks: [8, 12],
   },
@@ -48,6 +53,7 @@ export const TYPES: {
     id: "shop",
     title: "Магазин",
     includes: "Каталог, корзина, оплата и доставка, связка с 1С",
+    short: "Каталог и оплата",
     base: 1800,
     weeks: [10, 16],
   },
@@ -55,6 +61,7 @@ export const TYPES: {
     id: "unique",
     title: "Уникальный",
     includes: "Сервис, портал или личный кабинет: от прототипа до запуска",
+    short: "Сервис или кабинет",
     base: 3000,
     weeks: [16, 24],
   },
@@ -63,6 +70,7 @@ export const TYPES: {
     id: "ai",
     title: "ИИ и автоматизация",
     includes: "Чат-бот на нейросети, интеграции с CRM и 1С",
+    short: "Чат-бот на нейросети",
     base: 600,
     weeks: [4, 8],
   },
@@ -71,6 +79,7 @@ export const TYPES: {
     id: "app",
     title: "Приложение",
     includes: "iOS и Android: от прототипа до публикации в сторах",
+    short: "iOS и Android",
     base: 1650,
     weeks: [11, 16],
   },
@@ -78,6 +87,7 @@ export const TYPES: {
     id: "tma",
     title: "Telegram Mini App",
     includes: "Магазин, запись или сервис прямо в Telegram",
+    short: "Магазин или запись",
     base: 550,
     weeks: [5, 8],
   },
@@ -85,12 +95,14 @@ export const TYPES: {
     id: "support",
     title: "Поддержка",
     includes: "Доработки, обновления, мониторинг и резервные копии",
+    short: "Доработки",
     base: 40,
   },
   {
     id: "seo",
     title: "SEO и продвижение",
     includes: "Аудит, семантика, тексты и отчёт о позициях",
+    short: "Аудит и семантика",
     base: 60,
   },
 ];
