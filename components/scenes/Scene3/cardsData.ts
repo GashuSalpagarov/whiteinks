@@ -1,12 +1,14 @@
-// Кейсы Сцены 3: карточка и подпись в туннеле, плитка финальной сетки. Тексты и цифры —
-// заглушки, правьте здесь. Картинки — в public/assets/hero/; color — фон картинки (как первый
-// прямоугольник в её SVG): с ним она вписывается в карточку целиком.
+// Кейсы Сцены 3: карточка и подпись в туннеле, плитка финальной сетки. Тексты — настоящие,
+// согласованы с владельцем; у «Промо-сайта студии» цифры пока заглушка. Картинки — в
+// public/assets/hero/: у настоящих кейсов WebP 1200×900 с экранами проекта на пастельном фоне,
+// у промо-сайта — SVG. color — тот же фон (у SVG — первый прямоугольник): с ним картинка
+// вписывается в карточку целиком.
 // slug — страница кейса /works/<slug>/ (её содержимое — cases.ts): у карточки появляются ссылка
 // «Смотреть кейс →» в подписи туннеля, и сама карточка и плитка сетки ведут в кейс. Без slug —
 // просто карточка.
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const img = (name: string) => `${BASE}/assets/hero/${name}.svg`;
+const img = (file: string) => `${BASE}/assets/hero/${file}`;
 
 export type CardContent = {
   title: string;
@@ -24,25 +26,64 @@ export type CardContent = {
 // широком экране и 2×4 в портрете — одинаковые фоны не встают рядом.
 export const CARDS_CONTENT: CardContent[] = [
   {
-    title: "ИИ-ассистент",
-    client: "Служба доставки",
-    type: "ИИ и автоматизация",
+    title: "ИИ-собеседник Memoridian",
+    client: "White Inks",
+    type: "Приложение · ИИ",
+    year: "2026",
+    result: "Помнит",
+    resultNote: "тебя и близких — посмотреть и стереть можно в любой момент",
+    image: img("card-memoridian.webp"),
+    color: "#f7dccb",
+  },
+  {
+    title: "Медиатека для компаний",
+    client: "Picvario",
+    type: "Интерфейсы",
     year: "2025",
-    result: "70%",
-    resultNote: "обращений закрывает без оператора",
-    image: img("phones"),
+    result: "100+",
+    resultNote: "крупных клиентов пользуются системой",
+    image: img("card-picvario.webp"),
+    color: "#d3ebdd",
+  },
+  {
+    title: "Прокат снаряжения",
+    client: "Прокат «Адреналин», Архыз",
+    type: "Бренд и сайт",
+    year: "2026",
+    result: "4 шага",
+    resultNote: "бронь снаряжения на всю компанию",
+    image: img("card-adrenalin.webp"),
     color: "#f4ebc3",
   },
   {
-    title: "E-commerce платформа",
-    client: "Оптовый дистрибьютор",
-    type: "Платформа",
-    year: "2024",
-    result: "×2",
-    resultNote: "заказов онлайн за год",
-    image: img("shop"),
+    title: "Портал телемедицины",
+    client: "Doctis",
+    type: "Сайт · сервис",
+    year: "2022",
+    result: "24/7",
+    resultNote: "дежурный врач онлайн, ответ в течение 10 минут",
+    image: img("card-doctis.webp"),
     color: "#dddaf5",
-    slug: "e-commerce",
+  },
+  {
+    title: "Сайт стоматологии",
+    client: "Центр имплантации «Империя»",
+    type: "Сайт",
+    year: "2021",
+    result: "1 поле",
+    resultNote: "в форме записи — только телефон",
+    image: img("card-imperia.webp"),
+    color: "#d3ebdd",
+  },
+  {
+    title: "Витрина анализов",
+    client: "Doctis",
+    type: "Каталог и заказ",
+    year: "2022",
+    result: "Без направления",
+    resultNote: "цены в своём городе, лаборатория — на карте",
+    image: img("card-doctis-analysis.webp"),
+    color: "#f4ebc3",
   },
   {
     title: "Промо-сайт студии",
@@ -51,49 +92,9 @@ export const CARDS_CONTENT: CardContent[] = [
     year: "2026",
     result: "×3",
     resultNote: "заявок с сайта",
-    image: img("browser"),
+    image: img("browser.svg"),
     color: "#f7dccb",
     slug: "studio-site",
-  },
-  {
-    title: "Бренд-система",
-    client: "ИТ-стартап",
-    type: "Брендинг",
-    year: "2025",
-    result: "120 стр.",
-    resultNote: "гайдлайнов и шаблонов",
-    image: img("brand"),
-    color: "#f4ebc3",
-  },
-  {
-    title: "Мобильный банк",
-    client: "Частный банк",
-    type: "Приложение",
-    year: "2025",
-    result: "4,8 ★",
-    resultNote: "оценка в магазинах приложений",
-    image: img("app"),
-    color: "#d3ebdd",
-  },
-  {
-    title: "Шрифт для издания",
-    client: "Городской журнал",
-    type: "Типографика",
-    year: "2024",
-    result: "4 начертания",
-    resultNote: "кириллица и латиница",
-    image: img("type"),
-    color: "#f7dccb",
-  },
-  {
-    title: "Онлайн-редактор",
-    client: "Сервис для команд",
-    type: "Интерфейсы",
-    year: "2024",
-    result: "−40%",
-    resultNote: "времени на сборку макета",
-    image: img("shapes"),
-    color: "#dddaf5",
   },
 ];
 

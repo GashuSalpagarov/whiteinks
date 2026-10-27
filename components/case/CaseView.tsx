@@ -1,5 +1,5 @@
 import { type MouseEvent, type ReactNode, useEffect } from "react";
-import { CARDS_CONTENT, type CaseData, type CaseImage } from "@/components/scenes/Scene3";
+import { CARDS_CONTENT, CASES, type CaseData, type CaseImage } from "@/components/scenes/Scene3";
 import { BriefForm } from "@/components/ui/BriefForm";
 import { BRIEF_CONFIG, getBrief, setBrief, useBrief } from "@/lib/brief";
 import { HOME_HREF } from "@/lib/caseRoute";
@@ -117,11 +117,14 @@ function End({ c, act }: { c: CaseData; act: CaseActions }) {
               }
             />
           </div>
-          <p className={styles.more} data-rise>
-            <button type="button" className={styles.moreLink} onClick={act.next}>
-              {sent ? "пока ждёте звонка — ещё проект →" : "ещё проект →"}
-            </button>
-          </p>
+          {/* Кейс один — «ещё проект» вёл бы в него же */}
+          {CASES.length > 1 && (
+            <p className={styles.more} data-rise>
+              <button type="button" className={styles.moreLink} onClick={act.next}>
+                {sent ? "пока ждёте звонка — ещё проект →" : "ещё проект →"}
+              </button>
+            </p>
+          )}
         </div>
       </section>
     </>

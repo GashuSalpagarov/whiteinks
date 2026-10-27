@@ -43,20 +43,17 @@ export function Providers({ children }: { children: ReactNode }) {
     // (скорость·50·TOUCH)^1,5 px: на замере ближе всего к родной, умноженной на TOUCH.
     const TOUCH = 0.67;
     const trail: [number, number][] = [];
-    // ВРЕМЕННО, отладка на iPhone: с ?native в адресе касания ведёт браузер (родная прокрутка),
-    // колёсико — по-прежнему Lenis. Для сравнения плавности; убрать: native и его проверки ниже.
-    const native = new URLSearchParams(location.search).has("native");
     const instance = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - 2 ** (-10 * t)),
       smoothWheel: true,
-      syncTouch: !native,
+      syncTouch: true,
       touchMultiplier: TOUCH,
       touchInertiaExponent: 1.5,
       // Поле «Другое» (textarea) крутится само, страница при этом стоит.
       prevent: (node: HTMLElement) => node instanceof HTMLTextAreaElement,
       virtualScroll: ({ event: e }) => {
-        if (native || !("touches" in e)) return true;
+        if (!("touches" in e)) return true;
         if (e.type === "touchstart") trail.length = 0;
         if (e.type !== "touchend") trail.push([e.timeStamp, e.touches[0]?.clientY ?? 0]);
         else {

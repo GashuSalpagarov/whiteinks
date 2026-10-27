@@ -10,7 +10,7 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export const HOME_HREF = `${BASE}/`;
 export const caseHref = (slug: string) => `${BASE}/works/${slug}/`;
 
-// Кейс из адреса: «/whiteinks/works/e-commerce/» → «e-commerce»; не кейс — null.
+// Кейс из адреса: «/whiteinks/works/studio-site/» → «studio-site»; не кейс — null.
 export function caseSlugFrom(pathname: string): string | null {
   const path = BASE && pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname;
   return /^\/works\/([^/]+)\/?$/.exec(path)?.[1] ?? null;
