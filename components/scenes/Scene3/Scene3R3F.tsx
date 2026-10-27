@@ -119,12 +119,12 @@ export function Scene3R3F({ progressRef, streamRef }: Props) {
     const p = progressRef.current;
     const inScene = p > 0 && p < 1 ? 1 : 0;
 
-    // Скорость Lenis (px за кадр, со знаком) → −1..1. Делим на delta·60, чтобы на 120 Гц
+    // Скорость Lenis (px за кадр, со знаком) → −1..1. Делим на dt·60, чтобы на 120 Гц
     // (вдвое меньше px за кадр) отклик был тем же. Сглаживаем пружиной, а не lerp:
     // при остановке v чуть перелетает через 0 и успокаивается.
-    const rawV = (lenis?.velocity ?? 0) / (Math.max(delta, 1 / 240) * 60 * VELOCITY_MAX);
+    const dt = Math.min(delta, 1 / 30); // после простоя канваса и возврата во вкладку delta огромный
+    const rawV = (lenis?.velocity ?? 0) / (Math.max(dt, 1 / 240) * 60 * VELOCITY_MAX);
     const targetV = Math.max(-1, Math.min(1, rawV));
-    const dt = Math.min(delta, 1 / 30); // после возврата во вкладку delta огромный
     const spring = springRef.current;
     spring.dv += (VELOCITY_STIFFNESS * (targetV - spring.v) - VELOCITY_DAMPING * spring.dv) * dt;
     spring.v += spring.dv * dt;
