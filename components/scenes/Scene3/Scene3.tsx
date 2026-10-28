@@ -97,7 +97,10 @@ function layout(w: number, h: number) {
       const ch = cardH(cw);
       const x = (w - cw) / 2;
       read.push({ x, y: dy - 24 - ch, w: cw, h: ch });
-      caption.push({ x, y: dy + 28, w: cw, h: 0 });
+      // Короткий телефон (375×548): карточка сильно уже экрана — подпись по ширине экрана, иначе
+      // описание не влезает. Выше — по ширине карточки, чтобы край текста шёл по её рамке.
+      const capW = h <= 600 ? w - 40 : cw;
+      caption.push({ x: (w - capW) / 2, y: dy + 28, w: capW, h: 0 });
       tilt.push(0);
       continue;
     }
@@ -262,6 +265,8 @@ export function Scene3() {
     const section = sectionRef.current;
     if (!section) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const videos = [...section.querySelectorAll("video")];
+    let playing = false;
     let L: Layout | null = null;
     let shared: HTMLElement | null = null; // общая точка (.drop в Hero)
     let viewport = "";
@@ -292,6 +297,16 @@ export function Scene3() {
       const h = viewportH();
       if (!h) return;
       const rect = section.getBoundingClientRect();
+      // Видео карточек — только пока сцена на экране (батарея телефона). play() отклонён (iOS в
+      // режиме экономии) — остаётся постер.
+      const play = !reduced && rect.top < h && rect.bottom > 0;
+      if (play !== playing) {
+        playing = play;
+        for (const v of videos) {
+          if (play) v.play().catch(() => {});
+          else v.pause();
+        }
+      }
       // Без движения — сразу собранная сетка, пока sticky стоит.
       const raw = -rect.top / h;
       const u = reduced ? (rect.top <= 0 ? TOTAL : 0) : Math.max(0, Math.min(TOTAL, raw));
@@ -453,8 +468,26 @@ export function Scene3() {
                   {/* Цветное поле вокруг вписанной картинки — её собственный фон: на втором круге
                     (инверсия палитры, globals.css) img возвращается в свои цвета вместе с полем,
                     а рамки и белое поле карточки остаются в негативе. */}
-                  {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-                  <img src={c.image} alt="" style={{ background: c.color }} />
+                  {c.video ? (
+                    // Петля вместо картинки, пока грузится — постер. Грузится и играет, только пока
+                    // сцена на экране (update ниже), при «меньше движения» — нет; no-invert — как
+                    // img на втором круге.
+                    <video
+                      className="no-invert"
+                      src={c.video}
+                      poster={c.image}
+                      muted
+                      loop
+                      playsInline
+                      preload="none"
+                      style={{ background: c.color }}
+                    />
+                  ) : (
+                    <>
+                      {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
+                      <img src={c.image} alt="" style={{ background: c.color }} />
+                    </>
+                  )}
                 </div>
                 <span className={styles.badge}>{num(i)}</span>
               </>
@@ -521,16 +554,7 @@ export function Scene3() {
                 {num(i)} <span>/ {num(TUNNEL - 1)}</span>
               </p>
               <h3 className={styles.title}>{c.title}</h3>
-              <dl className={styles.meta}>
-                <dt>Клиент</dt>
-                <dd>{c.client}</dd>
-                <dt>Тип</dt>
-                <dd>{c.type}</dd>
-                <dt>Год</dt>
-                <dd>{c.year}</dd>
-              </dl>
-              <p className={styles.result}>{c.result}</p>
-              <p className={styles.resultNote}>{c.resultNote}</p>
+              {c.about && <p className={styles.about}>{c.about}</p>}
               {c.slug && (
                 <a
                   href={caseHref(c.slug)}

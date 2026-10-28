@@ -17,7 +17,9 @@ export type CardContent = {
   year: string;
   result: string;
   resultNote: string;
+  about?: string; // описание в окне чтения туннеля вместо крупной цифры, 2–3 предложения
   image: string;
+  video?: string; // петля MP4 вместо картинки; image — её первый кадр (постер)
   color: string;
   slug?: string;
 };
@@ -26,13 +28,16 @@ export type CardContent = {
 // широком экране и 2×4 в портрете — одинаковые фоны не встают рядом.
 export const CARDS_CONTENT: CardContent[] = [
   {
-    title: "ИИ-собеседник",
+    title: "ИИ-ассистент Memoridian",
     client: "White Inks",
-    type: "Бренд и продукт",
+    type: "Бренд, сайт и приложения",
     year: "2026",
     result: "Помнит",
-    resultNote: "о тебе и близких — а лишнее стираешь сам",
+    resultNote: "тебя и близких — в браузере и в телефоне",
+    about:
+      "От идеи до приложений в сторах: придумали бренд и маскота, собрали лендинг, веб-версию, Android и iPhone. Внутри — свой ИИ-движок с памятью, тренировки, поиск билетов и игровой режим.",
     image: img("card-memoridian.webp"),
+    video: img("card-memoridian.mp4"),
     color: "#f7dccb",
   },
   {
@@ -42,6 +47,8 @@ export const CARDS_CONTENT: CardContent[] = [
     year: "2025",
     result: "100+",
     resultNote: "крупных компаний хранят в ней фото и видео",
+    about:
+      "Весь интерфейс\u00a0— с нуля: медиатека, поиск, права и порталы. В нём работают больше 100\u00a0крупных компаний: кадр среди тысяч находят по лицу или похожему снимку и отдают ссылкой с паролем и сроком.",
     image: img("card-picvario.webp"),
     color: "#d3ebdd",
   },
@@ -52,6 +59,8 @@ export const CARDS_CONTENT: CardContent[] = [
     year: "2026",
     result: "4 шага",
     resultNote: "и бронь на всю компанию — без предоплаты",
+    about:
+      "Бренд со знаком-молнией, сайт и бронь\u00a0— всё с нуля. Бронь на всю компанию собирается за 4\u00a0шага и без предоплаты: на каждого вписываешь рост и вес, а забрать можно и в отеле.",
     image: img("card-adrenalin.webp"),
     color: "#f4ebc3",
   },
@@ -62,6 +71,8 @@ export const CARDS_CONTENT: CardContent[] = [
     year: "2022",
     result: "24/7",
     resultNote: "дежурный врач ответит в течение 10 минут",
+    about:
+      "Портал телемедицины: сайт, кабинеты пациента и врача. У пациента\u00a0— медкарта с профилями близких и календарь лекарств, а на срочный вопрос дежурный врач ответит в течение 10\u00a0минут.",
     image: img("card-doctis.webp"),
     color: "#dddaf5",
   },
@@ -72,6 +83,8 @@ export const CARDS_CONTENT: CardContent[] = [
     year: "2021",
     result: "1 поле",
     resultNote: "для записи хватает номера телефона",
+    about:
+      "Собрали клинике сайт под ключ: услуги, цены, врачи и запись. Форма записи\u00a0— короче некуда: одно поле, без анкет и выбора времени, хватает номера телефона.",
     image: img("card-imperia.webp"),
     color: "#d3ebdd",
   },
