@@ -12,11 +12,10 @@ const img = (file: string) => `${BASE}/assets/hero/${file}`;
 
 export type CardContent = {
   title: string;
-  client: string;
+  client?: string; // нет — свой продукт студии
   type: string;
-  year: string;
-  result: string;
-  resultNote: string;
+  result?: string; // главная цифра первого экрана страницы кейса (нет — первый экран без неё)
+  resultNote?: string;
   about?: string; // описание в окне чтения туннеля вместо крупной цифры, 2–3 предложения
   image: string;
   video?: string; // петля MP4 вместо картинки; image — её первый кадр (постер)
@@ -29,22 +28,18 @@ export type CardContent = {
 export const CARDS_CONTENT: CardContent[] = [
   {
     title: "ИИ-ассистент Memoridian",
-    client: "White Inks",
-    type: "Бренд, сайт и приложения",
-    year: "2026",
-    result: "Помнит",
-    resultNote: "тебя и близких — в браузере и в телефоне",
+    type: "Бренд, сайт, приложения и ИИ",
     about:
-      "От идеи до приложений в сторах: придумали бренд и маскота, собрали лендинг, веб-версию, Android и iPhone. Внутри — свой ИИ-движок с памятью, тренировки, поиск билетов и игровой режим.",
+      "От идеи до приложений в сторах: придумали бренд и маскота, собрали лендинг, веб-версию, Android и iPhone. Внутри — свой ИИ-движок с памятью, тренировки и поиск билетов.",
     image: img("card-memoridian.webp"),
     video: img("card-memoridian.mp4"),
     color: "#f7dccb",
+    slug: "memoridian",
   },
   {
     title: "Медиатека",
     client: "Picvario",
     type: "Интерфейс с нуля",
-    year: "2025",
     result: "100+",
     resultNote: "крупных компаний хранят в ней фото и видео",
     about:
@@ -56,7 +51,6 @@ export const CARDS_CONTENT: CardContent[] = [
     title: "Горный прокат",
     client: "Прокат «Адреналин», Архыз",
     type: "Бренд и сайт",
-    year: "2026",
     result: "4 шага",
     resultNote: "и бронь на всю компанию — без предоплаты",
     about:
@@ -68,7 +62,6 @@ export const CARDS_CONTENT: CardContent[] = [
     title: "Клиника онлайн",
     client: "Doctis",
     type: "Сайт и кабинеты",
-    year: "2022",
     result: "24/7",
     resultNote: "дежурный врач ответит в течение 10 минут",
     about:
@@ -80,7 +73,6 @@ export const CARDS_CONTENT: CardContent[] = [
     title: "Стоматология",
     client: "Центр имплантации «Империя»",
     type: "Сайт под ключ",
-    year: "2021",
     result: "1 поле",
     resultNote: "для записи хватает номера телефона",
     about:
@@ -92,7 +84,6 @@ export const CARDS_CONTENT: CardContent[] = [
     title: "Анализы рядом",
     client: "Doctis",
     type: "Каталог с картой",
-    year: "2022",
     result: "Сам или с врачом",
     resultNote: "анализы выбираешь сам — или их соберёт врач онлайн",
     image: img("card-doctis-analysis.webp"),
@@ -100,9 +91,7 @@ export const CARDS_CONTENT: CardContent[] = [
   },
   {
     title: "Промо-сайт студии",
-    client: "White Inks",
     type: "Сайт · 3D",
-    year: "2026",
     result: "×3",
     resultNote: "заявок с сайта",
     image: img("browser.svg"),

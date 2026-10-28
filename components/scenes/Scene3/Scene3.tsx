@@ -554,6 +554,9 @@ export function Scene3() {
                 {num(i)} <span>/ {num(TUNNEL - 1)}</span>
               </p>
               <h3 className={styles.title}>{c.title}</h3>
+              <p className={styles.kind}>
+                <span>{c.type}</span>
+              </p>
               {c.about && <p className={styles.about}>{c.about}</p>}
               {c.slug && (
                 <a
@@ -586,9 +589,7 @@ export function Scene3() {
                 <span className={styles.labelNum}>{num(i)} · </span>
                 {c.title}
               </span>
-              <span>
-                {c.type} · {c.year}
-              </span>
+              <span>{c.type}</span>
             </p>
           ))}
           <p ref={allLabelRef} className={styles.label}>

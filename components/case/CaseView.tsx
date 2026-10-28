@@ -44,14 +44,31 @@ function Img({ img, wide }: { img: CaseImage; wide?: boolean }) {
 }
 
 // Обложка — карточка туннеля: та же картинка на своём фоне и номер. На первом экране в её рамку
-// встаёт карточка туннеля (data-cover).
+// встаёт карточка туннеля (data-cover). Видео-петля карточки играет и здесь — с первого кадра (он
+// же постер), когда вход доигран (CaseLayer, settle).
 function Cover({ i, className }: { i: number; className: string }) {
   const card = CARDS_CONTENT[i];
+  const style = { background: card.color, objectFit: "contain" } as const;
   return (
     <figure className={`${styles.card} ${className}`} data-cover="">
       <div className={styles.pv}>
-        {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-        <img src={card.image} alt="" style={{ background: card.color, objectFit: "contain" }} />
+        {card.video ? (
+          <video
+            className="no-invert"
+            src={card.video}
+            poster={card.image}
+            muted
+            loop
+            playsInline
+            preload="auto"
+            style={style}
+          />
+        ) : (
+          <>
+            {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
+            <img src={card.image} alt="" style={style} />
+          </>
+        )}
       </div>
       <span className={styles.badge}>{num(i)}</span>
     </figure>
@@ -164,10 +181,12 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
           {/* Главная цифра — справа от обложки, по её нижнему краю (на телефоне — под текстом). */}
           <div className={styles.heroMedia}>
             <Cover i={i} className={styles.cover} />
-            <div className={styles.hr} data-hi>
-              <p className={styles.result}>{card.result}</p>
-              <p className={styles.small}>{card.resultNote}</p>
-            </div>
+            {card.result && (
+              <div className={styles.hr} data-hi>
+                <p className={styles.result}>{card.result}</p>
+                <p className={styles.small}>{card.resultNote}</p>
+              </div>
+            )}
           </div>
           {/* Номер, название и «клиент · тип · год» — одним блоком (на десктопе — слева от линии). */}
           <div className={styles.head}>
@@ -179,7 +198,8 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
               {card.title}
             </h1>
             <p className={styles.meta} data-hi>
-              {card.client} · {card.type} · {card.year}
+              {card.client && `${card.client} · `}
+              {card.type}
               {c.url && (
                 <>
                   {" · "}

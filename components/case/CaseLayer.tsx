@@ -77,6 +77,7 @@ function makeFlyer(card: HTMLElement, holder: HTMLElement) {
   const badge = card.lastElementChild;
   const copy = el.lastElementChild as HTMLElement | null;
   if (badge && copy) copy.style.opacity = getComputedStyle(badge).opacity;
+  const frame = grabFrame(card.querySelector("video"), el);
   holder.append(el);
   const m =
     /translate\((-?[\d.]+)px, (-?[\d.]+)px\) scale\((-?[\d.]+)\).*rotateY\((-?[\d.]+)deg\)/.exec(
@@ -84,9 +85,26 @@ function makeFlyer(card: HTMLElement, holder: HTMLElement) {
     );
   const pose = m ? { x: +m[1], y: +m[2], s: +m[3], tilt: +m[4] } : { x: 0, y: 0, s: 1, tilt: 0 };
   const o = Number.parseFloat(card.style.opacity) || 1;
-  return { el, box, pose, o };
+  return { el, box, pose, o, frame };
 }
 type Flyer = ReturnType<typeof makeFlyer>;
+
+// Видео-петля в карточке: копия сама не играет и показала бы постер — скачок в кадре нажатия.
+// Поверх неё — кадр, на котором стоит видео (холст сразу за video копии, выше прежних); полёт
+// сводит его в постер — с него обложка начинает петлю — и обратно.
+function grabFrame(video: HTMLVideoElement | null | undefined, el: HTMLElement) {
+  const copy = el.querySelector("video");
+  if (!video || !copy?.parentElement || video.readyState < 2) return null;
+  const c = document.createElement("canvas");
+  c.width = video.videoWidth;
+  c.height = video.videoHeight;
+  c.getContext("2d")?.drawImage(video, 0, 0);
+  c.className = video.className; // no-invert — как видео на втором круге
+  c.style.cssText = "position:absolute;inset:0;width:100%;height:100%";
+  copy.parentElement.style.position = "relative";
+  copy.after(c);
+  return c;
+}
 
 // Копия карточки: как она стоит на главной и как ушла в точку (12px, без наклона).
 function poses(f: Flyer, V: Point) {
@@ -320,6 +338,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     const t = { duration: FLY, easing: IO3, fill: "forwards" } as const;
     S.anims = [f.el.animate([{ transform: landOn(f, box) }, { transform: REST }], t)];
     if (f.o < 1) S.anims.push(f.el.animate([{ opacity: f.o }, { opacity: 1 }], t));
+    if (f.frame) S.anims.push(f.frame.animate([{ opacity: 1 }, { opacity: 0 }], t));
     // В сетке номер спрятан — в обложке он есть: проявляется в полёте.
     const badge = f.el.lastElementChild as HTMLElement | null;
     if (badge?.style.opacity === "0") badge.animate([{ opacity: 0 }, { opacity: 1 }], t);
@@ -452,6 +471,13 @@ export function CaseLayer({ initial }: { initial?: string }) {
     window.setTimeout(() => setFull(true), Math.max(0, at(NEXT + 400)));
   };
 
+  // Видео-петля обложки — с первого кадра (он же постер): после полёта карточки, иначе сразу.
+  const playCover = () => {
+    if (S.reduced) return;
+    const v = contentRef.current?.querySelector<HTMLVideoElement>("[data-cover] video");
+    v?.play().catch(() => {}); // iOS в экономии — постер
+  };
+
   // Вход доигран — кейс открыт.
   const settle = (anims: Animation[], then?: () => void) => {
     S.anims = anims;
@@ -461,6 +487,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
         S.phase = "open";
         S.anims = [];
         inertHome(true);
+        playCover();
         then?.();
       },
       () => {},
@@ -560,6 +587,14 @@ export function CaseLayer({ initial }: { initial?: string }) {
       cover.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: "forwards" });
       const from = `translate(${(cr.left + cr.width / 2 - f.box.x - f.box.w / 2).toFixed(1)}px, ${(cr.top + cr.height / 2 - f.box.y - f.box.h / 2).toFixed(1)}px) scale(${(cr.width / f.box.w).toFixed(4)}) perspective(1200px) rotateY(0deg)`;
       fly = f.el.animate([{ transform: from }, { transform: p.card }], {
+        duration: FLY,
+        delay,
+        easing: IO3,
+        fill: "both",
+      });
+      // Под кадром карточки — кадр обложки: полёт начинается с того, что было на экране.
+      grabFrame(cover.querySelector("video"), f.el);
+      f.frame?.animate([{ opacity: 0 }, { opacity: 1 }], {
         duration: FLY,
         delay,
         easing: IO3,
@@ -730,6 +765,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     fn.current.update();
     const enter = S.enter;
     S.enter = null;
+    if (enter !== "fly") playCover();
     if (enter === "fly") flyIn();
     else if (enter === "fade") fadeIn();
     else if (enter === "swap") swapIn();
