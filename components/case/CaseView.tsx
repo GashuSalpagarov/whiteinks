@@ -164,7 +164,7 @@ function End({ c, act }: { c: CaseData; act: CaseActions }) {
       <section className={`${styles.sec} ${styles.end}`}>
         <div className={styles.l} />
         <div className={styles.r}>
-          <div className={styles.letter} data-rise>
+          <div className={styles.letter} data-rise data-letter>
             <Envelope />
           </div>
           {/* Кейс один — «ещё проект» вёл бы в него же */}

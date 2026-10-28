@@ -165,10 +165,18 @@ function measure(content: HTMLElement, scroller: HTMLElement, dot: HTMLElement |
   const H = viewportH();
   const dy = H / 2 + DOT_Y;
   const all = (sel: string) => [...content.querySelectorAll<HTMLElement>(sel)];
+  const x = dot ? dot.offsetLeft + dot.offsetWidth / 2 : 0;
+  // Письмо в конце закрывает ось (телефон: оно на всю ширину) — с его верхнего края точка уходит
+  // в него, как линия под подложку (data-under). Иначе — никогда.
+  const letter = content.querySelector<HTMLElement>("[data-letter]");
+  const plate = letter?.firstElementChild?.getBoundingClientRect();
+  const under =
+    letter && plate && plate.left < x ? relY(letter, content) : Number.POSITIVE_INFINITY;
   return {
     H,
     dy,
-    x: dot ? dot.offsetLeft + dot.offsetWidth / 2 : 0, // ось (--x в Case.module.css)
+    x, // ось (--x в Case.module.css)
+    under, // где начинается письмо, если оно закрывает ось
     path: content.offsetHeight - H + dy, // длина пути: до точки в конце прокрутки
     maxS: scroller.scrollHeight - scroller.clientHeight,
     // data-d — задержка всплытия, мс.
@@ -267,6 +275,13 @@ export function CaseLayer({ initial }: { initial?: string }) {
     const dot = dotRef.current;
     const wait = y >= g.maxS - 1 ? "true" : "false";
     if (dot && dot.dataset.wait !== wait) dot.dataset.wait = wait;
+    const under = y + g.dy >= g.under ? "true" : "false";
+    if (dot && dot.dataset.under !== under) dot.dataset.under = under;
+  };
+
+  // Текст гаснет (выход, следующий кейс) — точка снова видна: из неё выходит карточка.
+  const surface = () => {
+    if (dotRef.current) dotRef.current.dataset.under = "false";
   };
 
   const relayout = () => {
@@ -539,6 +554,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     S.anims = [];
     flyerRef.current?.replaceChildren();
     S.phase = "closing";
+    surface();
     document.title = SITE_TITLE;
     const direct = !S.source;
     // Главная всё время стояла; если её всё же сдвинули (тап по строке состояния iOS) — на место.
@@ -666,6 +682,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     if (!content) return;
     const n = nextCase(slug).slug;
     S.swapping = true;
+    surface();
     S.t0 = performance.now();
     requestAnimationFrame(() =>
       window.setTimeout(() => {
