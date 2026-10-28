@@ -33,7 +33,7 @@ export const CARDS_CONTENT: CardContent[] = [
       "От идеи до приложений в сторах: придумали бренд и маскота, собрали лендинг, веб-версию, Android и iPhone. Внутри — свой ИИ-движок с памятью, тренировки и поиск билетов.",
     image: img("card-memoridian.webp"),
     video: img("card-memoridian.mp4"),
-    color: "#f7dccb",
+    color: "#fdc8a5",
     slug: "memoridian",
   },
   {

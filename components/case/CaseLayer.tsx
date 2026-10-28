@@ -124,14 +124,13 @@ type Box = { x: number; y: number; w: number; h: number };
 const REST = "translate(0px, 0px) scale(1) perspective(1200px) rotateY(0deg)";
 
 // Рамка обложки первого экрана до того, как кейс отрисован: полёт стартует в кадре нажатия. Числа —
-// из Case.module.css (.sec, .hero, .back, .heroMedia, .cover), менять вместе; отрисованный кейс
-// сверяет цель с настоящей рамкой (flyIn).
+// из Case.module.css (.sec, .r, .hero, .back, .heroMedia, .cover), менять вместе; отрисованный кейс
+// сверяет цель с настоящей рамкой (flyIn). Обложка — 7 из 12 колонок правой части.
 function coverBox(): Box {
   const W = window.innerWidth;
   const at = (x: number, y: number, w: number) => ({ x, y, w, h: w * 0.75 + 6.75 });
   if (W < 768) return at(44, 96 + 22.5 + 14, W - 64);
-  const x = W * 0.25 + 56;
-  return at(x, 100 + 22.5 + 18, Math.min(600, Math.min(900, W - 96 - x) * 0.66));
+  return at(W * 0.25 + 56, 100 + 22.5 + 18, (Math.min(1040, W * 0.75 - 112) * 7) / 12);
 }
 
 // Копия карточки встаёт в рамку обложки: её разметка — сразу размером и на месте обложки, а
@@ -172,7 +171,12 @@ function measure(content: HTMLElement, scroller: HTMLElement, dot: HTMLElement |
     x: dot ? dot.offsetLeft + dot.offsetWidth / 2 : 0, // ось (--x в Case.module.css)
     path: content.offsetHeight - H + dy, // длина пути: до точки в конце прокрутки
     maxS: scroller.scrollHeight - scroller.clientHeight,
-    rises: all("[data-rise]").map((el) => ({ el, top: relY(el, content) })),
+    // data-d — задержка всплытия, мс.
+    rises: all("[data-rise]").map((el) => ({
+      el,
+      top: relY(el, content),
+      delay: Number(el.dataset.d) || 0,
+    })),
   };
 }
 type Geometry = ReturnType<typeof measure>;
@@ -255,7 +259,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
               { opacity: 0, transform: "translateY(22px)" },
               { opacity: 1, transform: "none" },
             ],
-            { duration: 600, easing: OUT3 },
+            { duration: 600, delay: r.delay, easing: OUT3, fill: "backwards" },
           );
         } else put(r.el, "0", "translateY(22px)");
       }
@@ -696,14 +700,15 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const act: CaseActions = {
     close: () => close(),
     next: () => goNext(),
-    // «Обсудить проект» в шапке: форма в конце кейса на экране — курсор в её поле «телефон»; иначе —
-    // окно заявки поверх кейса (components/ui/BriefModal): растёт из нажатой кнопки, закрыли —
-    // снова в кейсе, на той же кнопке.
+    // «Обсудить проект» в шапке: конверт в конце кейса на экране и открыт — курсор в его поле
+    // «телефон»; иначе (и после отправки: поле в закрытом конверте недоступно) — окно заявки
+    // поверх кейса (components/ui/BriefModal): растёт из нажатой кнопки, закрыли — снова в кейсе,
+    // на той же кнопке.
     discuss: (e) => {
       const input = contentRef.current?.querySelector<HTMLInputElement>('input[name="phone"]');
       const r = input?.getBoundingClientRect();
       const top = headerRef.current?.getBoundingClientRect().bottom ?? 0;
-      if (input && r && r.top > top && r.bottom < window.innerHeight)
+      if (input && r && !input.closest("[inert]") && r.top > top && r.bottom < window.innerHeight)
         input.focus({ preventScroll: true });
       else openBrief(e.currentTarget);
     },

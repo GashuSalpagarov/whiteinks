@@ -1,0 +1,834 @@
+/* Конверт заявки (Envelope.tsx) — один на сайт: его собирает по прокрутке Сцена 6
+   (Scene6.tsx), собранным он стоит в конце страницы кейса (CaseView). Слои снизу вверх: сиреневое
+   поле, открытый клапан и спинка, письмо с полями, карман с согласием и кнопкой, закрытый клапан,
+   марка и «от: …»; контур сборки — поверх всего, в покое его нет. Стили сборки хозяин пишет на
+   самих элементах; в покое их нет — без JS и без анимаций конверт собран.
+   Отправили (.closed): письмо уходит в конверт, клапан закрывается, конверт садится до обычной
+   пропорции, на нём — «от: …»; ушло на сервер (.sent) — ложится марка.
+   Хозяин может задать (по умолчанию — как в Сцене 6): --letter-margin (место обёртки),
+   --side (боковое поле сиреневой подложки), --pill-x, --pill-gap, --pill-fs (пилюли «что нужно»). */
+
+/* ---------- Конверт ---------- */
+
+.letter {
+  position: relative;
+  max-width: 920px;
+  margin: var(--letter-margin, 0 auto);
+  --muted: rgba(10, 10, 10, 0.58);
+  --dim: rgba(10, 10, 10, 0.5);
+  --lav: #dddaf5;
+  --pad: 40px; /* поле подложки над конвертом: линия идёт по нему до вершины клапана */
+  --flap: 118px; /* высота открытого клапана */
+  --dip: 58px; /* глубина галочки кармана */
+  --pocket: 170px; /* карман с кнопкой */
+  --tuck: 84px; /* сколько письма в кармане */
+  /* Строки «Другое» под пилюлями: отступ, высота строки, до скольких строк растёт поле. Письмо
+     выдвигается на --lift (одна строка) и на строку за каждую следующую (--absorb: 1 — вверх;
+     0 — вниз, конверт удлиняется). */
+  --gap: 12px;
+  --line: 26px;
+  --max: 2;
+  --lift: 25px;
+  --absorb: 1;
+  --ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.plate {
+  position: relative;
+  padding: var(--pad) var(--side, 80px) 36px;
+  border-radius: 4px;
+}
+
+.tint {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lav);
+  pointer-events: none;
+}
+
+/* Слои снизу вверх: открытый клапан и спинка, письмо, карман, закрытый клапан, марка и адрес. */
+.env {
+  position: relative;
+  z-index: 2;
+  display: flow-root;
+  overflow: clip;
+}
+
+/* Рисунок конверта мышь не ловит: под ним поля, согласие и кнопка. */
+.flapOpen,
+.flapClosed,
+.cut,
+.outline {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.env polygon,
+.env polyline {
+  fill: var(--color-bg);
+  stroke: var(--color-fg);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.flapOpen {
+  top: 0;
+  z-index: 1;
+  height: var(--flap);
+  transform-origin: 50% 100%;
+}
+
+.back {
+  position: absolute;
+  top: var(--flap);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 0 0 6px 6px;
+  background: var(--color-bg);
+  pointer-events: none;
+}
+
+/* Письмо: верх выше конверта, низ (--tuck) — в кармане, над ним там же — место первой строки
+   «Другое» (конверт той же высоты). Выбрали «Другое» — письмо выдвигается из кармана на --lift и
+   на --k за следующие строки (--n — строк в поле, из Envelope.tsx); при сборке Scene6.tsx уводит
+   его в карман на столько же глубже. */
+.sheet {
+  --k: calc(var(--absorb) * (min(var(--n, 1), var(--max)) - 1) * var(--line));
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 26px;
+  width: calc(100% - 72px);
+  margin: 62px auto calc(var(--pocket) - var(--tuck) - var(--gap) - var(--line) - var(--k));
+  padding: 30px 36px calc(var(--tuck) + 20px);
+  border: 1.5px solid var(--color-fg);
+  border-radius: 6px 6px 0 0;
+  background: var(--color-bg);
+  transition: translate 0.4s var(--ease);
+}
+
+.sheet[data-other] {
+  translate: 0 calc(-1 * (var(--lift) + var(--k)));
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+/* Карман прижат ко дну конверта; верхний край — галочка (clip-path), её линия — .cut. Срез —
+   на 1px выше линии, чтобы она не теряла половину толщины. */
+.pocket {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  height: var(--pocket);
+  padding: calc(var(--dip) + 30px) 36px 0;
+  border: 1.5px solid var(--color-fg);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  background: var(--color-bg);
+  clip-path: polygon(0 -1px, 50% calc(var(--dip) - 1px), 100% -1px, 100% 100%, 0 100%);
+}
+
+.cut {
+  top: 0;
+  left: -1.5px;
+  width: calc(100% + 3px);
+  height: var(--dip);
+}
+
+.env .cut polyline {
+  fill: none;
+}
+
+.act {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.flapClosed {
+  top: var(--flap);
+  z-index: 4;
+  height: calc((100% - var(--flap)) * 0.6);
+  transform-origin: 50% 0;
+  scale: 1 0;
+}
+
+/* Контур сборки: две линии из точки обегают конверт (stroke-dashoffset из Scene6.tsx); в покое
+   его нет. */
+.outline {
+  top: 0;
+  z-index: 6;
+  height: 100%;
+  color: var(--color-fg);
+  opacity: 0;
+}
+
+/* Марка — пастель с белым полем и пунктирной кромкой, на ней круг пути. */
+.stamp {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 70px;
+  border: 1.5px dashed var(--color-fg);
+  background: #f5dccd;
+  box-shadow: inset 0 0 0 5px var(--color-bg);
+  opacity: 0;
+  scale: 1.6;
+  rotate: -14deg;
+  pointer-events: none;
+}
+
+.stamp::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  border: 4px solid var(--color-fg);
+  border-radius: 50%;
+}
+
+.from {
+  position: absolute;
+  bottom: 24px;
+  left: 32px;
+  z-index: 5;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--muted);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.from b {
+  font-weight: 500;
+  color: var(--color-fg);
+}
+
+/* ---------- Поля ---------- */
+
+.field {
+  position: relative;
+  min-width: 0;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+
+.field:focus-within > .label {
+  color: var(--color-fg);
+}
+
+.input {
+  display: block;
+  width: 100%;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: inset 0 -1.5px 0 var(--color-fg);
+  color: inherit;
+  font-size: 1.375rem;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: box-shadow 0.2s var(--ease-out);
+}
+
+.input:focus-visible,
+.input[aria-invalid="true"] {
+  box-shadow: inset 0 -3px 0 var(--color-fg);
+}
+
+/* Маска: набранное — чёрным в поле, остаток шаблона — бледным за ним, в той же клетке. */
+.mask {
+  position: relative;
+  display: grid;
+}
+
+.mask > * {
+  grid-area: 1 / 1;
+}
+
+.mask .input {
+  width: 0;
+  min-width: 100%;
+}
+
+.ghostMask {
+  display: flex;
+  align-items: center;
+  font-size: 1.375rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+  color: var(--dim);
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ghostMask i {
+  font-style: normal;
+  color: transparent;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pill-gap, 8px);
+  margin-top: 10px;
+}
+
+.pill {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.pill input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pill span {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 var(--pill-x, 18px);
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  background: var(--color-bg);
+  font-size: var(--pill-fs, 0.9375rem);
+  white-space: nowrap;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.pill input:checked + span {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+
+.pill input:focus-visible + span {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .pill:hover input:not(:checked) + span {
+    background: rgba(10, 10, 10, 0.05);
+  }
+}
+
+/* Своё к «Другое» — строки пути: на каждой пунктир, под набранным — чернила (позади чернила,
+   впереди пунктир). Поле растёт по строкам (rows из Envelope.tsx), дальше --max — прокрутка в нём;
+   Enter — новая строка. Пока «Другое» не выбрана, строк не видно (первая — в кармане). Выбрали —
+   проступают, а пунктир расходится из-под пилюли (--o из Envelope.tsx), как контур конверта из
+   точки. Пунктир и чернила рисует зеркало текста под полем (.otherInk): строки — его фон, под
+   словами — белый фон с нижней линией; прокрутку поля оно повторяет. */
+.other {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: var(--gap);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* Слои по порядку: зеркало (с scale) — под полем. */
+.other > * {
+  position: relative;
+  grid-area: 1 / 1;
+}
+
+.otherInk,
+.otherInput {
+  max-height: calc(var(--max) * var(--line));
+  overflow: hidden;
+  font-size: 1.0625rem;
+  line-height: var(--line);
+  letter-spacing: -0.005em;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Высоту строки задаёт поле, зеркало только повторяет её (contain: size). */
+.otherInk {
+  contain: size;
+  color: transparent;
+  background: radial-gradient(
+      circle at 50% calc(100% - 1px),
+      rgba(10, 10, 10, 0.34) 1px,
+      transparent 1.4px
+    )
+    0 0 / 8px var(--line) local;
+  transform-origin: var(--o, 50%) 0;
+  scale: 0 1;
+  transition: scale 0.3s var(--ease);
+  pointer-events: none;
+}
+
+.other:focus-within .otherInk {
+  background-image: radial-gradient(
+    circle at 50% calc(100% - 1px),
+    var(--color-fg) 1px,
+    transparent 1.4px
+  );
+}
+
+.otherInk span {
+  padding-bottom: 2px;
+  background:
+    linear-gradient(var(--color-fg), var(--color-fg)) 0 100% / 100% 1.5px no-repeat,
+    var(--color-bg);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.otherInput {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.otherInput::-webkit-scrollbar {
+  display: none;
+}
+
+.otherInput::placeholder {
+  color: var(--dim);
+}
+
+.sheet[data-other] .other {
+  opacity: 1;
+  transition: opacity 0.3s 0.15s;
+}
+
+.sheet[data-other] .otherInk {
+  scale: 1;
+  transition: scale 0.45s var(--ease-out) 0.15s;
+}
+
+/* Поле в фокусе — ниже шапки (72px) и выше края экрана с клавиатурой. */
+.input,
+.otherInput,
+.check {
+  scroll-margin: 96px 0 24px;
+}
+
+/* Ошибка — в тон сайта: точка героя и короткая фраза. */
+.error {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: errorIn 0.35s var(--ease-out);
+}
+
+.error::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  translate: 0 -1px;
+}
+
+@keyframes errorIn {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+.formError {
+  position: relative;
+  z-index: 2;
+  margin: 14px 0 0;
+}
+
+.trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.consent a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.check {
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.check::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border: solid var(--color-bg);
+  border-width: 0 0 2px 2px;
+  translate: 0 -1px;
+  rotate: -45deg;
+  scale: 0;
+  transition: scale 0.2s var(--ease-out);
+}
+
+.check:checked {
+  background: var(--color-fg);
+}
+
+.check:checked::after {
+  scale: 1;
+}
+
+.check[aria-invalid="true"] {
+  box-shadow: 0 0 0 1px var(--color-fg);
+}
+
+.send {
+  flex: none;
+  height: 52px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+.send:focus-visible,
+.check:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+/* ---------- Отправили: письмо в конверт, клапан, марка ---------- */
+
+.closed .sheet {
+  translate: 0 100%;
+  opacity: 0;
+  transition:
+    translate 0.35s var(--ease),
+    opacity 0s linear 0.35s;
+}
+
+.closed .act {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.closed .env {
+  transition: height 0.3s var(--ease) 0.3s;
+}
+
+.closed .flapOpen {
+  scale: 1 0;
+  transition: scale 0.15s cubic-bezier(0.5, 0, 0.9, 0.5) 0.3s;
+}
+
+.closed .flapClosed {
+  scale: 1 1;
+  transition: scale 0.2s var(--ease-out) 0.45s;
+}
+
+.closed .cut {
+  opacity: 0;
+  transition: opacity 0.2s ease 0.6s;
+}
+
+.closed .from {
+  opacity: 1;
+  transition: opacity 0.3s ease 0.65s;
+}
+
+.sent .stamp {
+  opacity: 1;
+  scale: 1;
+  rotate: -6deg;
+  transition:
+    opacity 0.1s ease 0.62s,
+    scale 0.35s var(--ease-out) 0.62s,
+    rotate 0.35s var(--ease-out) 0.62s;
+}
+
+.nw {
+  white-space: nowrap;
+}
+
+/* ---------- Телефон ---------- */
+
+/* Телефон, планшет в портрете (lib/phoneLayout.ts) и телефон боком: конверт на всю ширину, поля
+   письма — столбиком. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
+  .letter {
+    margin: var(--letter-margin, 0 -8px);
+    --pad: 24px;
+    --flap: 64px;
+    --dip: 34px;
+    --pocket: 190px;
+    --tuck: 80px;
+    /* Над письмом всего 34px: письмо выдвигается на первую строку, вторая и третья удлиняют
+       конверт вниз (сцена здесь не стоит — сборке и стыкам это не мешает). */
+    --gap: 6px;
+    --line: 24px;
+    --max: 3;
+    --lift: 19px;
+    --absorb: 0;
+  }
+
+  .otherInk,
+  .otherInput {
+    font-size: 1rem;
+  }
+
+  .plate {
+    padding: var(--pad) var(--side, 10px) 14px;
+  }
+
+  .sheet {
+    gap: 22px;
+    width: calc(100% - 24px);
+    margin-top: 34px;
+    padding: 22px 16px calc(var(--tuck) + 16px);
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .input {
+    height: 44px;
+  }
+
+  .input,
+  .ghostMask {
+    font-size: 1.1875rem;
+  }
+
+  /* Пять пилюль — в два ряда и на 390: тогда конверт влезает в экран. */
+  .pill span {
+    height: 44px;
+    padding: 0 var(--pill-x, 14px);
+  }
+
+  .pocket {
+    padding: calc(var(--dip) + 18px) 14px 0;
+  }
+
+  .act {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  /* Зона нажатия 44px — отступами подписи; у ссылок в ней — своими отступами. */
+  .consent {
+    margin-block: -12px;
+    padding-block: 12px;
+  }
+
+  .consent a {
+    padding-block: 14px;
+  }
+
+  .stamp {
+    right: 14px;
+    bottom: 14px;
+    width: 46px;
+    height: 56px;
+  }
+
+  .stamp::before {
+    width: 18px;
+    height: 18px;
+    border-width: 3.5px;
+  }
+
+  .from {
+    bottom: 16px;
+    left: 16px;
+    font-size: 0.875rem;
+  }
+}
+
+
+/* Телефонная раскладка (lib/phoneLayout.ts): сборка конверта. До сигнала Scene6.tsx пишет на
+   элементы лежачий конверт: форма поднята на «карман», всё в ней, кроме кармана, — опущено обратно
+   (обрезка формы идёт по низу кармана), подложка — доля высоты от верха. С data-play конверт
+   доигрывает сам: стили сборки сняты, к покою ведут переходы — клапан пологим ложится и
+   переворачивается (--lid — его глубина из Scene6.tsx), открывается, письмо проступает, карман
+   опускается на место (--move — один такт для формы и всего, что сдвинуто обратно), поля — по
+   одному, кнопка. Нажатия письмо и кнопка ловят, когда доиграло (wait). */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px) {
+  .tint {
+    transform-origin: 50% 0;
+  }
+
+  .letter[data-play] {
+    --move: 0.9s var(--ease) 0.62s;
+  }
+
+  .letter[data-play] .env,
+  .letter[data-play] .tint {
+    transition: transform var(--move);
+  }
+
+  .letter[data-play] .back,
+  .letter[data-play] .outline {
+    transition:
+      transform var(--move),
+      opacity 0.3s ease;
+  }
+
+  .letter[data-play] .flapClosed {
+    transition: translate var(--move);
+    animation: lid 0.62s var(--ease);
+  }
+
+  .letter[data-play] .flapOpen {
+    transition:
+      translate var(--move),
+      scale 0.32s var(--ease-out) 0.5s;
+  }
+
+  .letter[data-play] .cut {
+    transition: opacity 0.3s ease 0.55s;
+  }
+
+  .letter[data-play] .sheet {
+    transition:
+      transform var(--move),
+      opacity 0.25s ease 0.45s,
+      translate 0.4s var(--ease);
+    animation: wait 1.8s;
+  }
+
+  .letter[data-play] .field,
+  .letter[data-play] [role="radiogroup"] {
+    transition:
+      opacity 0.4s ease 0.55s,
+      transform 0.5s var(--ease-out) 0.55s;
+  }
+
+  .letter[data-play] .field + .field {
+    transition-delay: 0.8s;
+  }
+
+  .letter[data-play] [role="radiogroup"] {
+    transition-delay: 1.05s;
+  }
+
+  .letter[data-play] .act {
+    transition:
+      opacity 0.3s ease 1.35s,
+      transform 0.4s var(--ease-out) 1.35s;
+    animation: wait 1.8s;
+  }
+}
+
+@keyframes lid {
+  0% {
+    scale: 1 0;
+  }
+
+  40%,
+  62% {
+    scale: 1 var(--lid, 0.35);
+  }
+
+  100% {
+    scale: 1 0;
+  }
+}
+
+@keyframes wait {
+  from,
+  to {
+    pointer-events: none;
+  }
+}
+
+/* Узкий телефон (360–375): пилюли плотнее — тоже в два ряда, с запасом на шрифты телефонов. */
+@media (max-width: 389px) {
+  .pills {
+    gap: var(--pill-gap, 6px);
+  }
+
+  .pill span {
+    padding: 0 var(--pill-x, 11px);
+    font-size: var(--pill-fs, 0.875rem);
+  }
+}

@@ -1,21 +1,24 @@
 import { type MouseEvent, type ReactNode, useEffect } from "react";
 import { CARDS_CONTENT, CASES, type CaseData, type CaseImage } from "@/components/scenes/Scene3";
-import { BriefForm } from "@/components/ui/BriefForm";
-import { BRIEF_CONFIG, getBrief, setBrief, useBrief } from "@/lib/brief";
+import { Envelope } from "@/components/ui/Envelope";
+import { BRIEF_CONFIG, clearBrief, getBrief, setBrief, useBrief } from "@/lib/brief";
 import { HOME_HREF } from "@/lib/caseRoute";
+import { formatPhone } from "@/lib/phone";
 import styles from "./Case.module.css";
 
 // Разметка страницы кейса (вариант D2 «Рассказ», docs/12-case-page.md): ось у левого края, первый
-// экран (слева от линии номер и название, справа обложка с главной цифрой, под ней фраза) и главы
-// «о проекте → что сделали → результат (цифры и отзыв)», в конце — форма заявки и «ещё проект →». Засечки глав и пунктов, номер
-// главы и закреплённая подпись слева — в CSS. Ход по прокрутке (чернила, всплытие [data-rise]) и
-// вход (карточка туннеля встаёт в рамку обложки [data-cover], строки [data-hi] всплывают) —
-// CaseLayer.tsx.
+// экран (слева от линии номер и название, справа обложка, рядом фраза, ссылка и главная цифра) и
+// главы «о проекте → что сделали → результат (цифры или площадки, отзыв)», в конце — конверт заявки и «ещё
+// проект →». Засечки глав и пунктов, номер главы и закреплённая подпись слева — в CSS. Правая часть — сетка 12 колонок (вариант B «сетка»):
+// рамки статьи — по её колонкам (.g12 в CSS). Ход по прокрутке (чернила, всплытие [data-rise])
+// и вход (карточка туннеля встаёт в рамку обложки [data-cover],
+// строки [data-hi] всплывают) — CaseLayer.tsx.
 
 const N = CARDS_CONTENT.length;
 const num = (i: number) => String(i + 1).padStart(2, "0");
 const cardOf = (slug: string) => CARDS_CONTENT.findIndex((c) => c.slug === slug);
-const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+// Первая буква строчной, кроме сокращений вроде «ИИ».
+const lower = (s: string) => (/^\p{Lu}{2}/u.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
 
 export type CaseActions = {
   close: () => void;
@@ -30,10 +33,12 @@ export const back = (close: () => void) => (e: MouseEvent) => {
   close();
 };
 
-function Img({ img, wide }: { img: CaseImage; wide?: boolean }) {
+// Картинка всплывает сама по себе; место в сетке — className.
+function Img({ img, className = "" }: { img: CaseImage; className?: string }) {
   return (
     <figure
-      className={`${styles.card} ${img.ratio === "3/4" ? styles.port : ""} ${wide ? styles.wide : ""}`}
+      className={`${styles.card} ${img.ratio === "3/4" ? styles.port : ""} ${className}`}
+      data-rise
     >
       <div className={styles.pv}>
         {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
@@ -75,11 +80,12 @@ function Cover({ i, className }: { i: number; className: string }) {
   );
 }
 
-// Конец пути — заявка прямо на странице (макет case-page-3/end-form, вариант A): глава «дальше» с
-// вопросом и строкой из окна заявки, ниже — та же форма, что в окне (components/ui/BriefForm, данные
-// общие — lib/brief.ts), в карточке с рамкой 1,5px. Засечка конца пути тянется от линии до рамки,
-// в конце прокрутки точка ждёт у формы (Case.module.css, .end). «Что нужно» — по кейсу (need в
-// cases.ts), пока посетитель не выбрал сам. Под формой — неброско «ещё проект →» (переход через
+// Конец пути — заявка прямо на странице: глава «дальше» с вопросом и строкой (после отправки — что
+// с заявкой, как над конвертом Сцены 6), ниже — тот же конверт, что на главной (components/ui/
+// Envelope), уже собранный; отправили — он доигрывает сам: письмо в конверт, клапан, «от: …»,
+// марка. Данные общие — lib/brief.ts. Засечка конца пути тянется от линии до подложки, в конце
+// прокрутки точка ждёт у поля «телефон» (Case.module.css, .end). «Что нужно» — по кейсу (need в
+// cases.ts), пока посетитель не выбрал сам. Под конвертом — неброско «ещё проект →» (переход через
 // точку — CaseLayer).
 const ASK: Record<string, string> = {
   Сайт: "ваш сайт",
@@ -90,7 +96,8 @@ const ASK: Record<string, string> = {
 let autoNeed = ""; // «что нужно», подставленное кейсом, а не выбранное посетителем
 
 function End({ c, act }: { c: CaseData; act: CaseActions }) {
-  const sent = useBrief().status === "sent";
+  const { status, phone } = useBrief();
+  const sent = status === "sent";
   useEffect(() => {
     const s = getBrief();
     if (!c.need || s.status !== "idle" || (s.need && s.need !== autoNeed)) return;
@@ -104,39 +111,65 @@ function End({ c, act }: { c: CaseData; act: CaseActions }) {
           <p className={styles.word}>дальше</p>
         </div>
         <div className={styles.r}>
-          <p className={styles.h2} data-rise>
+          <p className={`${styles.h2} ${styles.bt}`} data-rise>
             Обсудим {ASK[c.need ?? ""] ?? "ваш проект"}?
           </p>
-          <p className={styles.p} data-rise>
-            Оставьте телефон — перезвоним {BRIEF_CONFIG.replyIn} в рабочее время, уточним задачу и в
-            тот же день назовём срок и цену.
-          </p>
+          <div className={`${styles.p} ${styles.bt} ${styles.said}`} role="status" data-rise>
+            {sent ? (
+              <>
+                <p>
+                  <strong>Заявка отправлена.</strong> Перезвоним на{" "}
+                  <span className={styles.nw}>{formatPhone(phone)}</span> {BRIEF_CONFIG.replyIn} в
+                  рабочее время.
+                </p>
+                <button type="button" className={styles.again} onClick={() => clearBrief()}>
+                  отправить ещё одну
+                </button>
+              </>
+            ) : status === "mail" ? (
+              <>
+                <p>
+                  <strong>Осталось отправить.</strong> Письмо открыто в вашей почте — отправьте его.
+                  Или позвоните{" "}
+                  <a href={`tel:+${BRIEF_CONFIG.phone.replace(/\D/g, "")}`} className={styles.nw}>
+                    {BRIEF_CONFIG.phone}
+                  </a>
+                  , Telegram{" "}
+                  <a
+                    href={`https://t.me/${BRIEF_CONFIG.telegram.replace(/^@/, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {BRIEF_CONFIG.telegram}
+                  </a>
+                  .
+                </p>
+                <button
+                  type="button"
+                  className={styles.again}
+                  onClick={() => setBrief({ status: "idle" })}
+                >
+                  вернуться к форме
+                </button>
+              </>
+            ) : (
+              <p>
+                Оставьте телефон — перезвоним {BRIEF_CONFIG.replyIn} в рабочее время, уточним задачу
+                и в тот же день назовём срок и цену.
+              </p>
+            )}
+          </div>
         </div>
       </section>
       <section className={`${styles.sec} ${styles.end}`}>
         <div className={styles.l} />
         <div className={styles.r}>
-          <div className={styles.brief} data-rise>
-            <BriefForm
-              inline
-              next={
-                <ol className={styles.steps} data-done>
-                  <li>
-                    <b>звонок</b> — {BRIEF_CONFIG.replyIn} ({BRIEF_CONFIG.hours})
-                  </li>
-                  <li>
-                    <b>уточним задачу</b> по телефону
-                  </li>
-                  <li>
-                    <b>в тот же день</b> — срок и цена
-                  </li>
-                </ol>
-              }
-            />
+          <div className={styles.letter} data-rise>
+            <Envelope />
           </div>
           {/* Кейс один — «ещё проект» вёл бы в него же */}
           {CASES.length > 1 && (
-            <p className={styles.more} data-rise>
+            <p className={`${styles.more} ${styles.bt}`} data-rise>
               <button type="button" className={styles.moreLink} onClick={act.next}>
                 {sent ? "пока ждёте звонка — ещё проект →" : "ещё проект →"}
               </button>
@@ -145,6 +178,60 @@ function End({ c, act }: { c: CaseData; act: CaseActions }) {
         </div>
       </section>
     </>
+  );
+}
+
+// Результат без цифр (launch в cases.ts) — где проект живёт сейчас: строка на площадку (имя,
+// рядом где и статус), ниже строка, цена и «попробовать ↗». Строки со ссылкой ведут на площадку.
+function Launch({ l }: { l: NonNullable<CaseData["launch"]> }) {
+  return (
+    <div className={styles.launch}>
+      {l.where.map((w, k) => {
+        const row = (
+          <>
+            <span className={styles.lName}>{w.name}</span>
+            <span className={styles.lWhere}>
+              <b>{w.place}</b> <span>{w.note}</span>
+            </span>
+            <span className={styles.lSt}>
+              <i />
+              {w.status}
+            </span>
+            {w.url && (
+              <span className={styles.lGo} aria-hidden="true">
+                ↗
+              </span>
+            )}
+          </>
+        );
+        return w.url ? (
+          <a
+            key={w.name}
+            className={styles.lRow}
+            href={w.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-rise
+            data-d={k * 90}
+          >
+            {row}
+          </a>
+        ) : (
+          <div key={w.name} className={styles.lRow} data-rise data-d={k * 90}>
+            {row}
+          </div>
+        );
+      })}
+      <div className={styles.lFoot} data-rise>
+        <p className={styles.lNote}>{l.note}</p>
+        <div className={styles.lEnd}>
+          <p className={styles.lPrice}>{l.price}</p>
+          <a className={styles.pill} href={l.try} target="_blank" rel="noopener noreferrer">
+            попробовать ↗
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -169,6 +256,7 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
   const { c, act } = p;
   const i = cardOf(c.slug);
   const card = CARDS_CONTENT[i];
+  const host = c.url?.replace(/^https?:\/\//, "").replace(/\/$/, "");
   let n = 0;
   return (
     <>
@@ -178,15 +266,31 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
           <a className={styles.back} href={HOME_HREF} onClick={back(act.close)} data-hi>
             ← все работы
           </a>
-          {/* Главная цифра — справа от обложки, по её нижнему краю (на телефоне — под текстом). */}
-          <div className={styles.heroMedia}>
+          {/* Обложка — на 7 колонок; справа, по её нижнему краю — фраза, ссылка, где ещё есть
+              проект, и главная цифра (на телефоне — всё под текстом). */}
+          <div className={`${styles.heroMedia} ${styles.g12}`}>
             <Cover i={i} className={styles.cover} />
-            {card.result && (
-              <div className={styles.hr} data-hi>
-                <p className={styles.result}>{card.result}</p>
-                <p className={styles.small}>{card.resultNote}</p>
-              </div>
-            )}
+            <div className={styles.side} data-hi>
+              <p className={styles.lead}>{c.summary}</p>
+              {c.url && (
+                <a className={styles.pill} href={c.url} target="_blank" rel="noopener noreferrer">
+                  {host} ↗
+                </a>
+              )}
+              {c.platforms && (
+                <p className={styles.plat}>
+                  {c.platforms.map((s) => (
+                    <span key={s}>{s}</span>
+                  ))}
+                </p>
+              )}
+              {card.result && (
+                <div className={styles.hr}>
+                  <p className={styles.result}>{card.result}</p>
+                  <p className={styles.small}>{card.resultNote}</p>
+                </div>
+              )}
+            </div>
           </div>
           {/* Номер, название и «клиент · тип · год» — одним блоком (на десктопе — слева от линии). */}
           <div className={styles.head}>
@@ -209,73 +313,83 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {c.url.replace(/^https?:\/\//, "").replace(/\/$/, "")} ↗
+                    {host} ↗
                   </a>
                 </>
               )}
             </p>
           </div>
-          <p className={styles.lead} data-hi>
-            {c.summary}
-          </p>
         </div>
       </section>
 
       {p.full && (
         <>
+          {/* Задача — на 9 колонок; картинка «было» — на 7, факты — столбиком справа по её низу. */}
           <Chapter n={n++} word="о проекте" sub={card.client}>
-            <p className={styles.big} data-rise>
+            <p className={`${styles.big} ${styles.task} ${styles.bt}`} data-rise>
               {c.task}
             </p>
-            <div className={styles.facts} data-rise>
-              {c.before.map((b) => (
-                <div key={b.value}>
-                  <b>{b.value}</b>
-                  <span>{b.note}</span>
-                </div>
-              ))}
-            </div>
-            <div data-rise>
-              <Img img={c.beforeImage} wide />
+            <div className={`${styles.g12} ${styles.row}`}>
+              <Img img={c.beforeImage} className={styles.pic} />
+              <div className={styles.facts}>
+                {c.before.map((b, k) => (
+                  <div key={b.value} data-rise data-d={k * 80}>
+                    <b>{b.value}</b>
+                    <span>{b.note}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </Chapter>
 
+          {/* «Ёлочка»: картинка и текст решения меняются местами; пара «телефон + широкая» —
+              одной высоты. */}
           <Chapter n={n++} word="что сделали" sub={c.services.map(lower).join(", ")}>
             {c.solution.map((s, k) => (
-              <div key={s.title} className={styles.it} data-rise>
-                <p className={styles.k}>
-                  <b>{num(k)}</b>решение
-                </p>
-                <h2 className={styles.h3}>{s.title}</h2>
-                <p className={styles.p}>{s.text}</p>
-                <Img img={s.image} wide />
+              <div
+                key={s.title}
+                className={`${styles.g12} ${styles.it} ${k % 2 ? styles.flip : ""}`}
+              >
+                <Img img={s.image} className={styles.pic} />
+                <div className={`${styles.tx} ${styles.bt}`} data-rise data-d={90}>
+                  <p className={styles.k}>{num(k)}</p>
+                  <h2 className={styles.h3}>{s.title}</h2>
+                  <p className={styles.p}>{s.text}</p>
+                </div>
               </div>
             ))}
-            <div className={styles.it} data-rise>
-              <div className={styles.pair}>
-                <Img img={c.gallery[0]} />
-                <Img img={c.gallery[1]} />
-              </div>
-              <p className={styles.note}>{c.galleryNote}</p>
+            <div className={`${styles.g12} ${styles.it} ${styles.gal}`}>
+              <Img img={c.gallery[0]} className={styles.mob} />
+              <Img img={c.gallery[1]} className={styles.desk} />
+              <p className={`${styles.note} ${styles.bt}`} data-rise>
+                {c.galleryNote}
+              </p>
             </div>
           </Chapter>
 
-          {/* Обложка — на первом экране; здесь цифры 2×2 размером цифры туннеля, над каждой линия,
-              под ними источник и отзыв (своей главы у отзыва нет). */}
+          {/* Обложка — на первом экране; здесь цифры таблицей 2×2 размером цифры туннеля (или,
+              если цифр нет, площадки — Launch), под ними источник и отзыв (своей главы у отзыва
+              нет). */}
           <Chapter n={n++} word="результат">
-            <div className={styles.figs} data-rise>
-              {c.results.map((r) => (
-                <div key={r.note}>
-                  <p className={styles.fig}>{r.value}</p>
-                  <p className={styles.small}>{r.note}</p>
+            {c.launch ? (
+              <Launch l={c.launch} />
+            ) : (
+              <>
+                <div className={`${styles.g12} ${styles.figs}`}>
+                  {c.results?.map((r, k) => (
+                    <div key={r.note} data-rise data-d={(k % 2) * 80}>
+                      <p className={styles.fig}>{r.value}</p>
+                      <p className={styles.small}>{r.note}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <p className={styles.src} data-rise>
-              {c.resultsSource}
-            </p>
+                <p className={`${styles.src} ${styles.bt}`} data-rise>
+                  {c.resultsSource}
+                </p>
+              </>
+            )}
             {c.quote && (
-              <figure className={styles.q} data-rise>
+              <figure className={`${styles.q} ${styles.bt}`} data-rise>
                 <p className={styles.quote}>{c.quote.text}</p>
                 <p className={styles.who}>{c.quote.who}</p>
               </figure>

@@ -29,10 +29,10 @@ import {
 import { caretAt, formatPhone, PHONE_MASK, PHONE_PREFIX, phoneEdit } from "@/lib/phone";
 import styles from "./BriefForm.module.css";
 
-// Форма заявки — одна на сайт: телефон, имя, «что нужно» пилюлями, согласие, отправка и статус
-// после неё. Её показывают окно заявки (BriefModal) и конец страницы кейса (CaseView). Данные —
-// общие с конвертом Сцены 6 (useBrief, lib/brief.ts): набрали в одном месте — видно в других,
-// отправили — статус везде. Что показать, поля или статус, — по статусу заявки.
+// Форма окна заявки (BriefModal): телефон, имя, «что нужно» пилюлями, согласие, отправка и статус
+// после неё. Данные — общие с конвертом (components/ui/Envelope: Сцена 6 и конец кейса; useBrief,
+// lib/brief.ts): набрали в одном месте — видно в других, отправили — статус везде. Что показать,
+// поля или статус, — по статусу заявки.
 
 type Errors = { phone?: string; consent?: string; form?: string };
 export type BriefFormHandle = { clearErrors: () => void; focusPhone: () => void };
@@ -40,9 +40,7 @@ export type BriefFormHandle = { clearErrors: () => void; focusPhone: () => void 
 export function BriefForm(p: {
   ref?: Ref<BriefFormHandle>;
   className?: string;
-  inline?: boolean; // на странице (конец кейса): телефон и имя строкой, без своей прокрутки
   lead?: ReactNode; // строка над полями (окно)
-  next?: ReactNode; // под «Заявка отправлена» — что дальше (конец кейса)
   since?: () => number; // когда форму показали — для защиты от ботов; без него — когда она появилась
   // Ушло: show() показывает статус. Окно сначала гасит поля (body), без него — сразу.
   onSent?: (show: () => void, body: HTMLElement | null) => void;
@@ -150,7 +148,7 @@ export function BriefForm(p: {
   return (
     <form
       ref={formRef}
-      className={`${styles.form} ${p.inline ? styles.inline : ""} ${p.className ?? ""}`}
+      className={`${styles.form} ${p.className ?? ""}`}
       noValidate
       onSubmit={submit}
     >
@@ -325,7 +323,6 @@ export function BriefForm(p: {
                 <span className={styles.nw}>{formatPhone(phone)}</span> {BRIEF_CONFIG.replyIn} в
                 рабочее время.
               </p>
-              {p.next}
               <button type="button" className={styles.link} onClick={() => reopen(true)} data-done>
                 отправить ещё одну
               </button>

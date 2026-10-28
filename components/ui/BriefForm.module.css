@@ -1,5 +1,4 @@
-/* Форма заявки (BriefForm.tsx) — поля как в конверте Сцены 6. Её показывают окно заявки
-   (BriefModal) и конец страницы кейса (.inline). */
+/* Форма окна заявки (BriefForm.tsx, BriefModal) — поля как в конверте (components/ui/Envelope). */
 .form {
   --muted: rgba(10, 10, 10, 0.58);
   --dim: rgba(10, 10, 10, 0.5);
@@ -336,30 +335,6 @@
   cursor: pointer;
 }
 
-/* ---------- На странице (конец кейса): телефон и имя строкой, своей прокрутки нет ---------- */
-.inline .scroll {
-  grid-template-columns: 1.15fr 1fr;
-  column-gap: 28px;
-  padding: 0;
-  overflow: visible;
-}
-
-.inline .scroll > * {
-  grid-column: 1 / -1;
-}
-
-.inline .scroll > .field {
-  grid-column: auto;
-}
-
-.inline .foot {
-  padding: 24px 0 0;
-}
-
-.inline .done {
-  padding: 0;
-}
-
 @media (max-width: 767px) {
   .scroll {
     gap: 22px;
@@ -387,15 +362,6 @@
     font-size: 1rem;
     line-height: 24px;
     background-size: 8px 24px;
-  }
-
-  .inline .scroll {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .inline .foot {
-    padding-top: 16px;
   }
 }
 

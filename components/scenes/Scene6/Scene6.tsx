@@ -1,38 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import {
-  type ChangeEvent,
-  type FormEvent,
-  type UIEvent,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { useLenis } from "@/app/providers";
+import { useEffect, useRef } from "react";
 import { BriefModal } from "@/components/ui/BriefModal";
-import {
-  BRIEF_CONFIG,
-  type BriefStatus,
-  briefErrors,
-  clearBrief,
-  FAIL_TEXT,
-  NEEDS,
-  needText,
-  OTHER,
-  setBrief,
-  submitBrief,
-  useBrief,
-} from "@/lib/brief";
-import { caretAt, formatPhone, PHONE_MASK, PHONE_PREFIX, phoneEdit } from "@/lib/phone";
+import { Envelope, type EnvelopeParts } from "@/components/ui/Envelope";
+import { BRIEF_CONFIG, type BriefStatus, clearBrief, setBrief, useBrief } from "@/lib/brief";
+import { formatPhone } from "@/lib/phone";
 import { phoneLayout } from "@/lib/phoneLayout";
 import { pathHandoff, phoneHold } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Scene6.module.css";
-
-type Errors = { phone?: string; consent?: string; form?: string };
 
 // Точка пути идёт по сцене всё время, пока её прокручивают, — без остановок; позади неё —
 // чернила, впереди — пунктир. Конверт собирается из неё: дошла до его верхнего края — из неё
@@ -105,11 +81,11 @@ const footerHome = (section: HTMLElement) => {
     : 0.65 * window.innerHeight;
 };
 
-// Сцена 6 — заявка конвертом. Точка идёт по линии с прокруткой, конверт собирается из неё:
-// контур, поле и бумага, клапан, письмо с полями (телефон, имя, что нужно), на кармане —
-// согласие и «Отправить заявку». Отправили — письмо уходит в конверт, клапан закрывается, на
-// конверте — «от: …»; ушло на сервер (sent) — ложится марка. Открыли письмо в почте (mail) —
-// марки нет: отправит сам посетитель. Точку отправка не трогает — она там, куда её довела
+// Сцена 6 — заявка конвертом. Точка идёт по линии с прокруткой, конверт (components/ui/Envelope)
+// собирается из неё: контур, поле и бумага, клапан, письмо с полями (телефон, имя, что нужно), на
+// кармане — согласие и «Отправить заявку». Отправили — письмо уходит в конверт, клапан
+// закрывается, на конверте — «от: …»; ушло на сервер (sent) — ложится марка. Открыли письмо в почте
+// (mail) — марки нет: отправит сам посетитель. Точку отправка не трогает — она там, куда её довела
 // прокрутка, и в футер переходит тоже по прокрутке (lib/scroll/handoff.ts).
 export function Scene6() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -118,62 +94,22 @@ export function Scene6() {
   const dropRef = useRef<HTMLSpanElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const leadRef = useRef<HTMLDivElement>(null);
-  const letterRef = useRef<HTMLDivElement>(null);
-  const tintRef = useRef<HTMLSpanElement>(null);
-  const envRef = useRef<HTMLFormElement>(null);
-  const outlineRef = useRef<SVGSVGElement>(null);
-  const edgeRef = useRef<SVGPathElement>(null);
-  const edgeUseRef = useRef<SVGUseElement>(null);
-  const flapOpenRef = useRef<SVGSVGElement>(null);
-  const backRef = useRef<HTMLDivElement>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const phoneFieldRef = useRef<HTMLDivElement>(null);
-  const nameFieldRef = useRef<HTMLDivElement>(null);
-  const needsRef = useRef<HTMLDivElement>(null);
-  const otherPillRef = useRef<HTMLLabelElement>(null);
-  const otherRowRef = useRef<HTMLDivElement>(null);
-  const otherRef = useRef<HTMLTextAreaElement>(null);
-  const otherInkRef = useRef<HTMLDivElement>(null);
-  const focusOther = useRef(false); // «Другое» выбрали мышью или касанием — курсор в строку
-  const pocketRef = useRef<HTMLDivElement>(null);
-  const cutRef = useRef<SVGSVGElement>(null);
-  const actRef = useRef<HTMLDivElement>(null);
-  const flapClosedRef = useRef<SVGSVGElement>(null);
+  const partsRef = useRef<EnvelopeParts>(null); // части конверта — для сборки
   const handRef = useRef<HTMLSpanElement>(null);
-  const phoneRef = useRef<HTMLInputElement>(null);
-  const consentRef = useRef<HTMLInputElement>(null);
-  const shownAt = useRef(0); // когда показали форму — для отсечки ботов
   const engagedRef = useRef(false);
-  const caretRef = useRef<number | null>(null); // цифр левее каретки после правки номера
+  const closedRef = useRef(false);
   const updateRef = useRef<() => void>(() => {});
-  const ids = useId();
-  const lenis = useLenis();
 
-  // Данные формы — общие с окном заявки (lib/brief.ts): набрали там — здесь то же, и наоборот.
-  const brief = useBrief();
-  const { phone, name, need, other, consent, status } = brief;
-  const setPhone = (v: string) => setBrief({ phone: v });
-  const setName = (v: string) => setBrief({ name: v });
-  const setNeed = (v: string) => setBrief({ need: v });
-  const setOther = (v: string) => setBrief({ other: v });
-  const setConsent = (v: boolean) => setBrief({ consent: v });
+  // Статус и номер — общие с конвертом и окном заявки (lib/brief.ts).
+  const { phone, status } = useBrief();
   const setStatus = (v: BriefStatus) => setBrief({ status: v });
-  const [focused, setFocused] = useState(false); // поле телефона в фокусе — маска с «+7 (»
-  const [rows, setRows] = useState(1); // строк в своём к «Другое»
-  const [errors, setErrors] = useState<Errors>({});
   const closed = status === "sent" || status === "mail";
-  const isOther = need === OTHER;
-  const lines = isOther ? rows : 1;
-  const shown = phone ? formatPhone(phone) : focused ? "+7 (" : "";
   const phoneText = formatPhone(phone);
   // Заявка уходит или ушла — конверт раскрыт целиком, что бы ни делала прокрутка. Введённое его
   // не держит: конверт складывается и раскладывается, значения остаются в полях.
   const engaged = status !== "idle";
   engagedRef.current = engaged;
-
-  useEffect(() => {
-    shownAt.current = Date.now();
-  }, []);
+  closedRef.current = closed;
 
   useEffect(() => {
     if (engaged) updateRef.current();
@@ -188,26 +124,13 @@ export function Scene6() {
     const drop = dropRef.current;
     const head = headRef.current;
     const lead = leadRef.current;
-    const letter = letterRef.current;
-    const tint = tintRef.current;
-    const env = envRef.current;
-    const svg = outlineRef.current;
-    const edge = edgeRef.current;
-    const edgeUse = edgeUseRef.current;
-    const flapOpen = flapOpenRef.current;
-    const back = backRef.current;
-    const sheet = sheetRef.current;
-    const pocket = pocketRef.current;
-    const cut = cutRef.current;
-    const act = actRef.current;
-    const flapClosed = flapClosedRef.current;
+    const parts = partsRef.current;
     const hand = handRef.current;
-    const fields = [phoneFieldRef.current, nameFieldRef.current, needsRef.current].filter(
-      (el): el is HTMLDivElement => el !== null,
-    );
-    if (!section || !stage || !railInk || !drop || !head || !lead || !letter || !tint) return;
-    if (!env || !svg || !edge || !edgeUse || !flapOpen || !back || !sheet || !pocket) return;
-    if (!cut || !act || !flapClosed || !hand || fields.length < 3) return;
+    if (!section || !stage || !railInk || !drop || !head || !lead || !parts || !hand) return;
+    const { root: letter, tint, env, outline: svg, edge, edgeUse, flapOpen, back } = parts;
+    const { sheet, pocket, cut, act, flapClosed, fields } = parts;
+    if (!letter || !tint || !env || !svg || !edge || !edgeUse || !flapOpen || !back) return;
+    if (!sheet || !pocket || !cut || !act || !flapClosed || fields.length < 3) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     // Стоянка — только с мышью: на сенсорном экране клавиатура закрыла бы кнопку под стоящей
     // сценой.
@@ -273,7 +196,7 @@ export function Scene6() {
 
     const layout = (h: number) => {
       // Конверт закрыт — раскладку не трогаем: подводка выросла, но сцена не сдвигается.
-      if (!section.classList.contains(styles.closed)) {
+      if (!closedRef.current) {
         // Закрепляем, если сцена целиком влезает в экран (под шапкой 72px); без анимаций и в
         // телефонной раскладке — нет.
         const contentH = head.offsetHeight + letter.offsetHeight;
@@ -430,18 +353,18 @@ export function Scene6() {
       // Сборка — по ходу точки от верхнего края конверта: со стоянкой — сквозь весь конверт,
       // без неё — за SPAN экрана. Отправил — всё как в покое.
       const phone = phoneLayout();
-      const final = reduced || engagedRef.current || section.classList.contains(styles.closed);
+      const final = reduced || engagedRef.current || closedRef.current;
       const p = final ? 1 : (at - rim) / (pinned ? bottom + 8 - rim : SPAN * h);
       const u = (h - rect.top) / h;
       // Телефон: на PLAY конверт доигрывает сам — стили сборки сняты, к покою ведут переходы CSS
-      // (data-play). Складывается заново, только когда сцена целиком под экраном.
+      // (data-play на конверте). Складывается заново, только когда сцена целиком под экраном.
       const play = phone && !final;
       if (play && rect.top >= h && played) {
         played = false;
-        section.removeAttribute("data-play");
+        letter.removeAttribute("data-play");
       } else if (play && rect.top < h && p >= PLAY && !played) {
         played = true;
-        section.setAttribute("data-play", "");
+        letter.setAttribute("data-play", "");
       }
       if (play && !played) fold(p);
       else apply(phone ? 1 : p, u);
@@ -507,7 +430,7 @@ export function Scene6() {
     // Телефон: доиграл (письмо дождалось конца) — переходы больше не нужны: дальше всё как в покое,
     // и закрытие после отправки идёт своими переходами.
     const onPlayed = (e: AnimationEvent) => {
-      if (e.target === sheet) section.removeAttribute("data-play");
+      if (e.target === sheet) letter.removeAttribute("data-play");
     };
     section.addEventListener("animationend", onPlayed);
     const off = onScroll(section, update);
@@ -515,164 +438,20 @@ export function Scene6() {
       off();
       env.removeEventListener("focusin", onFocusIn);
       section.removeEventListener("animationend", onPlayed);
-      section.removeAttribute("data-play");
+      letter.removeAttribute("data-play");
       ro.disconnect();
       updateRef.current = () => {};
     };
   }, []);
 
-  // Закрыли конверт — один замер: высота письма-обёртки замирает (ничего под ней не прыгнет), а
-  // конверт садится до обычной пропорции (переход высоты — в CSS). Вернулись к форме — снимаем.
-  useLayoutEffect(() => {
-    const letter = letterRef.current;
-    const env = envRef.current;
-    const sheet = sheetRef.current;
-    if (!letter || !env || !sheet) return;
-    if (!closed) {
-      letter.style.minHeight = "";
-      env.style.height = "";
-      // Письмо на место сразу, как и всё остальное: переход translate — только для «Другое».
-      sheet.style.transition = "none";
-      void sheet.offsetHeight;
-      sheet.style.transition = "";
-      return;
-    }
-    letter.style.minHeight = `${letter.offsetHeight}px`;
-    const flap = Number.parseFloat(getComputedStyle(env).getPropertyValue("--flap"));
-    const from = env.offsetHeight;
-    const to = Math.min(
-      from,
-      Math.round(flap + env.offsetWidth * (env.offsetWidth < 500 ? 0.62 : 0.46)),
-    );
-    env.style.height = `${from}px`;
-    void env.offsetHeight;
-    env.style.height = `${to}px`;
-  }, [closed]);
-
-  // «Другое» выбрали или сняли, строк стало больше или меньше: письмо выдвигается (CSS, --n — строк),
-  // на полпути сборки — пересчёт, насколько оно в кармане. Пунктир расходится из-под пилюли (--o);
-  // выбрали мышью или касанием — курсор в строку.
-  useLayoutEffect(() => {
-    sheetRef.current?.style.setProperty("--n", String(lines));
-    updateRef.current();
-    const row = otherRowRef.current;
-    const pill = otherPillRef.current;
-    if (!isOther || !row || !pill) return;
-    const r = pill.getBoundingClientRect();
-    const box = row.getBoundingClientRect();
-    const o = r.left + r.width / 2 - box.left;
-    row.style.setProperty("--o", `${Math.round(o)}px`);
-    if (focusOther.current) {
-      // Строка у нижнего края (телефон боком) — сначала подвозим её выше: печатать под краем
-      // экрана вслепую нельзя.
-      const h = viewportH();
-      if (box.bottom > 0.7 * h) {
-        const y = window.scrollY + box.bottom - 0.55 * h;
-        if (lenis) lenis.scrollTo(y, { duration: 0.6 });
-        else window.scrollTo(0, y);
-      }
-      otherRef.current?.focus({ preventScroll: true });
-    }
-    focusOther.current = false;
-  }, [isOther, lines, lenis]);
-
-  // Строк — сколько занял текст (замер при нулевой высоте); больше --max — прокрутка в поле.
-  // Текст мог прийти и из окна заявки — меряем по самому полю, когда текст сменился.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: строк — по тексту, когда он сменился
-  useLayoutEffect(() => {
-    const ta = otherRef.current;
-    if (!ta) return;
-    ta.style.height = "0";
-    const lh = Number.parseFloat(getComputedStyle(ta).lineHeight);
-    setRows(Math.max(1, Math.round(ta.scrollHeight / lh)));
-    ta.style.height = "";
-  }, [other]);
-  const onOther = (e: ChangeEvent<HTMLTextAreaElement>) => setOther(e.currentTarget.value);
-
-  // Прокрутка поля — целыми строками (линии не режутся краем), зеркало с линиями — за ней.
-  const onOtherScroll = (e: UIEvent<HTMLTextAreaElement>) => {
-    const ta = e.currentTarget;
-    const lh = Number.parseFloat(getComputedStyle(ta).lineHeight);
-    const top = Math.round(ta.scrollTop / lh) * lh;
-    if (Math.abs(top - ta.scrollTop) > 0.5) ta.scrollTop = top;
-    if (otherInkRef.current) otherInkRef.current.scrollTop = ta.scrollTop;
-  };
-
-  const clearError = (key: keyof Errors) =>
-    setErrors((e) => (e[key] || e.form ? { ...e, [key]: undefined, form: undefined } : e));
-
-  // Номер — из того, что в поле, с учётом каретки; каретка потом — за той же цифрой.
-  const onPhone = (e: ChangeEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    const type = (e.nativeEvent as InputEvent).inputType ?? "";
-    const caret = input.selectionStart ?? input.value.length;
-    const { digits, left } = phoneEdit(input.value, caret, phone, type);
-    caretRef.current = left;
-    setPhone(digits);
-    clearError("phone");
-  };
-
-  // Каретка — никогда внутри «+7 (»: ни щелчком, ни выделением, ни Home и стрелками.
-  const keepPrefix = (input: HTMLInputElement) => {
-    const n = PHONE_PREFIX.length;
-    if (!input.value.startsWith(PHONE_PREFIX)) return;
-    const a = input.selectionStart ?? n;
-    const b = input.selectionEnd ?? n;
-    if (a < n || b < n) input.setSelectionRange(Math.max(n, a), Math.max(n, b));
-  };
-
-  useLayoutEffect(() => {
-    const input = phoneRef.current;
-    if (!input || !focused || document.activeElement !== input) return;
-    const left = caretRef.current;
-    caretRef.current = null;
-    if (left === null && phone) return; // щёлкнули в номер — каретка там, где щёлкнули
-    const at = caretAt(input.value, left ?? 0);
-    input.setSelectionRange(at, at);
-  }, [phone, focused]);
-
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const trap = String(new FormData(e.currentTarget).get("website") ?? "");
-    const next: Errors = briefErrors(brief);
-    setErrors(next);
-    if (next.phone) return phoneRef.current?.focus();
-    if (next.consent) return consentRef.current?.focus();
-
-    setStatus("sending");
-    try {
-      const result = await submitBrief(
-        {
-          phone: `+7${phone}`,
-          name: name.trim() || undefined,
-          need: needText(brief),
-          time: new Date().toISOString(),
-        },
-        { trap, startedAt: shownAt.current },
-      );
-      setStatus(result);
-    } catch {
-      setStatus("idle");
-      setErrors({ form: FAIL_TEXT });
-    }
-  };
-
   // «Отправить ещё одну» — чистая форма; «вернуться к форме» после письма в почте — те же данные.
   const reopen = (clear: boolean) => {
     if (clear) clearBrief();
-    setErrors({});
     setStatus("idle");
   };
 
-  const cls = [styles.scene6, closed && styles.closed, status === "sent" && styles.sent];
-
   return (
-    <section
-      ref={sectionRef}
-      className={cls.filter(Boolean).join(" ")}
-      data-scene="scene6"
-      aria-label="Заявка"
-    >
+    <section ref={sectionRef} className={styles.scene6} data-scene="scene6" aria-label="Заявка">
       <div ref={stageRef} className={styles.stage}>
         {/* Линия пути через всю сцену: пунктир, поверх — чернила до точки. Точка — первая 12px
             в сцене: по размеру её находит Сцена 5. */}
@@ -729,231 +508,7 @@ export function Scene6() {
           </div>
         </div>
 
-        <div ref={letterRef} className={styles.letter}>
-          <div className={styles.plate}>
-            {/* Сиреневый слой — отдельно: на втором круге он в своём цвете, а конверт — в общем. */}
-            <span ref={tintRef} className={`${styles.tint} no-invert`} aria-hidden="true" />
-            <form ref={envRef} className={styles.env} noValidate onSubmit={submit} inert={closed}>
-              <svg
-                ref={flapOpenRef}
-                className={styles.flapOpen}
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <polygon points="0,100 50,0 100,100" vectorEffect="non-scaling-stroke" />
-              </svg>
-              <div ref={backRef} className={styles.back} aria-hidden="true" />
-
-              <div ref={sheetRef} className={styles.sheet} data-other={isOther || undefined}>
-                <div className={styles.row}>
-                  <div ref={phoneFieldRef} className={styles.field}>
-                    <label className={styles.label} htmlFor={`${ids}-phone`}>
-                      телефон
-                    </label>
-                    <span className={styles.mask}>
-                      <input
-                        ref={phoneRef}
-                        id={`${ids}-phone`}
-                        className={styles.input}
-                        name="phone"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        value={shown}
-                        onChange={onPhone}
-                        onFocus={() => setFocused(true)}
-                        onBlur={() => setFocused(false)}
-                        onSelect={(e) => keepPrefix(e.currentTarget)}
-                        onKeyDown={(e) => {
-                          const input = e.currentTarget;
-                          const n = PHONE_PREFIX.length;
-                          if (!input.value.startsWith(PHONE_PREFIX)) return;
-                          const a = input.selectionStart ?? n;
-                          const home = e.key === "Home" || e.key === "ArrowUp";
-                          if (home || (e.key === "ArrowLeft" && a <= n && !e.shiftKey)) {
-                            e.preventDefault();
-                            input.setSelectionRange(n, e.shiftKey ? (input.selectionEnd ?? n) : n);
-                          }
-                        }}
-                        required
-                        aria-invalid={Boolean(errors.phone)}
-                        aria-describedby={errors.phone ? `${ids}-phone-error` : undefined}
-                      />
-                      {/* Остаток маски — бледным за набранным. */}
-                      <span className={styles.ghostMask} aria-hidden="true">
-                        <i>{shown}</i>
-                        {PHONE_MASK.slice(shown.length)}
-                      </span>
-                    </span>
-                    {errors.phone && (
-                      <p id={`${ids}-phone-error`} className={styles.error}>
-                        {errors.phone}
-                      </p>
-                    )}
-                  </div>
-                  <div ref={nameFieldRef} className={styles.field}>
-                    <label className={styles.label} htmlFor={`${ids}-name`}>
-                      имя — по желанию
-                    </label>
-                    <input
-                      id={`${ids}-name`}
-                      className={styles.input}
-                      name="name"
-                      autoComplete="given-name"
-                      autoCapitalize="words"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div ref={needsRef} role="radiogroup" aria-labelledby={`${ids}-need`}>
-                  <span id={`${ids}-need`} className={styles.label}>
-                    что нужно — по желанию
-                  </span>
-                  <div className={styles.pills}>
-                    {NEEDS.map((v) => (
-                      <label
-                        key={v}
-                        ref={v === OTHER ? otherPillRef : undefined}
-                        className={styles.pill}
-                      >
-                        {/* Повторный щелчок по выбранной — снять выбор: поле необязательное. */}
-                        <input
-                          type="radio"
-                          name="need"
-                          value={v}
-                          checked={need === v}
-                          onChange={() => setNeed(v)}
-                          onClick={(e) => {
-                            if (need === v) setNeed("");
-                            // У выбора стрелками клавиатуры detail = 0 — фокус остаётся в пилюлях.
-                            else if (v === OTHER && e.detail > 0) focusOther.current = true;
-                          }}
-                        />
-                        <span>{v}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {/* Своё к «Другое» — строки пути: пунктир, под набранным — чернила (их рисует
-                      зеркало текста под полем). Место под первую — в кармане; выбрали «Другое» —
-                      письмо выдвигается, и строки видны. */}
-                  <div ref={otherRowRef} className={styles.other} inert={!isOther}>
-                    <div ref={otherInkRef} className={styles.otherInk} aria-hidden="true">
-                      <span>{other}</span>
-                      {"\u200b"}
-                    </div>
-                    <textarea
-                      ref={otherRef}
-                      className={styles.otherInput}
-                      name="other"
-                      rows={lines}
-                      value={other}
-                      onChange={onOther}
-                      onScroll={onOtherScroll}
-                      maxLength={300}
-                      placeholder="что именно?"
-                      aria-label="Другое — что именно"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Карман: верхний край галочкой; на нём — согласие и кнопка. */}
-              <div ref={pocketRef} className={styles.pocket}>
-                <svg
-                  ref={cutRef}
-                  className={styles.cut}
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <polyline points="0,0 50,100 100,0" vectorEffect="non-scaling-stroke" />
-                </svg>
-                <div ref={actRef} className={styles.act}>
-                  <div>
-                    <label className={styles.consent}>
-                      <input
-                        ref={consentRef}
-                        type="checkbox"
-                        className={styles.check}
-                        checked={consent}
-                        onChange={(e) => {
-                          setConsent(e.target.checked);
-                          clearError("consent");
-                        }}
-                        required
-                        aria-invalid={Boolean(errors.consent)}
-                        aria-describedby={errors.consent ? `${ids}-consent-error` : undefined}
-                      />
-                      <span>
-                        согласен на{" "}
-                        <Link href="/consent" target="_blank" prefetch={false}>
-                          обработку персональных данных
-                        </Link>{" "}
-                        ·{" "}
-                        <Link href="/privacy" target="_blank" prefetch={false}>
-                          политика
-                        </Link>
-                      </span>
-                    </label>
-                    {errors.consent && (
-                      <p id={`${ids}-consent-error`} className={styles.error}>
-                        {errors.consent}
-                      </p>
-                    )}
-                  </div>
-                  <button type="submit" className={styles.send} disabled={status === "sending"}>
-                    {status === "sending" ? "Отправляем…" : "Отправить заявку"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Клапан: ложится при сборке и при отправке. */}
-              <svg
-                ref={flapClosedRef}
-                className={styles.flapClosed}
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <polygon points="0,0 50,100 100,0" vectorEffect="non-scaling-stroke" />
-              </svg>
-              <span className={`${styles.stamp} no-invert`} aria-hidden="true" />
-              <p className={styles.from} aria-hidden="true">
-                <b>White Inks</b>
-                <br />
-                от: {name.trim() ? `${name.trim()}, ` : ""}
-                <span className={styles.nw}>{phoneText}</span>
-              </p>
-              {/* Контур сборки: две линии из точки обегают конверт; в покое его нет. */}
-              <svg ref={outlineRef} className={styles.outline} aria-hidden="true">
-                <path
-                  ref={edgeRef}
-                  id="scene6-edge"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <use ref={edgeUseRef} href="#scene6-edge" />
-              </svg>
-              {/* Ловушка для ботов: людям не видна и недоступна с клавиатуры. */}
-              <input
-                className={styles.trap}
-                name="website"
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-              />
-            </form>
-            {errors.form && (
-              <p className={`${styles.error} ${styles.formError}`} role="alert">
-                {errors.form}
-              </p>
-            )}
-          </div>
-        </div>
+        <Envelope ref={partsRef} onShift={() => updateRef.current()} />
         {/* Точка Сцены 5 ниже её края — её место на стыке (после точки конверта: Сцена 5 ищет
             первую 12px точку этой сцены). */}
         <span ref={handRef} className={styles.handoff} aria-hidden="true" />

@@ -10,6 +10,17 @@
   --pad: calc(var(--h) * 0.11);
   --text2: rgb(10 10 10 / 0.72);
   --muted: rgb(10 10 10 / 0.62);
+  /* Шкала текста правой части (левая — подписи глав, номер, название — своя): мелкий — подписи,
+     источники, пилюли; основной — абзацы; заголовок — названия решений, площадки «результата»,
+     «Обсудим…»; крупный — только цифры результата и главная цифра первого экрана. Начертание —
+     400, у заголовков и выделений 500. */
+  --fs-s: 15px;
+  --lh-s: 1.45;
+  --fs-m: 17px;
+  --lh-m: 1.55;
+  --fs-l: clamp(22px, 2vw, 30px);
+  --lh-l: 1.2;
+  --fs-xl: clamp(56px, 5.6vw, 104px);
 
   position: fixed;
   inset: 0;
@@ -23,6 +34,10 @@
   .layer {
     --x: 20px;
     --pad: calc(var(--h) * 0.1);
+    --fs-s: 14px;
+    --fs-m: 16px;
+    --fs-l: 22px;
+    --fs-xl: 40px;
   }
 }
 
@@ -230,7 +245,7 @@
   display: grid;
   grid-template-columns: calc(var(--x) - 88px) minmax(0, 1fr);
   column-gap: 112px;
-  padding: var(--pad) 96px 0 32px;
+  padding: var(--pad) 56px 0 32px;
 }
 
 .l {
@@ -238,11 +253,28 @@
 }
 
 .r {
-  max-width: 760px;
+  min-width: 0;
+  max-width: 1040px;
 }
 
 .r > * + * {
   margin-top: 14px;
+}
+
+/* Сетка правой части: 12 колонок (на телефоне — 4). Рамки встают ровно на колонки, текст — с
+   отступом .bt от них. */
+.g12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.bt {
+  padding: 0 16px;
+}
+
+/* Текст главы — ниже уровня засечки. */
+.ch > .r {
+  padding-top: 56px;
 }
 
 .stick {
@@ -292,13 +324,15 @@
   color: var(--muted);
 }
 
-/* Пункты «что сделали»: у каждого следующего — короткая засечка на оси. */
+/* Пункты «что сделали» — «ёлочкой»: картинка на 7 колонок, текст — на 4 по её низу, у каждого
+   второго они меняются местами. У каждого следующего пункта — короткая засечка на оси. */
 .it {
   position: relative;
+  align-items: end;
 }
 
 .it + .it {
-  margin-top: 7vh;
+  margin-top: calc(var(--h) * 0.14);
 }
 
 .it + .it::before {
@@ -311,26 +345,28 @@
   background: var(--color-fg);
 }
 
-/* Конец пути — у формы заявки (CaseView, End). Засечка тянется от линии до рамки карточки и стоит
-   там, где точка в конце прокрутки: низ блока минус остаток экрана под точкой. Блок не ниже, чем
-   нужно, чтобы это было у поля «телефон» (--t — от верха карточки до его середины); если форма
-   выше остатка экрана под точкой (телефон 390×844), точка — у следующего поля. Ниже прокрутки нет. */
+/* Конец пути — у конверта заявки (CaseView, End). Засечка тянется от линии до подложки конверта и
+   стоит там, где точка в конце прокрутки: низ блока минус остаток экрана под точкой. Блок не ниже,
+   чем нужно, чтобы это было у поля «телефон» (--t — от верха подложки до его середины: поле над
+   конвертом, клапан, письмо — Envelope.module.css); если конверт выше остатка экрана под точкой,
+   точка — у следующего поля. Ниже прокрутки нет. */
 .end {
   --pad: 40px;
-  --t: 68px;
+  --t: 175px;
   min-height: calc(var(--h) - var(--dy) + var(--pad) + var(--t));
 }
 
 .end::before {
   top: auto;
   bottom: calc(var(--h) - var(--dy) - 1.5px);
-  width: 70px; /* от линии до рамки карточки */
+  width: 70px; /* от линии до подложки конверта */
 }
 
 /* ---------- первый экран: слева от линии — «02 / 07» и название, выровненные к ней, как подписи
-   глав; справа — «← все работы», обложка, справа от неё у нижнего края главная цифра, под ней
-   фраза и «клиент · тип · год». В разметке это одна колонка .r — так её строки встают на
-   телефоне; на широком экране она растворяется в сетке блока (display: contents). ---------- */
+   глав; справа — «← все работы», обложка на 7 колонок, справа от неё по нижнему краю — фраза,
+   ссылка на проект, где ещё он есть, и главная цифра (.side). В разметке это одна колонка .r —
+   так её строки встают на телефоне; на широком экране она растворяется в сетке блока
+   (display: contents). ---------- */
 .hero {
   padding-top: 0;
 }
@@ -341,19 +377,62 @@
 }
 
 .heroMedia {
-  display: flex;
-  gap: 36px;
-  align-items: flex-end;
+  align-items: end;
   margin-top: 18px !important;
 }
 
+/* Верх рамки — по верху строки, что бы ни стояло рядом: её место заранее считает coverBox(). */
 .cover {
-  flex: 0 0 auto;
-  width: min(600px, 66%);
+  grid-column: 1 / 8;
+  align-self: start;
 }
 
-.heroMedia .hr {
-  margin-bottom: 6px;
+.side {
+  grid-column: 9 / 13;
+  padding: 0 16px;
+}
+
+/* Ссылка на живой проект — светлой пилюлей: чёрная на экране одна, «Обсудить проект». */
+.pill {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  height: 40px;
+  margin-top: 22px;
+  padding: 0 18px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  font-size: var(--fs-s);
+  line-height: 1;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+@media (hover: hover) {
+  .pill:hover {
+    background: var(--color-fg);
+    color: var(--color-bg);
+  }
+}
+
+/* Где ещё есть проект — строками (хвост galleryNote, CaseView). */
+.plat {
+  margin-top: 18px;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  color: var(--muted);
+}
+
+.plat span {
+  display: block;
+}
+
+.side .hr {
+  margin-top: 22px;
 }
 
 .head > * + * {
@@ -381,7 +460,7 @@
 
   .heroMedia {
     grid-area: 2 / 2;
-    max-width: 900px;
+    max-width: 1040px; /* как .r: на первом экране она растворена (display: contents) */
   }
 
   /* Номер, название и «клиент · тип · год» — в колонке подписей, верх — по верху обложки; кегль
@@ -401,11 +480,6 @@
   .hero .title {
     font-size: clamp(30px, 2.9vw, 44px);
     line-height: 1.06;
-  }
-
-  .hero .lead {
-    grid-area: 3 / 2;
-    margin-top: 30px !important;
   }
 }
 
@@ -450,8 +524,8 @@
 
 .lead {
   max-width: 36em;
-  font-size: clamp(17px, 1.3vw, 20px);
-  line-height: 1.5;
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
   color: var(--text2);
 }
 
@@ -462,7 +536,7 @@
 
 /* Цифра первого экрана — как в подписи туннеля (до 104px); цифры результата — не крупнее «Работы (06)». */
 .result {
-  font-size: clamp(56px, 5.6vw, 104px);
+  font-size: var(--fs-xl);
   letter-spacing: -0.05em;
   line-height: 0.95;
   white-space: nowrap;
@@ -470,7 +544,7 @@
 
 /* Цифра результата — размером цифры туннеля (как главная цифра первого экрана). */
 .fig {
-  font-size: clamp(56px, 5.6vw, 104px);
+  font-size: var(--fs-xl);
   letter-spacing: -0.05em;
   line-height: 0.95;
   white-space: nowrap;
@@ -478,14 +552,14 @@
 
 .small {
   margin-top: 8px;
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
 }
 
+/* Абзац задачи — основным, но чёрным. */
 .big {
-  font-size: clamp(20px, 1.6vw, 26px);
-  line-height: 1.4;
-  letter-spacing: -0.01em;
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
 }
 
 /* Отзыв — в главе «результат», под цифрами и источником. */
@@ -495,15 +569,15 @@
 
 .quote {
   max-width: 22em;
-  font-size: clamp(24px, 2.1vw, 34px);
-  line-height: 1.3;
-  letter-spacing: -0.015em;
+  font-size: var(--fs-l);
+  line-height: var(--lh-l);
+  letter-spacing: -0.03em;
 }
 
 .who,
 .note {
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
   color: var(--muted);
 }
 
@@ -512,47 +586,40 @@
 }
 
 .note {
-  max-width: 40em;
-  margin-top: 12px !important;
+  margin-top: 14px;
+}
+
+.h2,
+.h3 {
+  font-size: var(--fs-l);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: var(--lh-l);
 }
 
 .h2 {
   max-width: 18em;
-  font-size: clamp(28px, 2.6vw, 44px);
-  font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 1.1;
 }
 
 .h3 {
-  margin-top: 6px;
-  font-size: clamp(19px, 1.4vw, 22px);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  margin-top: 14px;
 }
 
 .p {
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
   color: var(--text2);
 }
 
-.it .p {
-  max-width: 34em;
-  margin-top: 8px;
-  font-size: 17px;
+.tx .p {
+  margin-top: 14px;
 }
 
+/* Номер решения. */
 .k {
-  font-size: 15px;
-  line-height: 1.3;
+  font-size: var(--fs-s);
+  line-height: 1;
   color: var(--muted);
-}
-
-.k b {
-  margin-right: 10px;
-  font-weight: 400;
 }
 
 .ulink {
@@ -569,60 +636,255 @@
 
 .back:focus-visible,
 .ulink:focus-visible,
-.moreLink:focus-visible {
+.moreLink:focus-visible,
+.again:focus-visible {
   outline: 1.5px solid var(--color-fg);
   outline-offset: 3px;
 }
 
-/* «Как было»: три факта строкой, над каждым — линия. */
-.facts {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 26px !important;
+/* «Как было»: задача на 9 колонок, ниже картинка на 7 и факты столбиком по её низу (колонки
+   9–12). */
+.row {
+  margin-top: 56px;
+  align-items: end;
 }
 
 .facts > div {
-  padding-top: 14px;
-  border-top: 1.5px solid var(--color-fg);
+  padding: 14px 16px 22px;
+}
+
+.facts > div:last-child {
+  padding-bottom: 0;
 }
 
 .facts b {
   display: block;
-  font-size: 19px;
+  font-size: var(--fs-m);
   font-weight: 500;
-  letter-spacing: -0.01em;
+  line-height: var(--lh-m);
 }
 
 .facts span {
   display: block;
-  margin-top: 4px;
-  font-size: 15px;
+  margin-top: 2px;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
   color: var(--text2);
 }
 
-/* Цифры результата — сеткой 2×2 в колонке текста, над каждой линия (как у фактов «как было»),
-   под ними — источник («данные клиента»). */
-.figs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 48px 40px;
+/* Пара «телефон + широкая» — одной высоты: телефон тянется по высоте широкой картинки. */
+.gal {
+  align-items: stretch;
 }
 
+/* Цифры результата — таблицей 2×2 размером цифры туннеля; под таблицей — источник («данные
+   клиента»). */
 .figs > div {
-  padding-top: 16px;
-  border-top: 1.5px solid var(--color-fg);
+  grid-column: span 6;
+  padding: 18px 16px 44px;
 }
 
 .figs .small {
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .src {
-  margin-top: 20px !important;
-  font-size: 15px;
-  line-height: 1.4;
+  margin-top: -20px;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
   color: var(--muted);
+}
+
+/* Результат без цифр — площадки (CaseView, Launch): строка на площадку по 12 колонкам — имя
+   кеглем заголовков решений (.h3) на 5 колонок, «где» — на 4, статус-пилюля и ↗, всё по одной
+   базовой линии. Ниже — строка, цена и «попробовать ↗». */
+.lRow,
+.lFoot {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.lRow {
+  align-items: baseline;
+  padding-bottom: 26px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.lName {
+  grid-column: 1 / 6;
+  padding: 0 16px;
+  font-size: var(--fs-l);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: var(--lh-l);
+  white-space: nowrap;
+  transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.lWhere {
+  grid-column: 6 / 10;
+  padding: 0 16px;
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
+}
+
+.lWhere b {
+  display: block;
+  font-weight: 500;
+}
+
+.lWhere span {
+  display: block;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  color: var(--muted);
+}
+
+.lSt {
+  grid-column: 10 / 12;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 30px;
+  margin: 0 16px;
+  padding: 0 13px 0 11px;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 999px;
+  font-size: var(--fs-s);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.lSt i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-fg);
+}
+
+.lGo {
+  grid-column: 12 / 13;
+  justify-self: end;
+  padding: 0 16px;
+  font-size: var(--fs-l);
+  line-height: 1;
+  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@media (hover: hover) {
+  a.lRow:hover .lName {
+    transform: translateX(8px);
+  }
+
+  a.lRow:hover .lGo {
+    transform: translate(4px, -4px);
+  }
+}
+
+.lFoot {
+  align-items: center;
+  padding-top: 18px;
+}
+
+.lNote {
+  grid-column: 1 / 6;
+  padding: 0 16px;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  color: var(--text2);
+}
+
+/* Цена — под «где», «попробовать» — у правого края. */
+.lEnd {
+  grid-column: 6 / 13;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 16px;
+}
+
+.lPrice {
+  max-width: 14em;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  color: var(--muted);
+}
+
+.lEnd .pill {
+  flex: none;
+  margin: 0;
+}
+
+/* Места в сетке 12 колонок (на телефоне всё — во всю ширину, ниже). */
+@media (min-width: 768px) {
+  .task {
+    width: 75%;
+  }
+
+  .pic {
+    grid-column: 1 / 8;
+  }
+
+  .facts,
+  .tx {
+    grid-column: 9 / 13;
+  }
+
+  .flip > .tx {
+    grid-area: 1 / 1 / 2 / 5;
+  }
+
+  .flip > .pic {
+    grid-area: 1 / 6 / 2 / 13;
+  }
+
+  .mob {
+    display: flex;
+    flex-direction: column;
+    grid-column: 1 / 5;
+  }
+
+  .gal .mob .pv {
+    flex: 1;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+
+  .desk,
+  .gal .note {
+    grid-column: 6 / 13;
+  }
+}
+
+/* Колонки уже: текст рядом с картинкой — на 5 колонок, у подложки конверта поле уже, чтобы пять
+   пилюль «что нужно» встали в строку (на 1280); уже 1024px текст первого экрана — под обложкой. */
+@media (min-width: 768px) and (max-width: 1309px) {
+  .letter {
+    --side: 40px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .side,
+  .facts,
+  .tx {
+    grid-column: 8 / 13;
+  }
+
+  .flip > .tx {
+    grid-area: 1 / 1 / 2 / 6;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .side {
+    grid-column: 1 / 11;
+    margin-top: 30px;
+  }
 }
 
 /* ---------- карточка-паспарту, как в Сцене 3 ---------- */
@@ -663,59 +925,40 @@
   line-height: 1;
 }
 
-.wide {
-  width: min(560px, 100%);
-}
-
-.it .wide,
-.facts + * .wide {
-  margin-top: 26px;
-}
-
-/* Телефон и широкая картинка — одной строкой. */
-.pair {
-  display: flex;
-  gap: 24px;
-  align-items: flex-end;
-  width: min(760px, 100%);
-}
-
-.pair > .port {
-  flex: 0 0 30%;
-}
-
-.pair > :not(.port) {
-  flex: 1 1 0;
-}
-
-/* Конец: вопрос и строка над формой. */
+/* Конец: вопрос и строка над конвертом — обещание, после отправки — что с заявкой (как над
+   конвертом Сцены 6). */
 .h2 + .p {
   max-width: 34em;
 }
 
-/* Форма заявки (components/ui/BriefForm) — в карточке с рамкой 1,5px, как окно заявки. */
-.brief {
-  max-width: 660px; /* пять пилюль «что нужно» — в одну строку */
-  padding: 26px 28px 28px;
-  border: 1.5px solid var(--color-fg);
-  border-radius: 22px;
-  background: var(--color-bg);
-}
-
-/* Отправлено — что дальше. */
-.steps {
-  display: grid;
-  gap: 6px;
-  margin: 16px 0 10px;
-  padding: 0;
-  font-size: 15px;
-  line-height: 1.45;
-  list-style: none;
-}
-
-.steps b {
-  font-weight: 500;
+.said a,
+.said strong {
   color: var(--color-fg);
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.nw {
+  white-space: nowrap;
+}
+
+.again {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-fg);
+  font-size: var(--fs-s);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Конверт заявки (components/ui/Envelope) — тот же, что на главной, от левого края колонки (не по
+   центру): засечка от линии упирается в подложку. */
+.letter {
+  --letter-margin: 0;
 }
 
 /* Следующий кейс — неброско: серая строка под формой. */
@@ -728,7 +971,7 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 15px;
+  font-size: var(--fs-s);
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -778,6 +1021,11 @@
     padding: var(--pad) 20px 0 44px;
   }
 
+  /* Знак — с колонки текста, как «← все работы»: ось (20px) проходит левее, а не под ним. */
+  .logo {
+    left: 44px;
+  }
+
   .hero {
     padding-top: 0;
   }
@@ -803,9 +1051,10 @@
     order: 2;
   }
 
-  .heroMedia .hr {
+  .side {
     order: 3;
-    margin: 22px 0 0;
+    margin-top: 18px;
+    padding: 0;
   }
 
   .hero .count {
@@ -839,59 +1088,180 @@
     line-height: 1.1;
   }
 
-  .result {
-    font-size: 56px;
-  }
-
-  .fig {
-    font-size: 44px;
-  }
-
-  .big {
-    font-size: 19px;
-  }
 
   .q {
     margin-top: 44px !important;
   }
 
-  .quote {
-    font-size: 22px;
+
+  /* Сетка — 4 колонки, блоки — во всю ширину. */
+  .g12 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .h2 {
-    font-size: 26px;
+  .g12 > * {
+    grid-column: 1 / -1;
   }
 
-  .facts {
-    grid-template-columns: 1fr;
-    gap: 0;
+  .bt {
+    padding: 0 12px;
+  }
+
+  .ch > .r {
+    padding-top: 40px;
+  }
+
+  /* Факты — строкой: значение в колонках 1–2, пояснение — в 3–4. */
+  .row {
+    margin-top: 32px;
+    row-gap: 28px;
   }
 
   .facts > div {
-    padding: 10px 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: baseline;
+    padding: 12px 0 14px;
   }
 
-  .facts > div:last-child {
-    border-bottom: 1.5px solid var(--color-fg);
+  .facts b {
+    grid-column: 1 / 3;
+    padding-left: 12px;
   }
 
-  .figs {
-    grid-template-columns: 1fr 1fr;
-    gap: 22px 16px;
+  .facts span {
+    grid-column: 3 / 5;
+    margin: 0;
+    padding: 0 12px;
   }
 
-  .pair {
+  /* Решение: картинка, под ней номер в первой колонке и текст во 2–4-й. */
+  .it {
+    row-gap: 20px;
+  }
+
+  .it + .it {
+    margin-top: 56px;
+  }
+
+  .tx {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0;
+  }
+
+  .tx .k {
+    grid-column: 1;
+    padding: 7px 12px 0;
+  }
+
+  .tx .h3,
+  .tx .p {
+    grid-column: 2 / 5;
+    padding-right: 12px;
+  }
+
+  .tx .h3 {
+    grid-row: 1;
+    margin: 0;
+  }
+
+  /* Пара: широкая — сверху, под ней телефон на 2 колонки и подпись рядом. */
+  .gal {
+    row-gap: 12px;
+    align-items: end;
+  }
+
+  .desk {
+    order: -1;
+  }
+
+  .mob {
+    grid-column: 1 / 3;
+  }
+
+  .gal .note {
+    grid-column: 3 / 5;
+    margin: 0;
+    padding: 0 0 0 12px;
+  }
+
+  .figs > div {
+    grid-column: span 2;
+    padding: 12px 12px 26px;
+  }
+
+  .figs .small {
+    margin-top: 10px;
+  }
+
+  .src {
+    margin-top: -8px;
+  }
+
+  /* Площадки: имя и статус — строкой, под ними «где»; ↗ не нужна — ссылка вся строка. Низ —
+     столбиком. */
+  .lRow,
+  .lFoot {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .lRow {
+    row-gap: 6px;
+    padding-bottom: 22px;
+  }
+
+  .lName {
+    grid-column: 1 / 5;
+    grid-row: 1;
+    padding: 0 12px;
+  }
+
+  .lSt {
+    grid-column: 3 / 5;
+    grid-row: 1;
+    justify-self: end;
+    height: 28px;
+    margin: 0 12px 0 0;
+  }
+
+  .lWhere {
+    grid-column: 1 / 5;
+    grid-row: 2;
+    padding: 0 12px;
+  }
+
+  .lGo {
+    display: none;
+  }
+
+  .lFoot {
+    row-gap: 14px;
+    padding-top: 8px;
+  }
+
+  .lNote,
+  .lEnd {
+    grid-column: 1 / 5;
+    padding: 0 12px;
+  }
+
+  .lEnd {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 14px;
   }
 
-  .pair > .port {
-    flex-basis: 36%;
+  .lPrice {
+    max-width: none;
   }
 
-  /* Конец: засечка — до рамки карточки (текст от 44px), «ещё проект →» не у самого края экрана. */
+  .more.bt {
+    padding: 0;
+  }
+
+  /* Конец: засечка — до подложки конверта (текст от 44px), «ещё проект →» не у самого края экрана. */
   .end {
-    --t: 60px;
     padding-bottom: 24px;
   }
 
@@ -903,9 +1273,20 @@
     display: none;
   }
 
-  .brief {
-    padding: 18px 16px 20px 18px;
-    border-radius: 20px;
+  /* Конверт — шире колонки текста: подложка до правого края экрана, пилюли плотнее (как у главной
+     уже 390px) — пять пилюль в два ряда. */
+  .letter {
+    --letter-margin: 0 -20px 0 0;
+    --pill-x: 11px;
+    --pill-gap: 6px;
+    --pill-fs: 0.875rem;
+  }
+}
+
+/* Конверт в телефонной раскладке (та же, что в Envelope.module.css): поле «телефон» выше. */
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
+  .end {
+    --t: 122px;
   }
 }
 
@@ -913,5 +1294,10 @@
 @media (prefers-reduced-motion: reduce) {
   .dot::before {
     animation: none !important;
+  }
+
+  .lName,
+  .lGo {
+    transition: none;
   }
 }
