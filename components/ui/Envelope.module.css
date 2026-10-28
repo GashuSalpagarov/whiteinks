@@ -590,7 +590,9 @@
 }
 
 .closed .env {
-  transition: height 0.3s var(--ease) 0.3s;
+  transition:
+    height 0.3s var(--ease) 0.3s,
+    translate 0.3s var(--ease) 0.3s;
 }
 
 .closed .flapOpen {

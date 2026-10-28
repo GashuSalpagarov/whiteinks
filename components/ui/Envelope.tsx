@@ -134,16 +134,21 @@ export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) 
   }, []);
 
   // Закрыли конверт — один замер: высота обёртки замирает (ничего под ней не прыгнет), а
-  // конверт садится до обычной пропорции (переход высоты — в CSS). Вернулись к форме — снимаем,
+  // конверт садится до обычной пропорции (переход высоты — в CSS). На телефоне он садится почти
+  // вдвое: подложка остаётся во всю высоту, конверт сдвигается к её середине (translate, переход —
+  // в CSS) — под ним нет белого места, а страница не короче. Вернулись к форме — снимаем,
   // ошибки прошлой попытки — тоже.
   useLayoutEffect(() => {
     const letter = rootRef.current;
     const env = envRef.current;
     const sheet = sheetRef.current;
-    if (!letter || !env || !sheet) return;
+    const plate = env?.parentElement;
+    if (!letter || !env || !sheet || !plate) return;
     if (!closed) {
       letter.style.minHeight = "";
+      plate.style.minHeight = "";
       env.style.height = "";
+      env.style.translate = "";
       // Письмо на место сразу, как и всё остальное: переход translate — только для «Другое».
       sheet.style.transition = "none";
       void sheet.offsetHeight;
@@ -153,14 +158,14 @@ export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) 
     }
     letter.style.minHeight = `${letter.offsetHeight}px`;
     const flap = Number.parseFloat(getComputedStyle(env).getPropertyValue("--flap"));
+    const phone = env.offsetWidth < 500;
     const from = env.offsetHeight;
-    const to = Math.min(
-      from,
-      Math.round(flap + env.offsetWidth * (env.offsetWidth < 500 ? 0.62 : 0.46)),
-    );
+    const to = Math.min(from, Math.round(flap + env.offsetWidth * (phone ? 0.62 : 0.46)));
+    if (phone) plate.style.minHeight = `${plate.offsetHeight}px`;
     env.style.height = `${from}px`;
     void env.offsetHeight;
     env.style.height = `${to}px`;
+    if (phone) env.style.translate = `0 ${Math.round((from - to) / 2)}px`;
   }, [closed]);
 
   // «Другое» выбрали или сняли, строк стало больше или меньше: письмо выдвигается (CSS, --n — строк),
