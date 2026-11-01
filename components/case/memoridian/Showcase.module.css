@@ -1,4 +1,4 @@
-/* Страница Memoridian (Showcase.tsx): белое полотно, ряды шахматным порядком, цвет только в картинках
+/* Страница Memoridian (Showcase.tsx): белое полотно, свободные блоки, цвет только в картинках
    и образцах. Стилей текста ровно четыре: .title, .head, .text, .note; цветов два. По месту не
    переопределять. Второй круг: страница переворачивается с корнем, картинки остаются в своих цветах,
    только образцы шрифта и иконки (.ink, тёмное на прозрачном) переворачиваются вместе с текстом. */
@@ -34,11 +34,12 @@
   text-wrap: pretty;
 }
 
-/* ---------- поля и один отступ между рядами ---------- */
+/* ---------- поля шапки; большой отступ между главами, меньший между блоками главы ---------- */
 .shot {
   --gut: 32px;
   --g: 16px;
   --gap: clamp(96px, 10vw, 160px);
+  --line: clamp(72px, 6.4vw, 112px);
   --col: calc((100vw - 2 * var(--gut) - 11 * var(--g)) / 12);
   padding: var(--gap) var(--gut) 0;
   overflow-x: clip; /* тень крайней карточки не даёт прокрутки вбок */
@@ -50,146 +51,105 @@
   height: auto;
 }
 
-/* ---------- ряд по Сцене 3: от середины окна до картинки 48, до текста 80, картинка 608 и текст 440
-   при 1440. Потолок 664 держит плотность снимков не ниже 2 на широком окне. ---------- */
-.row {
-  --near: 48px;
-  --far: 80px;
-  --pic: min(50vw - var(--near) - 64px, 664px);
+/* ---------- свободная раскладка: блок — картинка --p и текст --t рядом, по центру друг друга. Глава —
+   столбик блоков; блок сам выбирает сторону и сдвиг; .line — два блока в одном ряду. ---------- */
+.chapter {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--line);
+}
+
+.line {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+
+.line .block {
+  --j: clamp(20px, 2.2vw, 40px);
+}
+
+.block {
+  display: flex;
+  align-items: center;
+  column-gap: var(--j, clamp(28px, 3.4vw, 56px));
+  width: fit-content;
 }
 
 .pic {
-  grid-row: 1;
-  grid-column: 1;
-  justify-self: end;
-  width: var(--pic);
-  margin-right: var(--near);
+  flex: none;
+  width: var(--p);
 }
 
 .copy {
-  grid-row: 1;
-  grid-column: 2;
-  max-width: 440px;
-  margin-left: var(--far);
-}
-
-.flip .pic {
-  grid-column: 2;
-  justify-self: start;
-  margin: 0 0 0 var(--near);
-}
-
-.flip .copy {
-  grid-column: 1;
-  justify-self: end;
-  width: 100%;
-  margin: 0 var(--far) 0 0;
+  flex: none;
+  width: var(--t, clamp(300px, 26vw, 380px));
 }
 
 .copy > * + * {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
-/* Сайт: края те же, что у соседних рядов; текст 320 у левого края, снимок на всё остальное. */
-.wide {
-  grid-template-columns: 1fr 320px 48px calc(2 * var(--pic) + 2 * var(--near) - 368px) 1fr;
+.talk,
+.memory {
+  --p: clamp(340px, 30.5vw, 480px);
 }
 
-.wide .pic {
-  grid-column: 4;
-  width: 100%;
-  margin: 0;
+.talk {
+  --t: clamp(300px, 30.5vw, 460px);
 }
 
-.wide .copy {
-  grid-column: 2;
-  justify-self: start;
-  margin: 0;
+.memory,
+.site,
+.fin {
+  flex-direction: row-reverse;
+  margin-left: auto;
 }
 
-/* Детали и карточка из них: две картинки в одном ряду, по центру друг друга. Ширина от высоты окна:
-   детали (высота 1,162 ширины и зазор 40) целиком помещаются под шапкой и на низком окне. */
-.pair .pic {
-  width: min(var(--pic), (var(--h) - 136px) / 1.162);
+.small,
+.colors {
+  --p: clamp(240px, 20.8vw, 360px);
+  --t: clamp(240px, 20.8vw, 380px);
 }
 
-.pair .pic + .pic {
-  grid-column: 2;
-  justify-self: start;
-  margin: 0 0 0 var(--near);
+.run {
+  --p: clamp(220px, 18vw, 320px);
+  --t: clamp(240px, 20.8vw, 380px);
 }
 
-/* Снимок иконок пуст справа: сами иконки во всю колонку. 735 держит плотность не ниже 2. */
-.shot .icons {
-  width: min(100% * 1470 / 1271, 735px);
-  max-width: none;
-  margin-left: -0.7%;
+.memo {
+  --p: clamp(280px, 23vw, 380px);
+  margin-left: 16vw;
 }
 
-/* ---------- функции по Сцене 2: блок 28vw, не шире 460, от края 7vw или 18vw. Блоки занимают по две
-   строки сетки со сдвигом на одну: вперемешку слева и справа и не наезжают при любой высоте. ---------- */
-.fns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  row-gap: 72px;
-  align-items: start;
-  padding-inline: 7vw;
-  --shift: 11vw;
+.site,
+.how {
+  --p: clamp(420px, 44vw, 720px);
 }
 
-/* Не уже 310: мелкий текст на карточках не мельчает в узком окне. */
-.fns > * {
-  width: clamp(310px, 28vw, 460px);
+.type {
+  --p: clamp(420px, 38vw, 640px);
+  --t: clamp(280px, 24vw, 400px);
+  margin-left: 16vw;
 }
 
-.fns > :nth-child(1) {
-  grid-area: 1 / 1;
+.icons {
+  --p: clamp(220px, 19vw, 340px);
+  --t: clamp(240px, 18.8vw, 360px);
 }
 
-.fns > :nth-child(2) {
-  grid-area: 1 / 2 / span 2;
-  justify-self: end;
+.parts {
+  --p: clamp(300px, 28vw, 520px);
+  --t: clamp(240px, 19vw, 360px);
 }
 
-.fns > :nth-child(3) {
-  grid-area: 2 / 1 / span 2;
-  margin-left: var(--shift);
+.fin {
+  --p: clamp(320px, 24vw, 400px);
+  --t: clamp(280px, 21vw, 360px);
+  margin-right: 16vw;
 }
 
-.fns > :nth-child(4) {
-  grid-area: 3 / 2 / span 4;
-  justify-self: end;
-  margin-right: var(--shift);
-}
-
-/* Без карточек, вместе рядом со столбиком «Считает»: заполняют поле напротив него. */
-.fns > :nth-child(5) {
-  grid-area: 4 / 1;
-}
-
-.fns > :nth-child(6) {
-  grid-area: 5 / 1;
-}
-
-.fns > :nth-child(7) {
-  grid-area: 6 / 1;
-  margin-left: var(--shift);
-}
-
-.cards {
-  display: grid;
-  gap: var(--g);
-  margin-bottom: 24px;
-}
-
-.fn .text {
-  margin-top: 12px;
-}
-
-/* Карточка снята с запасом 24 под тень: край карточки стоит точно на краю колонки. Шириной 432 и 300. */
+/* Снимки с запасом под тень: край карточки стоит точно по ширине блока. */
 .shot .kit {
   width: calc(100% * 480 / 432);
   max-width: none;
@@ -200,6 +160,20 @@
   width: calc(100% * 348 / 300);
   max-width: none;
   margin: -8%;
+}
+
+/* У Мемо поля снимка пустые: ширина блока — по самому персонажу. */
+.shot .memoPic {
+  width: calc(100% * 1600 / 1253);
+  max-width: none;
+  margin-left: -14.4%;
+}
+
+/* Снимок иконок пуст справа: сами иконки во всю ширину блока. */
+.shot .iconsPic {
+  width: calc(100% * 1470 / 1271);
+  max-width: none;
+  margin-left: -0.7%;
 }
 
 .lead {
@@ -270,15 +244,10 @@
   border-radius: 20px;
 }
 
-/* ---------- дизайн-система без рамок: цвета и шрифт, ниже иконки и блоки рядом с карточкой из них ---------- */
-.stack {
-  display: grid;
-  gap: 40px;
-}
-
+/* ---------- образцы цветов ---------- */
 .swatches {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--g);
 }
 
@@ -323,72 +292,66 @@
     margin-bottom: 0;
   }
 
-  .row {
-    --near: 8px;
-    --far: 40px;
-    --pic: calc(50vw - 40px);
+  .memo,
+  .type {
+    margin-left: 6vw;
   }
 
-  .fns {
-    --shift: 6vw;
+  /* Два блока в ряду: текст под картинкой, рядом не помещается. */
+  .line {
+    align-items: flex-start;
   }
 
-  /* Снимок сайта во всю ширину: мелкий текст на нём не мельчает. */
-  .wide {
+  .line .block {
     display: block;
+    width: 47%;
   }
 
-  .wide .copy {
-    margin-top: 24px;
+  .line .pic {
+    max-width: 100%;
+  }
+
+  .line .copy {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .line > .copy {
+    width: 47%;
+    margin-top: 0;
   }
 }
 
 /* ---------- одна колонка: картинка, под ней текст, как карточка и подпись Сцены 3 в портрете ---------- */
 @media (max-width: 899px), (orientation: portrait) and (max-width: 1024px) {
-  .row {
+  .line {
+    display: grid;
+    row-gap: var(--line);
+  }
+
+  .block,
+  .line .block {
     display: block;
-  }
-
-  .row .pic,
-  .flip .pic,
-  .pair .pic + .pic {
-    justify-self: start;
     width: 100%;
-    max-width: 664px;
     margin: 0;
   }
 
-  .wide .pic {
-    max-width: none;
+  .pic,
+  .line .pic {
+    width: 100%;
+    max-width: min(var(--p), 100%);
   }
 
-  .row .copy,
-  .flip .copy {
-    justify-self: start;
+  .copy,
+  .line .copy,
+  .line > .copy {
+    width: 100%;
     max-width: 36em;
-    margin: 24px 0 0;
+    margin-top: 12px;
   }
 
-  .pair .pic + .pic {
-    margin-top: 48px;
-  }
-
-  .fns {
-    display: flex;
-    flex-direction: column;
-    gap: 56px;
-    padding-inline: var(--gut);
-  }
-
-  .fns > :nth-child(n) {
-    width: 100%;
-    max-width: 460px;
-    margin: 0;
-  }
-
-  .fns > :nth-child(2),
-  .fns > :nth-child(4) {
-    align-self: flex-end;
+  .line > .copy {
+    margin-top: 0;
   }
 }
 
@@ -398,6 +361,7 @@
     --gut: 20px;
     --g: 12px;
     --gap: 72px;
+    --line: 36px;
   }
 
   .title {
@@ -410,6 +374,35 @@
 
   .duo {
     width: 100%;
+  }
+
+  .talk {
+    --p: 280px;
+  }
+
+  .memory {
+    --p: 280px;
+  }
+
+  .memo {
+    --p: 180px;
+  }
+
+  .site,
+  .how {
+    --p: 320px;
+  }
+
+  .colors {
+    --p: 180px;
+  }
+
+  .fin {
+    --p: 240px;
+  }
+
+  .run {
+    --p: 200px;
   }
 
   .page {
