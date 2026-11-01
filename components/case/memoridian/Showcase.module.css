@@ -252,10 +252,29 @@
 }
 
 .swatches i {
-  display: block;
+  display: grid;
+  place-items: center;
   aspect-ratio: 1;
   border-radius: 14px;
   box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.3); /* виден и на тёмной странице */
+  font-size: var(--fs-s);
+  font-style: normal;
+}
+
+/* Код цвета: по наведению, а где наводить нечем — виден сразу. */
+.swatches span {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.swatches i:hover span {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .swatches span {
+    opacity: 1;
+  }
 }
 
 /* Низкое окно: сведения длиннее свободного места. */
@@ -360,8 +379,8 @@
   .shot {
     --gut: 20px;
     --g: 12px;
-    --gap: 72px;
-    --line: 36px;
+    --gap: 104px;
+    --line: 72px;
   }
 
   .title {
@@ -394,7 +413,7 @@
   }
 
   .colors {
-    --p: 180px;
+    --p: 240px;
   }
 
   .fin {

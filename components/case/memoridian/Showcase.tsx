@@ -58,7 +58,14 @@ function Lead(p: { head: string; children: ReactNode }) {
   );
 }
 
-const SWATCHES = ["#DC5C33", "#1A1C25", "#7A7F8C", "#FFFFFF", "#F6F7FB", "#141414"];
+const SWATCHES = [
+  ["#DC5C33", "#141414"],
+  ["#1A1C25", "#FFFFFF"],
+  ["#7A7F8C", "#141414"],
+  ["#FFFFFF", "#141414"],
+  ["#F6F7FB", "#141414"],
+  ["#141414", "#FFFFFF"],
+];
 
 export function Showcase({ c, act, full }: { c: CaseData; act: CaseActions; full: boolean }) {
   const link = (name: string, label: string) => (
@@ -300,8 +307,10 @@ export function Showcase({ c, act, full }: { c: CaseData; act: CaseActions; full
                 head="Цвета"
                 pic={
                   <div className={styles.swatches}>
-                    {SWATCHES.map((hex) => (
-                      <i key={hex} className="no-invert" style={{ background: hex }} />
+                    {SWATCHES.map(([hex, ink]) => (
+                      <i key={hex} className="no-invert" style={{ background: hex, color: ink }}>
+                        <span>{hex}</span>
+                      </i>
                     ))}
                   </div>
                 }
