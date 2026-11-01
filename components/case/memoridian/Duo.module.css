@@ -1,0 +1,76 @@
+/* Жёсткая группа: все размеры — доли её ширины (cqw), поэтому на карточке и на первом экране вид один.
+   Числа — от раскладки 912×631: окно 657×480, телефон 299×631 внахлёст справа, низ на одной линии.
+   Зазор вокруг телефона вырезан из окна маской: на поле карточки он не белый, на белом экране такой же. */
+.duo {
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 912 / 631;
+}
+
+.browser {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 72.04%;
+  height: 76.07%;
+  overflow: hidden;
+  border: 0.1645cqw solid var(--color-fg);
+  border-radius: 2.193cqw;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 657 480' preserveAspectRatio='none'%3E%3Cpath d='M0 0H607V440A46 46 0 0 0 630.3 480H0Z'/%3E%3C/svg%3E")
+    0 0 / 100% 100%;
+}
+
+.duo .browser img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 0 0;
+}
+
+.phone {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 32.79%;
+  margin: 0;
+  padding: 0.787cqw;
+  border-radius: 4.427cqw;
+  background: #0a0a0a;
+}
+
+.duo .phone img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 390 / 844;
+  border-radius: 3.672cqw;
+}
+
+/* Телефон: окно во всю группу и только колонка чата, телефон в его правом нижнем углу. На 350 px
+   раскладка компьютера нечитаема (снимок в 0,27 раза), поэтому своя, но та же на карточке и на экране. */
+@media (max-width: 767px) {
+  .duo {
+    aspect-ratio: 350 / 340;
+  }
+
+  .browser {
+    width: 100%;
+    height: 100%;
+    border-width: 0.43cqw;
+    border-radius: 5.7cqw;
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 350 340' preserveAspectRatio='none'%3E%3Cpath d='M0 0H350V89H249A20 20 0 0 0 229 109V324A20 20 0 0 0 237 340H0Z'/%3E%3C/svg%3E");
+  }
+
+  .duo .browser img {
+    object-position: 96.6% 0;
+  }
+
+  .phone {
+    width: 33.43%;
+    padding: 0.8cqw;
+    border-radius: 4.51cqw;
+  }
+
+  .duo .phone img {
+    border-radius: 3.74cqw;
+  }
+}

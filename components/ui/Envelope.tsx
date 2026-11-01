@@ -30,7 +30,7 @@ import { viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Envelope.module.css";
 
 // Конверт заявки — один на сайт: его собирает по прокрутке Сцена 6 и ставит уже собранным конец
-// страницы кейса (CaseView). На сиреневом поле — открытый конверт, из него торчит письмо с полями
+// страницы кейса (CaseView). Открытый конверт, из него торчит письмо с полями
 // (телефон, имя, что нужно), на кармане — согласие и «Отправить заявку». Отправили — письмо уходит
 // в конверт, клапан закрывается, на конверте — «от: …»; ушло на сервер (sent) — ложится марка.
 // Открыли письмо в почте (mail) — марки нет: отправит сам посетитель. Данные — общие с окном
@@ -45,7 +45,6 @@ type Errors = { phone?: string; consent?: string; form?: string };
 
 export type EnvelopeParts = {
   root: HTMLDivElement | null;
-  tint: HTMLSpanElement | null;
   env: HTMLFormElement | null;
   outline: SVGSVGElement | null;
   edge: SVGPathElement | null;
@@ -62,7 +61,6 @@ export type EnvelopeParts = {
 
 export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const tintRef = useRef<HTMLSpanElement>(null);
   const envRef = useRef<HTMLFormElement>(null);
   const outlineRef = useRef<SVGSVGElement>(null);
   const edgeRef = useRef<SVGPathElement>(null);
@@ -94,7 +92,6 @@ export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) 
 
   useImperativeHandle(p.ref, () => ({
     root: rootRef.current,
-    tint: tintRef.current,
     env: envRef.current,
     outline: outlineRef.current,
     edge: edgeRef.current,
@@ -135,7 +132,7 @@ export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) 
 
   // Закрыли конверт — один замер: высота обёртки замирает (ничего под ней не прыгнет), а
   // конверт садится до обычной пропорции (переход высоты — в CSS). На телефоне он садится почти
-  // вдвое: подложка остаётся во всю высоту, конверт сдвигается к её середине (translate, переход —
+  // вдвое: обёртка держит всю высоту, конверт сдвигается к её середине (translate, переход —
   // в CSS) — под ним нет белого места, а страница не короче. Вернулись к форме — снимаем,
   // ошибки прошлой попытки — тоже.
   useLayoutEffect(() => {
@@ -282,7 +279,6 @@ export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) 
     <div ref={rootRef} className={cls.filter(Boolean).join(" ")}>
       <div className={styles.plate}>
         {/* Сиреневый слой — отдельно: на втором круге он в своём цвете, а конверт — в общем. */}
-        <span ref={tintRef} className={`${styles.tint} no-invert`} aria-hidden="true" />
         <form ref={envRef} className={styles.env} noValidate onSubmit={submit} inert={closed}>
           <svg
             ref={flapOpenRef}

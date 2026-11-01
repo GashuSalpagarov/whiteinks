@@ -12,12 +12,12 @@ import styles from "./Scene6.module.css";
 
 // Точка пути идёт по сцене всё время, пока её прокручивают, — без остановок; позади неё —
 // чернила, впереди — пунктир. Конверт собирается из неё: дошла до его верхнего края — из неё
-// расходятся две линии и обегают контур, проступают поле и бумага, клапан ложится и открывается,
+// расходятся две линии и обегают контур, проступает бумага, клапан ложится и открывается,
 // выезжает письмо, поля — по одному.
 // Стоянка (с мышью, если сцена влезает в экран): сцена — экран, ещё RUN экрана она стоит
 // (sticky). Без стоянки (сенсорный или низкий экран) сцена едет как обычно.
 // Телефонная раскладка (lib/phoneLayout.ts) — без стоянки и со своей сборкой: по ходу точки из неё
-// рисуется лежачий конверт — контур, подложка, бумага (по высоте ничего не ходит). Бумага легла
+// рисуется лежачий конверт — контур, бумага (по высоте ничего не ходит). Бумага легла
 // (PLAY) — конверт доигрывает сам переходами CSS (data-play): пологий клапан ложится и открывается,
 // карман опускается на место, письмо выходит на всю высоту формы, поля — по одному, кнопка. Дальше
 // он к прокрутке не привязан: назад не складывается, поле под клавиатурой не двигается, рывков от
@@ -39,7 +39,6 @@ type Span = readonly [number, number];
 const T = {
   edge: [0, 0.35], // контур из точки
   edgeOut: [0.5, 0.56], // уступает рамкам бумаги
-  tint: [0.28, 0.48],
   fill: [0.36, 0.5], // спинка и карман
   flapIn: [0.44, 0.56], // клапан ложится…
   flapAway: [0.64, 0.71], // …уходит…
@@ -52,7 +51,6 @@ const T = {
 const PH = {
   edge: [0, 0.35], // контур лежачего конверта из точки
   edgeOut: [0.37, 0.45],
-  tint: [0.12, 0.35],
   fill: [0.25, 0.42], // спинка и карман
 } satisfies Record<string, Span>;
 const PLAY = 0.45;
@@ -82,7 +80,7 @@ const footerHome = (section: HTMLElement) => {
 };
 
 // Сцена 6 — заявка конвертом. Точка идёт по линии с прокруткой, конверт (components/ui/Envelope)
-// собирается из неё: контур, поле и бумага, клапан, письмо с полями (телефон, имя, что нужно), на
+// собирается из неё: контур и бумага, клапан, письмо с полями (телефон, имя, что нужно), на
 // кармане — согласие и «Отправить заявку». Отправили — письмо уходит в конверт, клапан
 // закрывается, на конверте — «от: …»; ушло на сервер (sent) — ложится марка. Открыли письмо в почте
 // (mail) — марки нет: отправит сам посетитель. Точку отправка не трогает — она там, куда её довела
@@ -127,9 +125,9 @@ export function Scene6() {
     const parts = partsRef.current;
     const hand = handRef.current;
     if (!section || !stage || !railInk || !drop || !head || !lead || !parts || !hand) return;
-    const { root: letter, tint, env, outline: svg, edge, edgeUse, flapOpen, back } = parts;
+    const { root: letter, env, outline: svg, edge, edgeUse, flapOpen, back } = parts;
     const { sheet, pocket, cut, act, flapClosed, fields } = parts;
-    if (!letter || !tint || !env || !svg || !edge || !edgeUse || !flapOpen || !back) return;
+    if (!letter || !env || !svg || !edge || !edgeUse || !flapOpen || !back) return;
     if (!sheet || !pocket || !cut || !act || !flapClosed || fields.length < 3) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     // Стоянка — только с мышью: на сенсорном экране клавиатура закрыла бы кнопку под стоящей
@@ -182,7 +180,6 @@ export function Scene6() {
     let edgeL = 0; // длина половины контура
     let slide = 0; // письмо до выезда — в кармане
     let low = 0; // телефон: на сколько карман лежачего конверта выше своего места
-    let plateH = 0; // высота подложки — от неё её доля у лежачего конверта
     let played = false; // телефон: конверт доиграл (или играет) и к прокрутке не привязан
     // Строка «Другое» открыта — письмо выдвинуто на lift (одна строка) и ещё на line за каждую
     // следующую, если они идут вверх (absorb), до max строк; как в CSS у .sheet[data-other].
@@ -223,7 +220,6 @@ export function Scene6() {
         edgeL = W + B - F - 3;
         // Глубина клапана, когда конверт доигрывает (доля высоты закрытого из CSS): 0,45 лежачего.
         if (phone) env.style.setProperty("--lid", ((0.45 * body) / (0.6 * (H - F))).toFixed(3));
-        plateH = tint.offsetHeight;
         edge.style.strokeDasharray = `${edgeL}`;
         slide = Math.max(0, H - pocket.offsetHeight - sheet.offsetTop + 12);
         const cs = getComputedStyle(sheet);
@@ -288,7 +284,6 @@ export function Scene6() {
       rise(lead, ease(clamp01((u - 0.4) / 0.3)), 16);
       put(edge, "stroke-dashoffset", (edgeL * (1 - seg(p, T.edge))).toFixed(1));
       put(svg, "opacity", p > 0 ? (1 - seg(p, T.edgeOut)).toFixed(3) : "0");
-      fade(tint, seg(p, T.tint));
       const fill = seg(p, T.fill);
       fade(back, fill);
       fade(pocket, fill);
@@ -310,7 +305,7 @@ export function Scene6() {
       rise(act, seg(p, T.act), 10);
     };
 
-    // Телефон до сигнала: лежачий конверт по ходу точки — контур, подложка, бумага. Форма поднята
+    // Телефон до сигнала: лежачий конверт по ходу точки — контур, бумага. Форма поднята
     // на low, всё в ней, кроме кармана, — опущено обратно: обрезка формы (overflow: clip) идёт по
     // низу кармана и прячет письмо ниже него. Клапан, письмо, поля и кнопка ждут сигнала. Подводка
     // не проявляется: она над линией, и полупрозрачная пропустила бы линию по буквам.
@@ -318,8 +313,6 @@ export function Scene6() {
       clean = false;
       put(edge, "stroke-dashoffset", (edgeL * (1 - seg(p, PH.edge))).toFixed(1));
       put(svg, "opacity", p > 0 ? (1 - seg(p, PH.edgeOut)).toFixed(3) : "0");
-      fade(tint, seg(p, PH.tint));
-      put(tint, "transform", `scaleY(${plateH > 0 ? ((plateH - low) / plateH).toFixed(4) : 1})`);
       const fill = seg(p, PH.fill);
       fade(back, fill);
       fade(pocket, fill);

@@ -48,34 +48,17 @@ function Img({ img, className = "" }: { img: CaseImage; className?: string }) {
   );
 }
 
-// Обложка — карточка туннеля: та же картинка на своём фоне и номер. На первом экране в её рамку
-// встаёт карточка туннеля (data-cover). Видео-петля карточки играет и здесь — с первого кадра (он
-// же постер), когда вход доигран (CaseLayer, settle).
+// Обложка — маленькая карточка туннеля над названием: та же картинка на своём фоне, номер — строкой
+// над ней. На первом экране в её рамку встаёт карточка туннеля (data-cover).
 function Cover({ i, className }: { i: number; className: string }) {
   const card = CARDS_CONTENT[i];
   const style = { background: card.color, objectFit: "contain" } as const;
   return (
     <figure className={`${styles.card} ${className}`} data-cover="">
       <div className={styles.pv}>
-        {card.video ? (
-          <video
-            className="no-invert"
-            src={card.video}
-            poster={card.image}
-            muted
-            loop
-            playsInline
-            preload="auto"
-            style={style}
-          />
-        ) : (
-          <>
-            {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-            <img src={card.image} alt="" style={style} />
-          </>
-        )}
+        {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
+        <img src={card.image} alt="" style={style} />
       </div>
-      <span className={styles.badge}>{num(i)}</span>
     </figure>
   );
 }
@@ -95,7 +78,7 @@ const ASK: Record<string, string> = {
 };
 let autoNeed = ""; // «что нужно», подставленное кейсом, а не выбранное посетителем
 
-function End({ c, act }: { c: CaseData; act: CaseActions }) {
+export function End({ c, act }: { c: CaseData; act: CaseActions }) {
   const { status, phone } = useBrief();
   const sent = status === "sent";
   useEffect(() => {
@@ -266,10 +249,9 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
           <a className={styles.back} href={HOME_HREF} onClick={back(act.close)} data-hi>
             ← все работы
           </a>
-          {/* Обложка — на 7 колонок; справа, по её нижнему краю — фраза, ссылка, где ещё есть
-              проект, и главная цифра (на телефоне — всё под текстом). */}
+          {/* Справа от линии — фраза, ссылка, где ещё есть проект, и главная цифра (на телефоне —
+              всё под названием). */}
           <div className={`${styles.heroMedia} ${styles.g12}`}>
-            <Cover i={i} className={styles.cover} />
             <div className={styles.side} data-hi>
               <p className={styles.lead}>{c.summary}</p>
               {c.url && (
@@ -292,12 +274,13 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
               )}
             </div>
           </div>
-          {/* Номер, название и «клиент · тип · год» — одним блоком (на десктопе — слева от линии). */}
+          {/* Номер, обложка, название и «клиент · тип · год» — одним блоком (на десктопе — слева от линии). */}
           <div className={styles.head}>
             <p className={styles.count} data-hi>
               {num(i)} <span>/ {num(N - 1)}</span>
               {c.example && <span className={styles.ex}>пример</span>}
             </p>
+            <Cover i={i} className={styles.cover} />
             <h1 className={styles.title} id="case-title" data-hi>
               {card.title}
             </h1>
@@ -396,7 +379,9 @@ export function CaseView(p: { c: CaseData; act: CaseActions; full: boolean }) {
             )}
           </Chapter>
 
-          <End c={c} act={act} />
+          <div className={`${styles.plain} ${styles.plainEnd}`}>
+            <End c={c} act={act} />
+          </div>
         </>
       )}
     </>

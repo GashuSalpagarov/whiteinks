@@ -3,6 +3,7 @@
 import { invalidate } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { useLenis } from "@/app/providers";
+import { Duo } from "@/components/case/memoridian/Duo";
 import heroStyles from "@/components/scenes/Hero/Hero.module.css";
 import skipStyles from "@/components/ui/Skip.module.css";
 import { caseHref, openCase } from "@/lib/caseRoute";
@@ -265,8 +266,6 @@ export function Scene3() {
     const section = sectionRef.current;
     if (!section) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const videos = [...section.querySelectorAll("video")];
-    let playing = false;
     let L: Layout | null = null;
     let shared: HTMLElement | null = null; // общая точка (.drop в Hero)
     let viewport = "";
@@ -297,16 +296,6 @@ export function Scene3() {
       const h = viewportH();
       if (!h) return;
       const rect = section.getBoundingClientRect();
-      // Видео карточек — только пока сцена на экране (батарея телефона). play() отклонён (iOS в
-      // режиме экономии) — остаётся постер.
-      const play = !reduced && rect.top < h && rect.bottom > 0;
-      if (play !== playing) {
-        playing = play;
-        for (const v of videos) {
-          if (play) v.play().catch(() => {});
-          else v.pause();
-        }
-      }
       // Без движения — сразу собранная сетка, пока sticky стоит.
       const raw = -rect.top / h;
       const u = reduced ? (rect.top <= 0 ? TOTAL : 0) : Math.max(0, Math.min(TOTAL, raw));
@@ -468,20 +457,11 @@ export function Scene3() {
                   {/* Цветное поле вокруг вписанной картинки — её собственный фон: на втором круге
                     (инверсия палитры, globals.css) img возвращается в свои цвета вместе с полем,
                     а рамки и белое поле карточки остаются в негативе. */}
-                  {c.video ? (
-                    // Петля вместо картинки, пока грузится — постер. Грузится и играет, только пока
-                    // сцена на экране (update ниже), при «меньше движения» — нет; no-invert — как
-                    // img на втором круге.
-                    <video
-                      className="no-invert"
-                      src={c.video}
-                      poster={c.image}
-                      muted
-                      loop
-                      playsInline
-                      preload="none"
-                      style={{ background: c.color }}
-                    />
+                  {c.duo ? (
+                    <>
+                      <i className={`${styles.field} no-invert`} style={{ background: c.color }} />
+                      <Duo className={styles.duo} />
+                    </>
                   ) : (
                     <>
                       {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}

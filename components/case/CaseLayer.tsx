@@ -16,6 +16,8 @@ import { syncScroll, viewportH } from "@/lib/scroll/onScroll";
 import { SITE_TITLE } from "@/lib/site";
 import styles from "./Case.module.css";
 import { back, type CaseActions, CaseView } from "./CaseView";
+import { DUO_SHOTS } from "./memoridian/Duo";
+import { Showcase } from "./memoridian/Showcase";
 
 // Слой кейса поверх главной (вариант D2 «Рассказ», docs/12-case-page.md). Главная под ним
 // смонтирована и стоит: прокрутку держит Lenis (stop), а html[data-case-open] ставит на паузу
@@ -77,7 +79,6 @@ function makeFlyer(card: HTMLElement, holder: HTMLElement) {
   const badge = card.lastElementChild;
   const copy = el.lastElementChild as HTMLElement | null;
   if (badge && copy) copy.style.opacity = getComputedStyle(badge).opacity;
-  const frame = grabFrame(card.querySelector("video"), el);
   holder.append(el);
   const m =
     /translate\((-?[\d.]+)px, (-?[\d.]+)px\) scale\((-?[\d.]+)\).*rotateY\((-?[\d.]+)deg\)/.exec(
@@ -85,26 +86,9 @@ function makeFlyer(card: HTMLElement, holder: HTMLElement) {
     );
   const pose = m ? { x: +m[1], y: +m[2], s: +m[3], tilt: +m[4] } : { x: 0, y: 0, s: 1, tilt: 0 };
   const o = Number.parseFloat(card.style.opacity) || 1;
-  return { el, box, pose, o, frame };
+  return { el, box, pose, o };
 }
 type Flyer = ReturnType<typeof makeFlyer>;
-
-// Видео-петля в карточке: копия сама не играет и показала бы постер — скачок в кадре нажатия.
-// Поверх неё — кадр, на котором стоит видео (холст сразу за video копии, выше прежних); полёт
-// сводит его в постер — с него обложка начинает петлю — и обратно.
-function grabFrame(video: HTMLVideoElement | null | undefined, el: HTMLElement) {
-  const copy = el.querySelector("video");
-  if (!video || !copy?.parentElement || video.readyState < 2) return null;
-  const c = document.createElement("canvas");
-  c.width = video.videoWidth;
-  c.height = video.videoHeight;
-  c.getContext("2d")?.drawImage(video, 0, 0);
-  c.className = video.className; // no-invert — как видео на втором круге
-  c.style.cssText = "position:absolute;inset:0;width:100%;height:100%";
-  copy.parentElement.style.position = "relative";
-  copy.after(c);
-  return c;
-}
 
 // Копия карточки: как она стоит на главной и как ушла в точку (12px, без наклона).
 function poses(f: Flyer, V: Point) {
@@ -121,32 +105,62 @@ function poses(f: Flyer, V: Point) {
 const outOfDot = (o: number) => [{ opacity: 0 }, { opacity: o, offset: 0.15 }, { opacity: o }];
 
 type Box = { x: number; y: number; w: number; h: number };
-const REST = "translate(0px, 0px) scale(1) perspective(1200px) rotateY(0deg)";
 
-// Рамка обложки первого экрана до того, как кейс отрисован: полёт стартует в кадре нажатия. Числа —
-// из Case.module.css (.sec, .r, .hero, .back, .heroMedia, .cover), менять вместе; отрисованный кейс
-// сверяет цель с настоящей рамкой (flyIn). Обложка — 7 из 12 колонок правой части.
+// Рамка маленькой обложки над названием до того, как кейс отрисован: полёт стартует в кадре нажатия.
+// Числа — из Case.module.css (.sec, .r, .hero, .back, .head, .count, .cover), менять вместе;
+// отрисованный кейс сверяет цель с настоящей рамкой (flyIn).
 function coverBox(): Box {
   const W = window.innerWidth;
-  const at = (x: number, y: number, w: number) => ({ x, y, w, h: w * 0.75 + 6.75 });
-  if (W < 768) return at(44, 96 + 22.5 + 14, W - 64);
-  return at(W * 0.25 + 56, 100 + 22.5 + 18, (Math.min(1040, W * 0.75 - 112) * 7) / 12);
+  const at = (x: number, y: number, w: number) => ({ x, y, w, h: w * 0.75 + 3.75 });
+  if (W < 768) return at(44, 188, 160);
+  const w = Math.min(200, W * 0.25 - 88);
+  return at(W * 0.25 - 56 - w, 188, w);
 }
 
-// Копия карточки встаёт в рамку обложки: её разметка — сразу размером и на месте обложки, а
-// transform в начале повторяет карточку на главной. В конце transform пустой — и копия совпадает
-// с настоящей обложкой без шва. Возвращает transform начала.
+// Копия карточки садится в рамку обложки: разметка остаётся как у карточки на главной, начало полёта
+// с неё без скачка, в конце transform уменьшает копию до обложки — та проявляется под ней (flyIn).
 function landOn(f: Flyer, b: Box) {
-  const { box, pose } = f;
-  Object.assign(f.el.style, {
-    left: `${b.x}px`,
-    top: `${b.y}px`,
-    width: `${b.w}px`,
-    height: `${b.h}px`,
-  });
-  const dx = box.x + box.w / 2 + pose.x - (b.x + b.w / 2);
-  const dy = box.y + box.h / 2 + pose.y - (b.y + b.h / 2);
-  return `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${((box.w * pose.s) / b.w).toFixed(4)}) perspective(1200px) rotateY(${pose.tilt.toFixed(2)}deg)`;
+  const { box } = f;
+  const dx = b.x + b.w / 2 - (box.x + box.w / 2);
+  const dy = b.y + b.h / 2 - (box.y + box.h / 2);
+  return `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${(b.w / box.w).toFixed(4)}) perspective(1200px) rotateY(0deg)`;
+}
+
+// Своя страница кейса: летит само окно с телефоном первого экрана (cover), от места этой же группы в
+// карточке к своему, подмены нет. Рамка, поле и номер — копия карточки без группы, она лежит внутри
+// группы под ней и едет с ней одним transform. Наклон карточки — вокруг её центра, поэтому и группа
+// вращается вокруг этой точки; перспектива делится на k, потому что группа в ней крупнее в 1/k раза.
+function carry(cover: HTMLElement, card: HTMLElement, holder: HTMLElement) {
+  const { el, box, pose } = makeFlyer(card, holder);
+  const duo = card.querySelector<HTMLElement>("[data-duo]") as HTMLElement;
+  const pv = duo.parentElement as HTMLElement;
+  const x = pv.offsetLeft + pv.clientLeft + duo.offsetLeft;
+  const y = pv.offsetTop + pv.clientTop + duo.offsetTop;
+  const g = cover.getBoundingClientRect();
+  const k = duo.offsetWidth / g.width;
+  const ox = (box.w / 2 - x) / k;
+  const oy = (box.h / 2 - y) / k;
+  cover.style.transformOrigin = `${ox}px ${oy}px`;
+  const t = (dx: number, dy: number, s: number, tilt: number) =>
+    `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${s.toFixed(5)}) perspective(${(1200 / k).toFixed(1)}px) rotateY(${tilt.toFixed(2)}deg)`;
+  el.querySelector("[data-duo]")?.remove();
+  el.style.left = `${-x / k}px`;
+  el.style.top = `${-y / k}px`;
+  el.style.opacity = "1";
+  el.style.zIndex = "auto"; // под группой: у карточки в туннеле свой порядок
+  el.style.transform = `scale(${1 / k})`;
+  el.style.transformOrigin = "0 0";
+  cover.prepend(el);
+  return {
+    chrome: el,
+    onCard: t(
+      box.x + box.w / 2 + pose.x - g.left - ox,
+      box.y + box.h / 2 + pose.y - g.top - oy,
+      pose.s * k,
+      pose.tilt,
+    ),
+    onScreen: t(0, 0, 1, 0),
+  };
 }
 
 // Геометрия прокрутки слоя: места элементов в статье без transform (offsetTop), пересчёт — на
@@ -232,6 +246,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     rest: false, // на входе остальная статья ещё не дорисована
+    shots: [] as HTMLImageElement[], // снимки первого экрана, готовые к полёту
     homeY: 0,
     t0: 0, // нажатие: от него — задержки входа
   }).current;
@@ -333,7 +348,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     if (S.enter === "fly" && source) {
       // Карточка летит в рамку обложки с кадра нажатия; кейс (пока — первый экран) рисуется
       // задачей после этого кадра: пролёт уже на композиторе, раскладка его не задерживает.
-      takeOff(source);
+      takeOff(source, s);
       requestAnimationFrame(() =>
         window.setTimeout(() => {
           if (S.phase !== "opening") return; // успели выйти («назад», Esc)
@@ -347,24 +362,28 @@ export function CaseLayer({ initial }: { initial?: string }) {
     }
   };
 
-  const takeOff = (source: Source) => {
+  const hideCard = (card: HTMLElement) => {
+    S.hide = card.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: "forwards" });
+  };
+
+  const takeOff = (source: Source, s: string) => {
     const holder = flyerRef.current;
     if (!holder) return;
     S.t0 = performance.now();
-    const f = makeFlyer(source.card, holder);
-    const box = coverBox();
-    S.fly = { f, box };
-    const t = { duration: FLY, easing: IO3, fill: "forwards" } as const;
-    S.anims = [f.el.animate([{ transform: landOn(f, box) }, { transform: REST }], t)];
-    if (f.o < 1) S.anims.push(f.el.animate([{ opacity: f.o }, { opacity: 1 }], t));
-    if (f.frame) S.anims.push(f.frame.animate([{ opacity: 1 }, { opacity: 0 }], t));
-    // В сетке номер спрятан — в обложке он есть: проявляется в полёте.
-    const badge = f.el.lastElementChild as HTMLElement | null;
-    if (badge?.style.opacity === "0") badge.animate([{ opacity: 0 }, { opacity: 1 }], t);
-    S.hide = source.card.animate([{ opacity: 0 }, { opacity: 0 }], {
-      duration: 1,
-      fill: "forwards",
-    });
+    // Своя страница кейса: полетит сама группа, как только отрисуется (flyIn).
+    if (!caseBySlug(s)?.showcase) {
+      const f = makeFlyer(source.card, holder);
+      const box = coverBox();
+      S.fly = { f, box };
+      const t = { duration: FLY, easing: IO3, fill: "forwards" } as const;
+      const from = poses(f, vp()).card;
+      S.anims = [f.el.animate([{ transform: from }, { transform: landOn(f, box) }], t)];
+      if (f.o < 1) S.anims.push(f.el.animate([{ opacity: f.o }, { opacity: 1 }], t));
+      // На обложке номера нет — он строкой над ней: гаснет в полёте (в сетке спрятан с самого начала).
+      const badge = f.el.lastElementChild as HTMLElement | null;
+      if (badge && badge.style.opacity !== "0") badge.animate([{ opacity: 1 }, { opacity: 0 }], t);
+      hideCard(source.card);
+    }
     S.capFade =
       source.caption?.animate([{ opacity: 0, transform: "translateY(-12px)" }], {
         duration: 320,
@@ -377,7 +396,11 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const open = (d: CaseOpenDetail) => {
     if (S.phase !== "closed" || !caseBySlug(d.slug)) return;
     S.fromHome = true;
-    window.history.pushState({ whiteinksCase: d.slug, fromHome: true }, "", caseHref(d.slug));
+    window.history.pushState(
+      { whiteinksCase: d.slug, fromHome: true, depth: 1 },
+      "",
+      caseHref(d.slug),
+    );
     show(d.slug, d.card ? { card: d.card, caption: d.caption } : null);
   };
 
@@ -408,15 +431,37 @@ export function CaseLayer({ initial }: { initial?: string }) {
     if (!content) return;
     const anims = [...S.anims];
     const cover = content.querySelector<HTMLElement>("[data-cover]");
-    if (cover && S.fly) {
+    const own = S.source && flyerRef.current && slug && caseBySlug(slug)?.showcase;
+    let textAt = FLY * 0.55;
+    if (own && cover && S.source && flyerRef.current) {
+      // Группа взлетает с места в карточке в том же кадре, где карточка скрывается; подложка
+      // становится белой, рамка и поле карточки растворяются, текст приходит после посадки.
+      const { chrome, onCard, onScreen } = carry(cover, S.source.card, flyerRef.current);
+      hideCard(S.source.card);
+      const t = { duration: FLY, easing: IO3, fill: "backwards" } as const;
+      const fly = cover.animate([{ transform: onCard }, { transform: onScreen }], t);
+      fly.finished.then(
+        () => chrome.remove(),
+        () => {},
+      );
+      chrome.animate([{ opacity: 1 }, { opacity: 0, offset: 0.7 }, { opacity: 0 }], {
+        ...t,
+        fill: "both",
+      });
+      const bg = stageRef.current?.firstElementChild;
+      if (bg)
+        anims.push(bg.animate([{ opacity: 0 }, { opacity: 1, offset: 0.7 }, { opacity: 1 }], t));
+      anims.push(fly);
+      textAt = FLY;
+    } else if (cover && S.fly) {
       // Цель — настоящая рамка: если раскладка разошлась с coverBox(), поправить полёт на ходу.
       const r = cover.getBoundingClientRect();
       const b = S.fly.box;
       if (Math.abs(r.left - b.x) + Math.abs(r.top - b.y) + Math.abs(r.width - b.w) > 1) {
         const box = { x: r.left, y: r.top, w: r.width, h: r.height };
         (S.anims[0].effect as KeyframeEffect).setKeyframes([
+          { transform: poses(S.fly.f, vp()).card },
           { transform: landOn(S.fly.f, box) },
-          { transform: REST },
         ]);
       }
       // Настоящая обложка проявляется под копией в самом конце полёта.
@@ -432,10 +477,10 @@ export function CaseLayer({ initial }: { initial?: string }) {
       anims.push(swap);
     }
     const fade = { duration: 420, delay: at(60), easing: "ease-out", fill: "backwards" } as const;
-    for (const el of [stageRef.current, headerRef.current]) {
+    for (const el of own ? [headerRef.current] : [stageRef.current, headerRef.current]) {
       if (el) anims.push(el.animate([{ opacity: 0 }, { opacity: 1 }], fade));
     }
-    anims.push(...heroIn(at(FLY * 0.55)));
+    anims.push(...heroIn(at(textAt)));
     settle(anims, () => flyerRef.current?.replaceChildren());
     // Остальная статья — когда карточка встала в обложку (пролёт ведёт композитор).
     S.rest = true;
@@ -490,13 +535,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
     window.setTimeout(() => setFull(true), Math.max(0, at(NEXT + 400)));
   };
 
-  // Видео-петля обложки — с первого кадра (он же постер): после полёта карточки, иначе сразу.
-  const playCover = () => {
-    if (S.reduced) return;
-    const v = contentRef.current?.querySelector<HTMLVideoElement>("[data-cover] video");
-    v?.play().catch(() => {}); // iOS в экономии — постер
-  };
-
   // Вход доигран — кейс открыт.
   const settle = (anims: Animation[], then?: () => void) => {
     S.anims = anims;
@@ -506,7 +544,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
         S.phase = "open";
         S.anims = [];
         inertHome(true);
-        playCover();
         then?.();
       },
       () => {},
@@ -518,7 +555,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
     if (S.phase === "closed" || S.phase === "closing") return;
     S.after = after ?? null;
     if (S.fromHome) {
-      window.history.back(); // popstate → leave()
+      // На запись главной, сколько бы кейсов ни прошли через «ещё проект →»: popstate → leave().
+      window.history.go(-(window.history.state?.depth ?? 1));
       return;
     }
     window.history.pushState(null, "", HOME_HREF);
@@ -575,19 +613,20 @@ export function CaseLayer({ initial }: { initial?: string }) {
       return;
     }
     S.source = source;
-    if (direct) {
-      S.hide = source.card.animate([{ opacity: 0 }, { opacity: 0 }], {
-        duration: 1,
-        fill: "forwards",
-      });
-    }
+    if (direct) hideCard(source.card);
     const cover = content.querySelector<HTMLElement>("[data-cover]");
     const cr = cover?.getBoundingClientRect();
     const onScreen = !!cr && cr.bottom > 80 && cr.top < window.innerHeight - 40;
-    for (const el of sections())
+    const own = !!caseBySlug(slug)?.showcase;
+    // Своя страница кейса: окно с телефоном само летит обратно, гаснет только текст вокруг.
+    const gone =
+      own && onScreen
+        ? [...content.querySelectorAll("[data-hi]"), ...sections().slice(1)]
+        : sections();
+    for (const el of gone)
       el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: "forwards" });
     // Из точки — ось сначала возвращается в центр, к точке туннеля.
-    if (!onScreen) {
+    if (!onScreen && !own) {
       const dx = window.innerWidth / 2 - g.x;
       for (const el of [pathRef.current, dotRef.current]) {
         el?.animate([{ transform: "none" }, { transform: `translateX(${dx}px)` }], {
@@ -598,38 +637,46 @@ export function CaseLayer({ initial }: { initial?: string }) {
       }
     }
     // Главная впервые рисуется на этом месте (прямой заход) — дадим ей кадр.
-    const delay = (onScreen ? 0 : 380) + (direct ? 80 : 0);
-    const f = makeFlyer(source.card, holder);
-    const p = poses(f, vp());
+    const delay = (onScreen || own ? 0 : 380) + (direct ? 80 : 0);
     let fly: Animation;
-    if (onScreen && cover && cr) {
-      // С места обложки: копия (разметка — как у карточки на главной) сначала накрывает обложку.
-      cover.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: "forwards" });
-      const from = `translate(${(cr.left + cr.width / 2 - f.box.x - f.box.w / 2).toFixed(1)}px, ${(cr.top + cr.height / 2 - f.box.y - f.box.h / 2).toFixed(1)}px) scale(${(cr.width / f.box.w).toFixed(4)}) perspective(1200px) rotateY(0deg)`;
-      fly = f.el.animate([{ transform: from }, { transform: p.card }], {
-        duration: FLY,
-        delay,
-        easing: IO3,
-        fill: "both",
-      });
-      // Под кадром карточки — кадр обложки: полёт начинается с того, что было на экране.
-      grabFrame(cover.querySelector("video"), f.el);
-      f.frame?.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: FLY,
-        delay,
-        easing: IO3,
-        fill: "both",
-      });
-      const badge = f.el.lastElementChild as HTMLElement | null;
-      if (badge?.style.opacity === "0") {
-        badge.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FLY, delay, fill: "both" });
-      }
+    if (own && onScreen && cover) {
+      const { chrome, onCard, onScreen: home } = carry(cover, source.card, holder);
+      const t = { duration: FLY, delay, easing: IO3, fill: "both" } as const;
+      fly = cover.animate([{ transform: home }, { transform: onCard }], t);
+      chrome.animate([{ opacity: 0 }, { opacity: 0, offset: 0.3 }, { opacity: 1 }], t);
+      stageRef.current?.firstElementChild?.animate(
+        [{ opacity: 1 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }],
+        t,
+      );
     } else {
-      const grow = { duration: 560, delay, fill: "both" } as const;
-      fly = f.el.animate([{ transform: p.dot }, { transform: p.card }], { ...grow, easing: OUT3 });
-      f.el.animate(outOfDot(f.o), grow);
+      const f = makeFlyer(source.card, holder);
+      const p = poses(f, vp());
+      if (onScreen && cover && cr) {
+        // С места обложки: копия (разметка — как у карточки на главной) сначала накрывает обложку.
+        cover.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: "forwards" });
+        const from = landOn(f, { x: cr.left, y: cr.top, w: cr.width, h: cr.height });
+        fly = f.el.animate([{ transform: from }, { transform: p.card }], {
+          duration: FLY,
+          delay,
+          easing: IO3,
+          fill: "both",
+        });
+        const badge = f.el.lastElementChild as HTMLElement | null;
+        if (badge && badge.style.opacity !== "0") {
+          badge.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FLY, delay, fill: "both" });
+        }
+      } else {
+        const grow = { duration: 560, delay, fill: "both" } as const;
+        fly = f.el.animate([{ transform: p.dot }, { transform: p.card }], {
+          ...grow,
+          easing: OUT3,
+        });
+        f.el.animate(outOfDot(f.o), grow);
+      }
     }
-    for (const el of [stageRef.current, headerRef.current]) {
+    for (const el of own && onScreen
+      ? [headerRef.current]
+      : [stageRef.current, headerRef.current]) {
       el?.animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: 320,
         delay: delay + (onScreen ? 160 : 0),
@@ -672,25 +719,15 @@ export function CaseLayer({ initial }: { initial?: string }) {
     after?.();
   };
 
-  // Следующий кейс («ещё проект →» под формой): текст гаснет, линия и точка остаются, из точки
-  // выходит обложка нового кейса; адрес меняется на месте (запись истории та же — «назад» ведёт на
-  // главную). Без движения — затухание. Адрес — задачей после кадра нажатия (смена адреса
-  // перерисовывает дерево Next), подмена — как только текст погас (сначала только первый экран).
-  const goNext = () => {
-    if (S.phase !== "open" || !slug || S.swapping) return;
+  // Другой кейс на месте: текст гаснет, линия и точка остаются, из точки выходит обложка нового кейса.
+  // Без движения — затухание. Подмена — как только текст погас (сначала только первый экран).
+  const swapTo = (n: string) => {
     const content = contentRef.current;
-    if (!content) return;
-    const n = nextCase(slug).slug;
+    if (S.phase !== "open" || !content || S.swapping || n === slug) return;
     S.swapping = true;
     surface();
     S.t0 = performance.now();
-    requestAnimationFrame(() =>
-      window.setTimeout(() => {
-        // Своё состояние без служебного Next (__NA): так Next узнаёт о новом адресе.
-        window.history.replaceState({ whiteinksCase: n, fromHome: S.fromHome }, "", caseHref(n));
-        document.title = titleOf(n);
-      }, 0),
-    );
+    document.title = titleOf(n);
     // Выход теперь — на карточку нового кейса: прежнюю вернуть на главную, новую найдёт placeHome().
     S.hide?.cancel();
     S.hide = null;
@@ -714,6 +751,25 @@ export function CaseLayer({ initial }: { initial?: string }) {
     Promise.all(fades.map((a) => a.finished)).then(swap("swap"), () => {});
   };
 
+  // «ещё проект →» под формой: новая запись истории, «назад» вернёт в прежний кейс. Адрес — задачей
+  // после кадра нажатия (смена адреса перерисовывает дерево Next); depth — сколько записей до главной.
+  const goNext = () => {
+    if (S.phase !== "open" || !slug || S.swapping) return;
+    const n = nextCase(slug).slug;
+    swapTo(n);
+    requestAnimationFrame(() =>
+      window.setTimeout(() => {
+        const depth = (window.history.state?.depth ?? 1) + 1;
+        // Своё состояние без служебного Next (__NA): так Next узнаёт о новом адресе.
+        window.history.pushState(
+          { whiteinksCase: n, fromHome: S.fromHome, depth },
+          "",
+          caseHref(n),
+        );
+      }, 0),
+    );
+  };
+
   const act: CaseActions = {
     close: () => close(),
     next: () => goNext(),
@@ -730,8 +786,22 @@ export function CaseLayer({ initial }: { initial?: string }) {
       else openBrief(e.currentTarget);
     },
   };
-  const fn = useRef({ open, leave, show, update, relayout, restIn, act });
-  fn.current = { open, leave, show, update, relayout, restIn, act };
+  const fn = useRef({ open, leave, show, swapTo, update, relayout, restIn, act });
+  fn.current = { open, leave, show, swapTo, update, relayout, restIn, act };
+
+  // Снимки первого экрана — заранее, когда главная уже показана: к нажатию они загружены и
+  // декодированы (ссылки держим, иначе браузер их выбросит).
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      S.shots = DUO_SHOTS.map((src) => {
+        const img = new Image();
+        img.src = src;
+        img.decode().catch(() => {});
+        return img;
+      });
+    }, 2000);
+    return () => window.clearTimeout(t);
+  }, [S]);
 
   // Lenis под кейсом стоит, даже если его запустит кто-то ещё (замок заставки HeroScrollLock).
   useEffect(() => {
@@ -753,7 +823,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
         if (S.phase === "opening" || S.phase === "open") fn.current.leave();
         return;
       }
-      if (S.phase !== "closed") return;
+      if (S.phase !== "closed") return fn.current.swapTo(s); // из кейса в кейс по истории
       S.fromHome = !!window.history.state?.fromHome;
       fn.current.show(s, sourceOf(s));
     };
@@ -787,7 +857,6 @@ export function CaseLayer({ initial }: { initial?: string }) {
     fn.current.update();
     const enter = S.enter;
     S.enter = null;
-    if (enter !== "fly") playCover();
     if (enter === "fly") flyIn();
     else if (enter === "fade") fadeIn();
     else if (enter === "swap") swapIn();
@@ -900,16 +969,26 @@ export function CaseLayer({ initial }: { initial?: string }) {
         <div className={styles.bg} />
         <div ref={scrollRef} className={styles.scroll} tabIndex={-1}>
           <article ref={contentRef} key={c.slug} className={styles.content}>
-            <div ref={pathRef} className={styles.path} aria-hidden="true">
-              <div className={styles.ghost} />
-              <div ref={inkRef} className={styles.ink} />
-            </div>
-            <CaseView c={c} act={act} full={full} />
+            {c.showcase ? (
+              <Showcase c={c} act={act} full={full} />
+            ) : (
+              <>
+                <div ref={pathRef} className={styles.path} aria-hidden="true">
+                  <div className={styles.ghost} />
+                  <div ref={inkRef} className={styles.ink} />
+                </div>
+                <CaseView c={c} act={act} full={full} />
+              </>
+            )}
           </article>
         </div>
-        <span ref={dotRef} className={styles.dot} aria-hidden="true" />
+        {!c.showcase && <span ref={dotRef} className={styles.dot} aria-hidden="true" />}
       </div>
-      <header key="header" ref={headerRef} className={styles.header}>
+      <header
+        key="header"
+        ref={headerRef}
+        className={`${styles.header} ${c.showcase ? styles.showHeader : ""}`}
+      >
         <a className={styles.logo} href={HOME_HREF} onClick={back(act.close)}>
           White Inks.
         </a>

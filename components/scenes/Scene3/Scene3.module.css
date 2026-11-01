@@ -45,12 +45,33 @@
 }
 
 .preview {
+  position: relative;
   height: 100%;
   border: 1.5px solid var(--color-fg);
 }
 
-.preview img,
-.preview video {
+/* Окно с телефоном на поле карточки: на втором круге поле в своих цветах, как картинка. */
+.field {
+  position: absolute;
+  inset: 0;
+}
+
+.duo {
+  position: absolute;
+  top: 11.3%;
+  left: 8%;
+  width: 84%;
+}
+
+@media (max-width: 767px) {
+  .duo {
+    top: 7.2%;
+    left: 17%;
+    width: 66%;
+  }
+}
+
+.preview img {
   width: 100%;
   height: 100%;
   object-fit: contain;

@@ -17,8 +17,8 @@ export type CardContent = {
   result?: string; // главная цифра первого экрана страницы кейса (нет — первый экран без неё)
   resultNote?: string;
   about?: string; // описание в окне чтения туннеля вместо крупной цифры, 2–3 предложения
-  image: string;
-  video?: string; // петля MP4 вместо картинки; image — её первый кадр (постер)
+  image?: string; // нет у карточки с живой группой (duo)
+  duo?: boolean; // вместо картинки — окно и телефон первого экрана кейса (components/case/memoridian/Duo)
   color: string;
   slug?: string;
 };
@@ -31,8 +31,7 @@ export const CARDS_CONTENT: CardContent[] = [
     type: "Бренд, сайт, приложения и ИИ",
     about:
       "От идеи до приложений в сторах: придумали бренд и маскота, собрали лендинг, веб-версию, Android и iPhone. Внутри — свой ИИ-движок с памятью, тренировки и поиск билетов.",
-    image: img("card-memoridian.webp"),
-    video: img("card-memoridian.mp4"),
+    duo: true,
     color: "#fdc8a5",
     slug: "memoridian",
   },

@@ -1,0 +1,418 @@
+/* Страница Memoridian (Showcase.tsx): белое полотно, ряды шахматным порядком, цвет только в картинках
+   и образцах. Стилей текста ровно четыре: .title, .head, .text, .note; цветов два. По месту не
+   переопределять. Второй круг: страница переворачивается с корнем, картинки остаются в своих цветах,
+   только образцы шрифта и иконки (.ink, тёмное на прозрачном) переворачиваются вместе с текстом. */
+:global(html[data-palette="inverted"]) .ink img {
+  filter: none;
+}
+
+.title {
+  font-size: clamp(38px, 3.9vw, 72px);
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  line-height: 1.05;
+}
+
+.head {
+  font-size: var(--fs-l);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: var(--lh-l);
+}
+
+.text {
+  font-size: var(--fs-m);
+  font-weight: 400;
+  line-height: var(--lh-m);
+  text-wrap: pretty;
+}
+
+.note {
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* ---------- поля и один отступ между рядами ---------- */
+.shot {
+  --gut: 32px;
+  --g: 16px;
+  --gap: clamp(96px, 10vw, 160px);
+  --col: calc((100vw - 2 * var(--gut) - 11 * var(--g)) / 12);
+  padding: var(--gap) var(--gut) 0;
+  overflow-x: clip; /* тень крайней карточки не даёт прокрутки вбок */
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------- ряд по Сцене 3: от середины окна до картинки 48, до текста 80, картинка 608 и текст 440
+   при 1440. Потолок 664 держит плотность снимков не ниже 2 на широком окне. ---------- */
+.row {
+  --near: 48px;
+  --far: 80px;
+  --pic: min(50vw - var(--near) - 64px, 664px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+}
+
+.pic {
+  grid-row: 1;
+  grid-column: 1;
+  justify-self: end;
+  width: var(--pic);
+  margin-right: var(--near);
+}
+
+.copy {
+  grid-row: 1;
+  grid-column: 2;
+  max-width: 440px;
+  margin-left: var(--far);
+}
+
+.flip .pic {
+  grid-column: 2;
+  justify-self: start;
+  margin: 0 0 0 var(--near);
+}
+
+.flip .copy {
+  grid-column: 1;
+  justify-self: end;
+  width: 100%;
+  margin: 0 var(--far) 0 0;
+}
+
+.copy > * + * {
+  margin-top: 16px;
+}
+
+/* Сайт: края те же, что у соседних рядов; текст 320 у левого края, снимок на всё остальное. */
+.wide {
+  grid-template-columns: 1fr 320px 48px calc(2 * var(--pic) + 2 * var(--near) - 368px) 1fr;
+}
+
+.wide .pic {
+  grid-column: 4;
+  width: 100%;
+  margin: 0;
+}
+
+.wide .copy {
+  grid-column: 2;
+  justify-self: start;
+  margin: 0;
+}
+
+/* Детали и карточка из них: две картинки в одном ряду, по центру друг друга. Ширина от высоты окна:
+   детали (высота 1,162 ширины и зазор 40) целиком помещаются под шапкой и на низком окне. */
+.pair .pic {
+  width: min(var(--pic), (var(--h) - 136px) / 1.162);
+}
+
+.pair .pic + .pic {
+  grid-column: 2;
+  justify-self: start;
+  margin: 0 0 0 var(--near);
+}
+
+/* Снимок иконок пуст справа: сами иконки во всю колонку. 735 держит плотность не ниже 2. */
+.shot .icons {
+  width: min(100% * 1470 / 1271, 735px);
+  max-width: none;
+  margin-left: -0.7%;
+}
+
+/* ---------- функции по Сцене 2: блок 28vw, не шире 460, от края 7vw или 18vw. Блоки занимают по две
+   строки сетки со сдвигом на одну: вперемешку слева и справа и не наезжают при любой высоте. ---------- */
+.fns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 72px;
+  align-items: start;
+  padding-inline: 7vw;
+  --shift: 11vw;
+}
+
+/* Не уже 310: мелкий текст на карточках не мельчает в узком окне. */
+.fns > * {
+  width: clamp(310px, 28vw, 460px);
+}
+
+.fns > :nth-child(1) {
+  grid-area: 1 / 1;
+}
+
+.fns > :nth-child(2) {
+  grid-area: 1 / 2 / span 2;
+  justify-self: end;
+}
+
+.fns > :nth-child(3) {
+  grid-area: 2 / 1 / span 2;
+  margin-left: var(--shift);
+}
+
+.fns > :nth-child(4) {
+  grid-area: 3 / 2 / span 4;
+  justify-self: end;
+  margin-right: var(--shift);
+}
+
+/* Без карточек, вместе рядом со столбиком «Считает»: заполняют поле напротив него. */
+.fns > :nth-child(5) {
+  grid-area: 4 / 1;
+}
+
+.fns > :nth-child(6) {
+  grid-area: 5 / 1;
+}
+
+.fns > :nth-child(7) {
+  grid-area: 6 / 1;
+  margin-left: var(--shift);
+}
+
+.cards {
+  display: grid;
+  gap: var(--g);
+  margin-bottom: 24px;
+}
+
+.fn .text {
+  margin-top: 12px;
+}
+
+/* Карточка снята с запасом 24 под тень: край карточки стоит точно на краю колонки. Шириной 432 и 300. */
+.shot .kit {
+  width: calc(100% * 480 / 432);
+  max-width: none;
+  margin: -5.556%;
+}
+
+.shot .tile {
+  width: calc(100% * 348 / 300);
+  max-width: none;
+  margin: -8%;
+}
+
+.lead {
+  margin-top: 12px;
+}
+
+/* ---------- первый экран: слева название и внизу сведения, справа окно с телефоном жёсткой группой
+   (Duo): всё в окне браузера, высота группы --gh не больше окна и не шире своих колонок, край правый.
+   Минимум 420: ниже страница просто прокручивается, текст не наезжает. ---------- */
+.intro {
+  --gh: max(420px, min(var(--h) - 100px, (var(--col) * 8 + 7 * var(--g)) / 1.4453));
+  display: grid;
+  grid-template-rows: auto auto minmax(24px, 1fr) auto;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--g);
+  min-height: var(--h);
+  padding-top: 72px;
+  padding-bottom: 28px;
+  margin-bottom: -28px; /* отступ до следующего экрана как у всех */
+}
+
+.intro .title,
+.intro .lead {
+  grid-column: 1 / 5;
+}
+
+.intro .title {
+  margin-top: 32px;
+}
+
+.duo {
+  grid-row: 1 / -1;
+  grid-column: 5 / -1;
+  align-self: end;
+  justify-self: end;
+  width: calc(var(--gh) * 1.4453);
+}
+
+.facts {
+  display: grid;
+  grid-row: 4;
+  grid-column: 1 / 5;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.list {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li + li {
+  margin-top: 4px;
+}
+
+.list a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* ---------- страницы сайта в рамке ---------- */
+.page {
+  overflow: hidden;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 20px;
+}
+
+/* ---------- дизайн-система без рамок: цвета и шрифт, ниже иконки и блоки рядом с карточкой из них ---------- */
+.stack {
+  display: grid;
+  gap: 40px;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--g);
+}
+
+.swatches i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.3); /* виден и на тёмной странице */
+}
+
+/* Низкое окно: сведения длиннее свободного места. */
+@media (max-height: 680px) {
+  .facts {
+    margin-bottom: 8px;
+  }
+}
+
+/* Текст над картинкой: рядом теснятся. */
+@media (max-width: 1279px) {
+  .intro {
+    --gh: max(360px, min(var(--h) - 230px, (100vw - 2 * var(--gut)) / 1.4453));
+    display: block;
+    min-height: 0;
+    padding-top: 88px;
+  }
+
+  .intro .title {
+    margin-top: 0;
+  }
+
+  .title br {
+    display: none;
+  }
+
+  .duo {
+    margin-top: 24px;
+  }
+
+  .facts {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 24px;
+    margin-bottom: 0;
+  }
+
+  .row {
+    --near: 8px;
+    --far: 40px;
+    --pic: calc(50vw - 40px);
+  }
+
+  .fns {
+    --shift: 6vw;
+  }
+
+  /* Снимок сайта во всю ширину: мелкий текст на нём не мельчает. */
+  .wide {
+    display: block;
+  }
+
+  .wide .copy {
+    margin-top: 24px;
+  }
+}
+
+/* ---------- одна колонка: картинка, под ней текст, как карточка и подпись Сцены 3 в портрете ---------- */
+@media (max-width: 899px), (orientation: portrait) and (max-width: 1024px) {
+  .row {
+    display: block;
+  }
+
+  .row .pic,
+  .flip .pic,
+  .pair .pic + .pic {
+    justify-self: start;
+    width: 100%;
+    max-width: 664px;
+    margin: 0;
+  }
+
+  .wide .pic {
+    max-width: none;
+  }
+
+  .row .copy,
+  .flip .copy {
+    justify-self: start;
+    max-width: 36em;
+    margin: 24px 0 0;
+  }
+
+  .pair .pic + .pic {
+    margin-top: 48px;
+  }
+
+  .fns {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+    padding-inline: var(--gut);
+  }
+
+  .fns > :nth-child(n) {
+    width: 100%;
+    max-width: 460px;
+    margin: 0;
+  }
+
+  .fns > :nth-child(2),
+  .fns > :nth-child(4) {
+    align-self: flex-end;
+  }
+}
+
+/* ---------- телефон ---------- */
+@media (max-width: 767px) {
+  .shot {
+    --gut: 20px;
+    --g: 12px;
+    --gap: 72px;
+  }
+
+  .title {
+    font-size: 38px;
+  }
+
+  .facts {
+    grid-template-columns: 1fr;
+  }
+
+  .duo {
+    width: 100%;
+  }
+
+  .page {
+    border-radius: 14px;
+  }
+}

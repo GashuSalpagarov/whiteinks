@@ -127,7 +127,7 @@
   background: var(--color-fg);
 }
 
-/* Письмо закрывает ось (телефон) — точка уходит в него, как линия под подложку (CaseLayer). */
+/* Письмо закрывает ось (телефон) — точка уходит в него, как и линия (CaseLayer). */
 .dot[data-under="true"] {
   opacity: 0;
 }
@@ -351,28 +351,27 @@
   background: var(--color-fg);
 }
 
-/* Конец пути — у конверта заявки (CaseView, End). Засечка тянется от линии до подложки конверта и
+/* Конец пути — у конверта заявки (CaseView, End). Засечка тянется от линии до края конверта и
    стоит там, где точка в конце прокрутки: низ блока минус остаток экрана под точкой. Блок не ниже,
    чем нужно, чтобы это было у поля «телефон» (--t — от верха подложки до его середины: поле над
    конвертом, клапан, письмо — Envelope.module.css); если конверт выше остатка экрана под точкой,
    точка — у следующего поля. Ниже прокрутки нет. */
 .end {
   --pad: 40px;
-  --t: 175px;
+  --t: 150px;
   min-height: calc(var(--h) - var(--dy) + var(--pad) + var(--t));
 }
 
 .end::before {
   top: auto;
   bottom: calc(var(--h) - var(--dy) - 1.5px);
-  width: 70px; /* от линии до подложки конверта */
+  width: 70px; /* от линии до края конверта */
 }
 
-/* ---------- первый экран: слева от линии — «02 / 07» и название, выровненные к ней, как подписи
-   глав; справа — «← все работы», обложка на 7 колонок, справа от неё по нижнему краю — фраза,
-   ссылка на проект, где ещё он есть, и главная цифра (.side). В разметке это одна колонка .r —
-   так её строки встают на телефоне; на широком экране она растворяется в сетке блока
-   (display: contents). ---------- */
+/* ---------- первый экран: слева от линии — «← все работы», «02 / 07», маленькая обложка и название,
+   выровненные к ней, как подписи глав; справа — фраза, ссылка на проект, где ещё он есть, и главная
+   цифра (.side). В разметке это одна колонка .r — так её строки встают на телефоне; на широком экране
+   она растворяется в сетке блока (display: contents). ---------- */
 .hero {
   padding-top: 0;
 }
@@ -383,18 +382,20 @@
 }
 
 .heroMedia {
-  align-items: end;
+  align-items: start;
   margin-top: 18px !important;
 }
 
-/* Верх рамки — по верху строки, что бы ни стояло рядом: её место заранее считает coverBox(). */
-.cover {
-  grid-column: 1 / 8;
-  align-self: start;
+/* Маленькая карточка над названием: паспарту тоньше, номер — строкой над ней. Её место заранее
+   считает coverBox(). */
+.hero .cover {
+  width: 160px;
+  margin-top: 14px;
+  padding: 6px;
 }
 
 .side {
-  grid-column: 9 / 13;
+  grid-column: 1 / 9;
   padding: 0 16px;
 }
 
@@ -449,6 +450,10 @@
   margin-top: 6px;
 }
 
+.hero .cover + .title {
+  margin-top: 14px;
+}
+
 @media (min-width: 768px) {
   .hero {
     padding-top: 100px;
@@ -481,6 +486,11 @@
 
   .hero .count {
     margin-top: 18px !important;
+  }
+
+  .hero .cover {
+    width: min(200px, 100%);
+    margin-left: auto;
   }
 
   .hero .title {
@@ -866,14 +876,6 @@
   }
 }
 
-/* Колонки уже: текст рядом с картинкой — на 5 колонок, у подложки конверта поле уже, чтобы пять
-   пилюль «что нужно» встали в строку (на 1280); уже 1024px текст первого экрана — под обложкой. */
-@media (min-width: 768px) and (max-width: 1309px) {
-  .letter {
-    --side: 40px;
-  }
-}
-
 @media (min-width: 768px) and (max-width: 1199px) {
   .side,
   .facts,
@@ -912,23 +914,10 @@
   aspect-ratio: 3 / 4;
 }
 
-.pv img,
-.pv video {
+.pv img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.badge {
-  position: absolute;
-  top: 24px;
-  left: 24px;
-  padding: 5px 11px;
-  border: 1.5px solid var(--color-fg);
-  border-radius: 999px;
-  background: var(--color-bg);
-  font-size: 14px;
-  line-height: 1;
 }
 
 /* Конец: вопрос и строка над конвертом — обещание, после отправки — что с заявкой (как над
@@ -962,7 +951,7 @@
 }
 
 /* Конверт заявки (components/ui/Envelope) — тот же, что на главной, от левого края колонки (не по
-   центру): засечка от линии упирается в подложку. */
+   центру): засечка от линии упирается в конверт. */
 .letter {
   --letter-margin: 0;
 }
@@ -1036,7 +1025,7 @@
     padding-top: 0;
   }
 
-  /* Обложка — сразу под «← все работы», цифра — после текста первого экрана. */
+  /* Номер, обложка и название — сразу под «← все работы», цифра — после текста первого экрана. */
   .hero .r {
     display: flex;
     flex-direction: column;
@@ -1045,12 +1034,6 @@
 
   .heroMedia {
     display: contents;
-  }
-
-  .cover {
-    order: 1;
-    width: 100%;
-    margin-top: 14px;
   }
 
   .hero .r > :not(.back, .heroMedia) {
@@ -1291,7 +1274,109 @@
 /* Конверт в телефонной раскладке (та же, что в Envelope.module.css): поле «телефон» выше. */
 @media (max-width: 767px), (orientation: portrait) and (max-width: 1024px), (max-height: 500px) {
   .end {
-    --t: 122px;
+    --t: 113px;
+  }
+}
+
+/* Страницы кейсов: письмо отдельным финалом, вопрос, абзац, конверт и «ещё проект» по центру окна. */
+.plain .sec {
+  display: block;
+  padding: 0;
+}
+
+.plain .l,
+.plain .ch::before,
+.plain .ch::after,
+.plain .end::before {
+  display: none;
+}
+
+.plain .ch > .r {
+  display: block;
+  max-width: none;
+  padding-top: 0;
+  text-align: center;
+}
+
+.plain .h2 {
+  max-width: none;
+  letter-spacing: -0.02em;
+}
+
+.plain .bt {
+  padding: 0;
+}
+
+.plain .said {
+  max-width: 34em;
+  margin: 12px auto 0;
+}
+
+.plain .p {
+  color: var(--color-fg);
+}
+
+.plain .moreLink {
+  line-height: var(--lh-s);
+}
+
+.plain .again {
+  color: var(--muted);
+  line-height: var(--lh-s);
+}
+
+.plain .end {
+  min-height: 0;
+  padding-bottom: 72px;
+}
+
+.plain .end > .r {
+  max-width: none;
+  padding-left: 0;
+}
+
+.plain .letter {
+  --letter-margin: 0 auto;
+}
+
+.plain .more {
+  margin-top: 24px !important;
+  text-align: center;
+}
+
+/* Страница с осью: полей .shot нет, письмо стоит после последней главы. */
+.plainEnd {
+  padding: var(--pad) 32px 0;
+}
+
+@media (max-width: 767px) {
+  .showHeader .logo {
+    left: 20px;
+  }
+
+  .plain .ch > .r,
+  .plain .more {
+    text-align: left;
+  }
+
+  .plain .said {
+    margin: 10px 0 0;
+  }
+
+  .plainEnd {
+    padding-inline: 20px;
+  }
+
+  .plain .end {
+    padding: 0 0 24px;
+  }
+
+  .plain .letter {
+    --letter-margin: 8px -10px 0;
+  }
+
+  .plain .more {
+    margin-top: 20px !important;
   }
 }
 
