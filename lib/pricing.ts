@@ -6,6 +6,7 @@ export type TypeId =
   | "builder"
   | "corp"
   | "shop"
+  | "integr"
   | "unique"
   | "ai"
   | "app"
@@ -52,10 +53,18 @@ export const TYPES: {
   {
     id: "shop",
     title: "Магазин",
-    includes: "Каталог, корзина, оплата и доставка, связка с 1С",
+    includes: "Каталог, корзина, оплата и доставка",
     short: "Каталог и оплата",
     from: 200,
     weeks: [10, 16],
+  },
+  {
+    id: "integr",
+    title: "Интеграции с 1С и CRM",
+    includes: "Обмен данными с сайтом: заказы, остатки, клиенты и заявки",
+    short: "Обмен данными",
+    from: 30,
+    weeks: [2, 4],
   },
   {
     id: "unique",
@@ -68,7 +77,7 @@ export const TYPES: {
   {
     id: "ai",
     title: "ИИ и автоматизация",
-    includes: "Чат-бот на нейросети, интеграции с CRM и 1С",
+    includes: "Чат-бот на нейросети и автоматизация рутинных задач",
     short: "Чат-бот на нейросети",
     from: 150,
     weeks: [4, 8],

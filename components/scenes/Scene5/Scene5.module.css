@@ -63,8 +63,8 @@
 }
 
 
-/* Мозаика 4×3 без рамок. Верхний ряд — два дорогих типа во всю половину: «Уникальный» слева от
-   линии, «Магазин» справа; второй — четыре сайта по одной клетке, от дорогого к дешёвому;
+/* Мозаика 4×3 без рамок. Верхний ряд — «Уникальный сервис» во всю половину слева от линии, справа
+   «Магазин» и «Интеграции»; второй — четыре сайта по одной клетке, от дорогого к дешёвому;
    третий — слева от линии приложения, справа помесячные услуги. Колонки равные, без зазоров:
    граница средних колонок — ровно линия пути. */
 .tiles {
@@ -75,7 +75,7 @@
     minmax(clamp(130px, calc(var(--ih, 100svh) * 0.15), 170px), auto)
   );
   grid-template-areas:
-    "unique unique shop shop"
+    "unique unique shop integr"
     "corp ai landing builder"
     "app tma support seo";
   margin: 0;
@@ -106,20 +106,26 @@
   container-type: inline-size;
 }
 
-/* Широкие клетки — обычный поток, не сетка: рисунок справа (float), слева название, что входит
-   и сразу под ними цена со сроком; высота — по тому, что выше. */
+/* Над первым рядом полей нет. */
 .unique,
-.shop {
-  display: flow-root;
+.shop,
+.integr {
   padding-top: 6px;
 }
 
+/* Широкая клетка — обычный поток, не сетка: рисунок справа (float), слева название, что входит
+   и сразу под ними цена со сроком; высота — по тому, что выше. */
 .unique {
+  display: flow-root;
   grid-area: unique;
 }
 
 .shop {
   grid-area: shop;
+}
+
+.integr {
+  grid-area: integr;
 }
 
 .corp {
@@ -178,10 +184,11 @@
   transform-origin: 50% 0;
 }
 
-/* Под верхним и вторым рядом — линии от линии пути к краям; во втором и третьем — между
-   клетками каждой пары. Под третьим линий нет. */
+/* Под верхним и вторым рядом — линии от линии пути к краям; между клетками каждой пары — справа
+   от линии в верхнем ряду, во втором и третьем — по обе стороны. Под третьим линий нет. */
 .unique::after,
 .shop::after,
+.integr::after,
 .corp::after,
 .ai::after,
 .landing::after,
@@ -196,11 +203,13 @@
 }
 
 .shop::after,
+.integr::after,
 .landing::after,
 .builder::after {
   transform-origin: 0 50%;
 }
 
+.shop::before,
 .corp::before,
 .landing::before,
 .app::before,
@@ -291,32 +300,24 @@
   overflow: visible;
 }
 
-.unique .art,
-.shop .art {
+.unique .art {
   position: relative;
   float: right;
   right: auto;
   bottom: auto;
-  margin: 4px 0 0 24px;
+  margin: 4px 14px 0 24px;
   font-size: clamp(9px, 2.05cqw, 15px);
 }
 
-.unique .art {
-  margin-right: 14px;
-}
-
-.unique .name,
-.shop .name {
+.unique .name {
   font-size: 1.1875rem;
 }
 
-.unique .includes,
-.shop .includes {
+.unique .includes {
   font-size: 0.875rem;
 }
 
-.unique .price,
-.shop .price {
+.unique .price {
   padding-top: 18px;
   font-size: clamp(32px, 2.6vw, 42px);
   font-weight: 400;
@@ -501,7 +502,8 @@
       "app tma"
       "support tma"
       "support seo"
-      ". seo";
+      "integr seo"
+      "integr .";
   }
 
   /* Поля: до линии пути — 18px (она 4px), у края экрана — 10px (с полем страницы — 30px). */
