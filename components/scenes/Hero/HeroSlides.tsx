@@ -248,14 +248,13 @@ function desktop(W: number, H: number, lead: Box, cta: Box, dots: Box, { desk }:
 // Телефон. Над заголовком — веер из трёх карт, как в руке: у карт одна высота, пропорции
 // и порядок — по слайду. Средняя спереди, по центру; боковые под ней (их внутренние 55% ширины
 // уходят под среднюю), чуть ниже и повёрнуты наружу. Веер целиком, с повёрнутыми углами, — от
-// отступа слева до отступа справа (edge) и от 12px под полосой шапки (72px) до 12px над
+// отступа слева до отступа справа (edge) и от top (12px под строкой h1) до 12px над
 // заголовком; размер — наибольший, при котором он туда помещается. Остаток по ширине — поровну
 // по краям, по высоте — сверху: веер прижат к заголовку, весь блок стоит у низа экрана.
 // Мельче 48px по высоте — без картинок (короткий экран).
-function phone(W: number, title: number, { phone: p }: Layout): Rect[] {
+function phone(W: number, top: number, title: number, { phone: p }: Layout): Rect[] {
   const out: Rect[] = [null, null, null];
   const [eL, eR] = p.edge;
-  const top = 84;
   const band = title - 12 - top;
   const room = W - eL - eR;
   // Веер при высоте карты 1: центры карт относительно средней и полуразмеры с учётом поворота.
@@ -288,6 +287,7 @@ export function HeroSlides({
   children: ReactNode;
 }) {
   const h1Ref = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const leadRef = useRef<HTMLParagraphElement>(null);
   // Активный слайд и только что ушедший (он уезжает вверх, остальные ждут снизу).
   const [[slide, prev], setPair] = useState<[number, number]>([0, -1]);
@@ -300,10 +300,11 @@ export function HeroSlides({
   useEffect(() => {
     const root = hero.current;
     const h1 = h1Ref.current;
+    const headingEl = headingRef.current;
     const leadEl = leadRef.current;
     const ctaEl = root?.querySelector<HTMLElement>(`.${styles.cta}`);
     const dotsEl = root?.querySelector<HTMLElement>(`.${styles.dots}`);
-    if (!root || !h1 || !leadEl || !ctaEl || !dotsEl) return;
+    if (!root || !h1 || !headingEl || !leadEl || !ctaEl || !dotsEl) return;
     let widths: number[][] | null = null;
     let frame = 0;
 
@@ -342,7 +343,9 @@ export function HeroSlides({
       const rects = matchMedia("(max-height: 500px)").matches
         ? []
         : mobile
-          ? SLIDES.flatMap((_, i) => phone(W, rows[0].offsetTop, LAYOUTS[i % LAYOUTS.length]))
+          ? SLIDES.flatMap((_, i) =>
+              phone(W, box(headingEl).b + 12, rows[0].offsetTop, LAYOUTS[i % LAYOUTS.length]),
+            )
           : SLIDES.flatMap((_, i) => desktop(W, H, lead, cta, dots, LAYOUTS[i % LAYOUTS.length]));
       root.querySelectorAll<HTMLElement>(`.${styles.slot}`).forEach((el, k) => {
         const r = rects[k];
@@ -459,9 +462,11 @@ export function HeroSlides({
         )),
       )}
 
-      {/* Заголовок страницы для поиска и скринридеров — один и тот же на всех слайдах. Буквы
-          слайдов ниже — анимация: вне h1, иначе робот читает их слитно («СоздаёмСоздаём…»). */}
-      <h1 className={styles.srOnly}>{SITE_H1}</h1>
+      {/* Заголовок страницы — один и тот же на всех слайдах. Буквы слайдов ниже — анимация: вне
+          h1, иначе робот читает их слитно («СоздаёмСоздаём…»). */}
+      <h1 ref={headingRef} className={styles.heading}>
+        {SITE_H1}
+      </h1>
       <div ref={h1Ref} className={styles.title} data-nosnippet>
         <span className={styles.srOnly}>{SLIDES[slide].title.join(" ")}</span>
         {ROWS.map((row, r) => (
