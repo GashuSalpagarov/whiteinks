@@ -6,8 +6,8 @@ import { Duo } from "../memoridian/Duo";
 import base from "../memoridian/Showcase.module.css";
 import styles from "./Globaldrive.module.css";
 
-// Страница магазина Globaldrive (docs/12-case-page.md): тот же вид, что у Memoridian и проката. Что
-// делала студия, не подтверждено, поэтому тексты описывают сам интерфейс. Снимки — настоящий сайт;
+// Страница магазина Globaldrive (docs/12-case-page.md): тот же вид, что у Memoridian и проката.
+// Снимки — настоящий сайт;
 // ссылок на него нет. Карточки на главной нет: только прямой адрес, полёта нет.
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -73,7 +73,7 @@ export function Globaldrive({ c, act, full }: { c: CaseData; act: CaseActions; f
         />
         <div className={base.facts} data-hi>
           <div>
-            <p className={base.text}>Что на странице</p>
+            <p className={base.text}>Что входило в работу</p>
             <ul className={`${base.note} ${base.list}`}>
               <li>Каталог и поиск</li>
               <li>Фильтры и карточки товаров</li>

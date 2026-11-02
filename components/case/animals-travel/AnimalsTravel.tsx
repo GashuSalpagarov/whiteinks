@@ -7,7 +7,6 @@ import base from "../memoridian/Showcase.module.css";
 import styles from "./AnimalsTravel.module.css";
 
 // Страница сайта Animals Travel (docs/12-case-page.md): тот же вид, что у Memoridian и Globaldrive.
-// Сайт стоит на готовом шаблоне, кто что делал, неизвестно: тексты описывают только то, что видно.
 // Снимки — настоящий сайт, ссылок на него нет. Карточки на главной нет: только прямой адрес.
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -75,7 +74,7 @@ export function AnimalsTravel({ c, act, full }: { c: CaseData; act: CaseActions;
         />
         <div className={base.facts} data-hi>
           <div>
-            <p className={base.text}>Что на сайте</p>
+            <p className={base.text}>Что входило в работу</p>
             <ul className={`${base.note} ${base.list}`}>
               <li>Перевозка: самолёт, поезд, автомобиль</li>
               <li>Документы, ветеринар, передержка</li>

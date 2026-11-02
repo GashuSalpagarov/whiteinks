@@ -74,7 +74,7 @@ export function Goroddorog({ c, act, full }: { c: CaseData; act: CaseActions; fu
         />
         <div className={base.facts} data-hi>
           <div>
-            <p className={base.text}>Что есть на сайте</p>
+            <p className={base.text}>Что входило в работу</p>
             <ul className={`${base.note} ${base.list}`}>
               <li>Тарифы и таблица скрытых платежей</li>
               <li>Десять шагов до удостоверения</li>

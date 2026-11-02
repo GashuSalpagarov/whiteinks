@@ -79,7 +79,7 @@ export function EdgeConf({ c, act, full }: { c: CaseData; act: CaseActions; full
         />
         <div className={base.facts} data-hi>
           <div>
-            <p className={base.text}>Что входит в платформу</p>
+            <p className={base.text}>Что входило в работу</p>
             <ul className={`${base.note} ${base.list}`}>
               <li>Конференции и вебинары</li>
               <li>Вход без регистрации и скачивания</li>
