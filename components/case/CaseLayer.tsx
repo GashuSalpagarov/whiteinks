@@ -21,6 +21,7 @@ import { ArmListener } from "./arm-listener/ArmListener";
 import styles from "./Case.module.css";
 import { back, type CaseActions, CaseView } from "./CaseView";
 import { CheckPlease } from "./check-please/CheckPlease";
+import { DmCloud } from "./dmcloud/DmCloud";
 import { Doctis } from "./doctis/Doctis";
 import { DoctisAnalysis } from "./doctis-analysis/DoctisAnalysis";
 import { DoctisCrm } from "./doctis-crm/DoctisCrm";
@@ -1043,6 +1044,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <Gbz c={c} act={act} full={full} />
             ) : c.slug === "sc-system" ? (
               <ScSystem c={c} act={act} full={full} />
+            ) : c.slug === "dmcloud" ? (
+              <DmCloud c={c} act={act} full={full} />
             ) : c.slug === "kanban" ? (
               <Kanban c={c} act={act} full={full} />
             ) : c.slug === "check-please" ? (

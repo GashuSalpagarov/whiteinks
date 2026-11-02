@@ -946,3 +946,46 @@
     height: 62%;
   }
 }
+
+/* DMCloud: экран сравнения окном, под ним две модели из окна создания проекта, поверх угла панель свойств.
+   Панель уже других: в кадре видео она 398 px, на 912 px группы плотность около 2. */
+.duo[data-duo="dmcloud"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+  width: 86%;
+  height: 59.5%;
+}
+
+.duo[data-duo="dmcloud"] > [data-p="1"] {
+  top: 64%;
+  left: 0;
+  width: 74%;
+  height: 34.7%;
+}
+
+.duo[data-duo="dmcloud"] > [data-p="2"] {
+  top: 48%;
+  left: 78.5%;
+  width: 21.5%;
+  height: 37.4%;
+}
+
+@media (max-width: 767px) {
+  .duo[data-duo="dmcloud"] > [data-p="0"] {
+    width: 84%;
+    height: 73.8%;
+  }
+
+  .duo[data-duo="dmcloud"] > [data-p="1"] {
+    top: 78%;
+    width: 62%;
+    height: 20.8%;
+  }
+
+  .duo[data-duo="dmcloud"] > [data-p="2"] {
+    top: 44%;
+    left: 60%;
+    width: 40%;
+    height: 49.2%;
+  }
+}

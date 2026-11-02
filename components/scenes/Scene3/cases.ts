@@ -527,6 +527,26 @@ export const CASES: CaseData[] = [
     services: [],
     need: "Другое",
   },
+  {
+    // Своя страница (components/case/dmcloud), карточки на главной нет: поля рассказа только ради типа.
+    slug: "dmcloud",
+    showcase: true,
+    title: "Контроль качества DMCloud",
+    unlisted: true,
+    summary:
+      "Веб-сервис для контроля качества в промышленности: сравнение плановой модели с результатом сканирования, отклонения цветом и допуски.",
+    task: "Веб-сервис для контроля качества в промышленности: план, факт и допуски.",
+    before: [],
+    beforeImage: { src: img("dmcloud", "main.webp"), alt: "Экран сравнения" },
+    solution: [],
+    gallery: [
+      { src: img("dmcloud", "props.webp"), alt: "Панель свойств", ratio: "3/4" },
+      { src: img("dmcloud", "align.webp"), alt: "Автовыравнивание" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Другое",
+  },
 ];
 
 export const caseBySlug = (slug: string) => CASES.find((c) => c.slug === slug) ?? null;

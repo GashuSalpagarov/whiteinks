@@ -115,6 +115,10 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
     ],
     unlisted: true,
   },
+  dmcloud: {
+    parts: [{ file: "main", fileM: "main-m" }, { file: "models" }, { file: "props" }],
+    unlisted: true,
+  },
   "globaldrive-portal": {
     parts: [
       { file: "duo-main", fileM: "duo-main-m" },

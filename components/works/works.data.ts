@@ -142,6 +142,16 @@ const ONLY_HERE: CardContent[] = [
     color: "#f4ebc3",
     slug: "sc-system",
   },
+  {
+    title: "Контроль качества",
+    client: "DMCloud",
+    type: "Веб-сервис",
+    about:
+      "Веб-сервис для контроля качества в промышленности: сравнивает плановую модель с результатом сканирования и показывает отклонения цветом. Новый интерфейс с нуля и окно создания проекта с 3D-превью.",
+    duo: true,
+    color: "#dddaf5",
+    slug: "dmcloud",
+  },
 ];
 
 const TEXT: Record<string, string> = {

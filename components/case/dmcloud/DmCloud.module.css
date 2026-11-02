@@ -1,0 +1,138 @@
+/* Страница DMCloud (DmCloud.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и сторона --side.
+   Кадры из видео: показ не шире половины кадра, поэтому на 1440 плотность не ниже 2. */
+.main,
+.storybook {
+  --p: clamp(420px, 46vw, 900px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.props {
+  --side: 1;
+  --p: clamp(180px, 13.8vw, 199px);
+  --t: clamp(240px, 24vw, 360px);
+}
+
+.dev {
+  --side: 0;
+  --p: clamp(400px, 44vw, 800px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.gray {
+  --p: clamp(240px, 26vw, 430px);
+  --t: clamp(180px, 16vw, 260px);
+}
+
+.visual {
+  --p: clamp(180px, 13.8vw, 199px);
+  --t: clamp(180px, 16vw, 260px);
+}
+
+.measure {
+  --p: clamp(280px, 29vw, 420px);
+  --t: clamp(200px, 18vw, 280px);
+}
+
+/* Низкие и широкие панели: текст под ними, а не сбоку. */
+.snapshot,
+.share,
+.search,
+.dialogs {
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 20px;
+}
+
+.snapshot {
+  --p: clamp(200px, 20vw, 289px);
+  --t: var(--p);
+}
+
+.share {
+  --side: 1;
+  --p: clamp(280px, 29.9vw, 431px);
+  --t: var(--p);
+}
+
+.empty,
+.models,
+.align {
+  --p: clamp(360px, 38vw, 713px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.models {
+  --side: 1;
+}
+
+.fields {
+  --p: clamp(240px, 24vw, 388px);
+  --t: clamp(200px, 18vw, 280px);
+}
+
+.search {
+  --p: clamp(200px, 22vw, 380px);
+  --t: var(--p);
+}
+
+.dialogs {
+  --side: 1;
+  --p: clamp(300px, 31.7vw, 457px);
+  --t: var(--p);
+}
+
+.icons {
+  --side: 1;
+  --p: clamp(320px, 38vw, 659px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.old {
+  --side: 0;
+  --p: clamp(420px, 44vw, 900px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .props,
+  .models,
+  .icons {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Телефон: снимки во всю ширину, панели своей. */
+@media (max-width: 767px) {
+  .main,
+  .storybook,
+  .dev,
+  .gray,
+  .measure,
+  .share,
+  .empty,
+  .models,
+  .align,
+  .fields,
+  .search,
+  .dialogs,
+  .icons,
+  .old {
+    --p: 100%;
+  }
+
+  .props,
+  .visual {
+    --p: 199px;
+  }
+
+  .snapshot {
+    --p: 289px;
+  }
+}
