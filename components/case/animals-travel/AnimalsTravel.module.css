@@ -1,0 +1,133 @@
+/* Страница Animals Travel (AnimalsTravel.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Положения те же три: левое поле, сдвиг, правое поле. Потолки ширин держат текст не ниже 0,4 высоты
+   картинки и на 1920. */
+.train,
+.tiles,
+.carriers {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 340px);
+}
+
+.tiles {
+  --t: clamp(280px, 27vw, 400px);
+}
+
+.list {
+  --p: clamp(340px, 33.3vw, 480px);
+  --t: clamp(260px, 24vw, 340px);
+}
+
+.price {
+  --p: clamp(380px, 34.7vw, 520px);
+  --t: clamp(260px, 24vw, 340px);
+}
+
+.card {
+  --p: clamp(240px, 25vw, 400px);
+  --t: clamp(210px, 17vw, 270px);
+}
+
+.fields {
+  --p: clamp(280px, 28vw, 460px);
+  --t: clamp(200px, 17vw, 270px);
+}
+
+.phones {
+  --p: clamp(340px, 30.5vw, 460px);
+  --t: clamp(240px, 19vw, 300px);
+}
+
+.brand {
+  --p: clamp(260px, 23.6vw, 360px);
+  --t: clamp(240px, 21vw, 320px);
+}
+
+/* Сдвиг от левого поля — пока рядом хватает места. */
+@media (min-width: 1280px) {
+  .list,
+  .phones {
+    margin-left: 16vw;
+  }
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .tiles,
+  .carriers,
+  .brand {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Ряд заявки, когда текст стоит под картинкой: картинка во всю ширину своей половины. */
+@media (min-width: 900px) and (max-width: 1279px) and (orientation: landscape) {
+  .card,
+  .fields {
+    --p: 100%;
+  }
+}
+
+/* Три плитки услуг одной группой. */
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(8px, 0.8vw, 12px);
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13%/6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5%/5.3%;
+}
+
+/* Логотип над образцами цвета. */
+.brandPic {
+  display: grid;
+  gap: 20px;
+}
+
+/* Телефон: снимки мобильной раскладки; высокие — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .list,
+  .tiles,
+  .carriers,
+  .fields,
+  .phones {
+    --p: 100%;
+  }
+
+  .train,
+  .card {
+    --p: 300px;
+  }
+
+  .brand {
+    --p: 260px;
+  }
+
+  .price {
+    --p: 230px;
+  }
+
+  /* Подписи плиток читаются только крупнее: первая во всю ширину, две под ней. */
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .row > :first-child {
+    grid-column: 1 / -1;
+  }
+}

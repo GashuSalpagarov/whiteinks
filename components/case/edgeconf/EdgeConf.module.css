@@ -1,0 +1,74 @@
+/* Страница видеоплатформы (EdgeConf.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Снимки маленькие (стартовый экран 1440, кабинет 916 px), поэтому ширины не больше самих снимков. */
+.start,
+.free {
+  --p: clamp(420px, 44vw, 700px);
+  --t: clamp(280px, 24vw, 400px);
+}
+
+.demo {
+  --p: clamp(300px, 28vw, 440px);
+  --t: clamp(240px, 19vw, 320px);
+}
+
+.cabinet {
+  --p: clamp(460px, 48vw, 780px);
+  --t: clamp(280px, 24vw, 400px);
+}
+
+.menu {
+  --p: 230px;
+  --t: clamp(240px, 19vw, 320px);
+}
+
+.toggles {
+  --p: 340px;
+  --t: clamp(240px, 19vw, 320px);
+}
+
+.player {
+  --p: 320px;
+  --t: clamp(280px, 24vw, 400px);
+}
+
+.colors {
+  --p: clamp(240px, 20.8vw, 340px);
+  --t: clamp(240px, 19vw, 320px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .start,
+  .player {
+    margin-left: 16vw;
+  }
+
+  .free,
+  .cabinet {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Телефон: снимки во всю ширину, маленькие — не шире, чем они есть. */
+@media (max-width: 767px) {
+  .start,
+  .free,
+  .demo,
+  .cabinet,
+  .toggles {
+    --p: 100%;
+  }
+
+  .menu {
+    --p: 220px;
+  }
+
+  .player {
+    --p: 300px;
+  }
+
+  .colors {
+    --p: 240px;
+  }
+}

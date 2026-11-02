@@ -460,7 +460,7 @@ export function Scene3() {
                   {c.duo ? (
                     <>
                       <i className={`${styles.field} no-invert`} style={{ background: c.color }} />
-                      <Duo className={styles.duo} />
+                      <Duo slug={c.slug} className={styles.duo} />
                     </>
                   ) : (
                     <>

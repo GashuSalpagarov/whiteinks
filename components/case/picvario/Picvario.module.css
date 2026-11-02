@@ -1,0 +1,113 @@
+/* Страница медиатеки Picvario (Picvario.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.library,
+.open {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.search {
+  --p: clamp(320px, 30vw, 480px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.collections {
+  --p: clamp(240px, 19vw, 300px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.filter {
+  --p: clamp(240px, 22vw, 340px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.view {
+  --p: clamp(280px, 26vw, 420px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.select {
+  --p: clamp(300px, 28vw, 440px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.phones {
+  --p: clamp(400px, 35vw, 500px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.colors {
+  --p: clamp(240px, 19.5vw, 320px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.kit {
+  --p: clamp(340px, 30.5vw, 480px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+/* Сдвиг от левого поля — пока рядом хватает места. */
+@media (min-width: 1280px) {
+  .filter,
+  .phones {
+    margin-left: 16vw;
+  }
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .open,
+  .phones {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .library,
+  .open {
+    --p: 58vw;
+  }
+
+  .phones {
+    --p: 46vw;
+  }
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13% / 6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5% / 5.3%;
+}
+
+/* Телефон: снимки мобильной раскладки; высокая панель фильтров — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .library,
+  .open,
+  .search,
+  .collections,
+  .view,
+  .select,
+  .phones,
+  .kit,
+  .colors {
+    --p: 100%;
+  }
+
+  .filter {
+    --p: 260px;
+  }
+}

@@ -1,0 +1,66 @@
+/* Страница личного кабинета EdgeЦентр (EdgeCenter.tsx). Стили текста, поля, первый экран и общая раскладка —
+   из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Снимки маленькие (кабинет 914–1166 px, база знаний до 651 px), поэтому ширины не больше самих снимков. */
+.dash {
+  --p: clamp(460px, 50vw, 800px);
+  --t: clamp(280px, 24vw, 400px);
+}
+
+.signin,
+.quotas,
+.codes {
+  --p: clamp(420px, 44vw, 700px);
+  --t: clamp(280px, 24vw, 400px);
+}
+
+.cdn {
+  --p: clamp(360px, 36vw, 600px);
+  --t: clamp(220px, 18vw, 300px);
+}
+
+.roles,
+.notify,
+.log {
+  --p: clamp(280px, 27vw, 480px);
+  --t: clamp(220px, 16vw, 280px);
+}
+
+.account {
+  --p: clamp(240px, 22vw, 400px);
+  --t: clamp(220px, 16vw, 280px);
+}
+
+.colors {
+  --p: clamp(240px, 20.8vw, 340px);
+  --t: clamp(240px, 19vw, 320px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .signin,
+  .codes {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Телефон: снимки во всю ширину. */
+@media (max-width: 767px) {
+  .signin {
+    --p: 240px;
+  }
+
+  .account {
+    --p: 300px;
+  }
+
+  .dash,
+  .cdn,
+  .quotas,
+  .codes,
+  .roles,
+  .notify,
+  .log,
+  .colors {
+    --p: 100%;
+  }
+}

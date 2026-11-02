@@ -20,6 +20,10 @@
     0 0 / 100% 100%;
 }
 
+.browser picture {
+  display: contents;
+}
+
 .duo .browser img {
   width: 100%;
   height: 100%;
@@ -72,5 +76,368 @@
 
   .duo .phone img {
     border-radius: 3.74cqw;
+  }
+}
+
+/* ---------- Остальные кейсы: та же рамка и те же пропорции группы, своя раскладка ----------
+   data-p — номер части в GROUPS (Duo.tsx), место каждой — доли группы. В полёте первым ребёнком группы
+   становится копия карточки (carry в CaseLayer), поэтому не nth-child и не «все дети». */
+.duo:not([data-duo="memoridian"]) > [data-p] {
+  right: auto;
+  bottom: auto;
+  mask: none;
+}
+
+/* Прокат: красный первый экран как плакат, одно окно на всю группу. */
+.duo[data-duo="prokat"] .browser {
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Doctis: телефон с поиском врача посередине, по бокам расписание и дежурные врачи. */
+.duo[data-duo="doctis"] > [data-p="0"] {
+  top: 47%;
+  left: 0;
+  width: 36.5%;
+  height: 53%;
+}
+
+.duo[data-duo="doctis"] > [data-p="1"] {
+  top: 0;
+  left: 63.5%;
+  width: 36.5%;
+  height: 52%;
+}
+
+.duo[data-duo="doctis"] > [data-p="2"] {
+  top: 0;
+  left: 33.6%;
+}
+
+/* Анализы: только телефоны — плитки, карта и список лабораторий. */
+.duo[data-duo="doctis-analysis"] > [data-p] {
+  top: 7.3%;
+  width: 30.5%;
+}
+
+.duo[data-duo="doctis-analysis"] > [data-p="0"] {
+  left: 0;
+}
+
+.duo[data-duo="doctis-analysis"] > [data-p="1"] {
+  left: 69.5%;
+}
+
+.duo[data-duo="doctis-analysis"] > [data-p="2"] {
+  top: 0;
+  left: 34.75%;
+}
+
+/* Globaldrive: без страниц, сами элементы — фильтр, рисунки запчастей и значки разделов. */
+.duo[data-duo="globaldrive"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+  width: 30.7%;
+  height: 100%;
+}
+
+.duo[data-duo="globaldrive"] > [data-p="1"] {
+  top: 0;
+  left: 32.46%;
+  width: 67.54%;
+  height: 59.43%;
+}
+
+.duo[data-duo="globaldrive"] > [data-p="2"] {
+  top: 61.97%;
+  left: 32.46%;
+  width: 67.54%;
+  height: 38.03%;
+}
+
+/* Animals Travel: окно сверху, на его нижний край заходят три плитки услуг. */
+.duo[data-duo="animals-travel"] > [data-p="0"] {
+  top: 0;
+  width: 100%;
+  height: 75%;
+}
+
+.duo[data-duo="animals-travel"] > .browser + .browser {
+  top: 62.76%;
+  width: 29.6%;
+  height: 37.24%;
+}
+
+.duo[data-duo="animals-travel"] > [data-p="1"] {
+  left: 3.3%;
+}
+
+.duo[data-duo="animals-travel"] > [data-p="2"] {
+  left: 35.2%;
+}
+
+.duo[data-duo="animals-travel"] > [data-p="3"] {
+  left: 67.1%;
+}
+
+@media (max-width: 767px) {
+  .duo:not([data-duo="memoridian"]) .browser img {
+    object-position: 0 0;
+  }
+
+  /* Сайт проката: левая часть с заголовком; чуть крупнее, чтобы кнопка шапки не торчала обрубком. */
+  .duo[data-duo="prokat"] .browser img {
+    width: 103%;
+    height: 103%;
+  }
+
+  .duo[data-duo="doctis"] > [data-p="0"] {
+    top: 50.4%;
+    left: 52%;
+    width: 48%;
+    height: 49.6%;
+  }
+
+  .duo[data-duo="doctis"] > [data-p="1"] {
+    left: 52%;
+    width: 48%;
+    height: 48.6%;
+  }
+
+  .duo[data-duo="doctis"] > [data-p="2"] {
+    left: 0;
+    width: 45.5%;
+  }
+
+  .duo[data-duo="doctis-analysis"] > [data-p] {
+    top: 8%;
+    width: 40%;
+  }
+
+  .duo[data-duo="doctis-analysis"] > [data-p="1"] {
+    left: 60%;
+  }
+
+  .duo[data-duo="doctis-analysis"] > [data-p="2"] {
+    top: 0;
+    left: 27.5%;
+    width: 45%;
+  }
+
+  .duo[data-duo="globaldrive"] > [data-p="0"] {
+    display: none;
+  }
+
+  .duo[data-duo="globaldrive"] > [data-p="1"] {
+    left: 0;
+    width: 100%;
+    height: 61%;
+  }
+
+  .duo[data-duo="globaldrive"] > [data-p="2"] {
+    top: 63%;
+    left: 0;
+    width: 100%;
+    height: 37%;
+  }
+
+  .duo[data-duo="animals-travel"] > [data-p="0"] {
+    height: 80%;
+  }
+
+  .duo[data-duo="animals-travel"] > .browser + .browser {
+    top: 70%;
+    width: 31%;
+    height: 30%;
+  }
+
+  .duo[data-duo="animals-travel"] > [data-p="1"] {
+    left: 2%;
+  }
+
+  .duo[data-duo="animals-travel"] > [data-p="2"] {
+    left: 34.5%;
+  }
+
+  .duo[data-duo="animals-travel"] > [data-p="3"] {
+    left: 67%;
+  }
+}
+
+/* EdgeConf: два окна по диагонали — тёмный старт встречи и поверх него светлый кабинет. */
+.duo[data-duo="edgeconf"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+  width: 70%;
+  height: 63.2%;
+}
+
+.duo[data-duo="edgeconf"] > [data-p="1"] {
+  top: 49.1%;
+  left: 38%;
+  width: 62%;
+  height: 50.9%;
+}
+
+@media (max-width: 767px) {
+  .duo[data-duo="edgeconf"] > [data-p="0"] {
+    width: 100%;
+    height: 54%;
+  }
+
+  .duo[data-duo="edgeconf"] > [data-p="1"] {
+    top: 48%;
+    left: 17%;
+    width: 83%;
+    height: 52%;
+  }
+}
+
+/* EdgeЦентр: стопка окон кабинета — из-за дашборда видны шапки разделов «Веб-защита» и CDN. */
+.duo[data-duo="edgecenter"] > [data-p="0"] {
+  top: 0;
+  left: 12%;
+  width: 76%;
+  height: 32%;
+}
+
+.duo[data-duo="edgecenter"] > [data-p="1"] {
+  top: 14%;
+  left: 6%;
+  width: 88%;
+  height: 32%;
+}
+
+.duo[data-duo="edgecenter"] > [data-p="2"] {
+  top: 29%;
+  width: 100%;
+  height: 71%;
+}
+
+/* «Империя»: список цен, над ним колесо скидок, на углу форма в одно поле — главная мысль кейса. */
+.duo[data-duo="imperia"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+  width: 61%;
+  height: 74%;
+}
+
+.duo[data-duo="imperia"] > [data-p="1"] {
+  top: 0;
+  left: 56%;
+  width: 44%;
+  height: 63.6%;
+  overflow: visible;
+  border: 0;
+  border-radius: 50%;
+}
+
+.duo[data-duo="imperia"] > [data-p="2"] {
+  top: 56%;
+  left: 34%;
+  width: 66%;
+  height: 44%;
+}
+
+@media (max-width: 767px) {
+  .duo[data-duo="imperia"] > [data-p="0"] {
+    width: 74%;
+    height: 66%;
+  }
+
+  .duo[data-duo="imperia"] > [data-p="1"] {
+    left: 58%;
+    width: 42%;
+    height: 43.2%;
+  }
+
+  .duo[data-duo="imperia"] > [data-p="2"] {
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 50%;
+  }
+}
+
+/* Picvario: сетка файлов, над её углом строка поиска и меню с двумя режимами. */
+.duo[data-duo="picvario"] > [data-p="0"] {
+  top: 16%;
+  left: 8%;
+  width: 92%;
+  height: 84%;
+}
+
+.duo[data-duo="picvario"] > [data-p="1"] {
+  top: 4%;
+  left: 0;
+  width: 66%;
+  height: 8.6%;
+  border-radius: 99cqw;
+}
+
+.duo[data-duo="picvario"] > [data-p="2"] {
+  top: 14.5%;
+  left: 3%;
+  width: 36%;
+  height: 20.5%;
+}
+
+@media (max-width: 767px) {
+  .duo[data-duo="picvario"] > [data-p="0"] {
+    top: 7%;
+    left: 0;
+    width: 100%;
+    height: 93%;
+  }
+
+  .duo[data-duo="picvario"] > [data-p="1"] {
+    top: 0;
+    width: 88%;
+    height: 8.2%;
+  }
+
+  .duo[data-duo="picvario"] > [data-p="2"] {
+    top: 11%;
+    left: 3%;
+    width: 54%;
+    height: 21.6%;
+  }
+}
+
+/* Город Дорог: три карточки тарифов лестницей, от меньшего к большему. */
+.duo[data-duo="goroddorog"] > [data-p] {
+  width: 31.6%;
+  height: 74%;
+}
+
+.duo[data-duo="goroddorog"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+}
+
+.duo[data-duo="goroddorog"] > [data-p="1"] {
+  top: 13%;
+  left: 34.2%;
+}
+
+.duo[data-duo="goroddorog"] > [data-p="2"] {
+  top: 26%;
+  left: 68.4%;
+}
+
+@media (max-width: 767px) {
+  .duo[data-duo="goroddorog"] > [data-p] {
+    width: 48%;
+    height: 79.9%;
+  }
+
+  .duo[data-duo="goroddorog"] > [data-p="1"] {
+    top: 20.1%;
+    left: 52%;
+  }
+
+  .duo[data-duo="goroddorog"] > [data-p="2"] {
+    display: none;
   }
 }

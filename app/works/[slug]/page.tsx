@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const c = caseBySlug(slug);
   const card = CARDS_CONTENT.find((x) => x.slug === slug);
-  const title = `${card?.title ?? "Кейс"} — кейс ${SITE_NAME}`;
+  const title = `${card?.title ?? c?.title ?? "Кейс"} — кейс ${SITE_NAME}`;
   return {
     title,
     description: c?.summary,

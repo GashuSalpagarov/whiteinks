@@ -1,0 +1,145 @@
+/* Страница витрины анализов (DoctisAnalysis.tsx). Стили текста, поля, первый экран и общая раскладка —
+   из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.tiles,
+.cards {
+  --p: clamp(420px, 44vw, 680px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.search {
+  --p: clamp(380px, 38vw, 560px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.cart {
+  --p: clamp(280px, 24vw, 360px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.map {
+  --p: clamp(420px, 44vw, 640px);
+  --t: clamp(280px, 26vw, 400px);
+}
+
+.order {
+  --p: clamp(360px, 39vw, 600px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.item {
+  --p: clamp(360px, 37.5vw, 560px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.phones {
+  --p: clamp(380px, 37vw, 560px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.colors {
+  --p: clamp(280px, 23vw, 380px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.details {
+  --p: clamp(300px, 26vw, 420px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+/* Сдвиг от левого поля — пока рядом хватает места. */
+@media (min-width: 1280px) {
+  .cards,
+  .item {
+    margin-left: 8vw;
+  }
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .search,
+  .cart,
+  .order,
+  .phones {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .tiles,
+  .cards,
+  .map {
+    --p: 58vw;
+  }
+
+  .search,
+  .order,
+  .item {
+    --p: 50vw;
+  }
+
+  .phones {
+    --p: 46vw;
+  }
+
+  .cart {
+    --p: 33vw;
+  }
+}
+
+/* Двенадцать образцов: прямоугольники, чтобы ряд не выходил выше текста. На телефоне три колонки:
+   в четырёх код цвета не помещается. */
+.palette i {
+  aspect-ratio: 3 / 2;
+}
+
+@media (min-width: 768px) {
+  .palette {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13% / 6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5% / 5.3%;
+}
+
+/* Телефон: снимки мобильной раскладки; высокие — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .tiles,
+  .search,
+  .cards,
+  .details,
+  .phones {
+    --p: 100%;
+  }
+
+  .cart,
+  .order,
+  .item {
+    --p: 280px;
+  }
+
+  .map {
+    --p: 300px;
+  }
+
+  .colors {
+    --p: 100%;
+  }
+}

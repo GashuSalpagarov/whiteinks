@@ -8,7 +8,13 @@ import type { MouseEvent } from "react";
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const HOME_HREF = `${BASE}/`;
+export const WORKS_HREF = `${BASE}/works/`;
 export const caseHref = (slug: string) => `${BASE}/works/${slug}/`;
+
+// Эту страницу открыли со страницы href: «назад» вернёт на неё и на то же место.
+export function cameFrom(href: string) {
+  return !!document.referrer && new URL(document.referrer).pathname === href;
+}
 
 // Кейс из адреса: «/whiteinks/works/studio-site/» → «studio-site»; не кейс — null.
 export function caseSlugFrom(pathname: string): string | null {

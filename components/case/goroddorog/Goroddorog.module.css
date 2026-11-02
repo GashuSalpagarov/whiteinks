@@ -1,0 +1,97 @@
+/* Страница автошколы (Goroddorog.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Положения те же три: левое поле, сдвиг 16vw, правое поле. */
+.steps,
+.table {
+  --p: clamp(460px, 56vw, 960px);
+  --t: clamp(260px, 24vw, 400px);
+}
+
+.classes,
+.args,
+.gift {
+  --p: clamp(440px, 52vw, 880px);
+  --t: clamp(260px, 24vw, 400px);
+}
+
+.cert {
+  --p: clamp(380px, 33vw, 540px);
+  --t: clamp(300px, 26vw, 400px);
+}
+
+.phones {
+  --p: clamp(320px, 26.4vw, 440px);
+  --t: clamp(300px, 26vw, 400px);
+}
+
+.tariff {
+  --p: clamp(200px, 18vw, 300px);
+  --t: clamp(220px, 19vw, 340px);
+}
+
+.colors {
+  --p: clamp(240px, 20.8vw, 340px);
+  --t: clamp(240px, 19vw, 320px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .table,
+  .args,
+  .cert {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+
+  .classes,
+  .phones {
+    margin-left: 16vw;
+  }
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13%/6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5%/5.3%;
+}
+
+/* Телефон: снимки во всю ширину, высокие — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .steps,
+  .cert {
+    --p: 100%;
+  }
+
+  .table,
+  .classes {
+    --p: 290px;
+  }
+
+  .phones {
+    --p: 310px;
+  }
+
+  .args {
+    --p: 270px;
+  }
+
+  .gift {
+    --p: 236px;
+  }
+
+  .tariff,
+  .colors {
+    --p: 240px;
+  }
+}

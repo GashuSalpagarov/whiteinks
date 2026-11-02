@@ -16,7 +16,9 @@ export type CaseImage = {
 
 export type CaseData = {
   slug: string;
-  showcase?: boolean; // своя страница вместо рассказа (components/case/memoridian)
+  showcase?: boolean; // своя страница вместо рассказа (components/case/memoridian, prokat)
+  title?: string; // название для кейса без карточки в cardsData.ts
+  unlisted?: boolean; // без карточки на главной: «ещё проект →» других кейсов сюда не ведёт
   example?: boolean;
   summary: string; // одна фраза первого экрана и описания ссылки, до 160 знаков
   url?: string; // живой проект
@@ -134,6 +136,42 @@ export const CASES: CaseData[] = [
     need: "Приложение",
   },
   {
+    // Своя страница (components/case/picvario): поля рассказа только ради типа.
+    slug: "picvario",
+    showcase: true,
+    summary:
+      "Интерфейс медиатеки для компаний: сетка файлов, карточка файла, поиск, фильтры и версия для телефона.",
+    task: "Интерфейс, в котором компании хранят, ищут и отдают фото и видео.",
+    before: [],
+    beforeImage: { src: img("picvario", "library.webp"), alt: "Медиатека: сетка файлов" },
+    solution: [],
+    gallery: [
+      { src: img("picvario", "phone-grid.webp"), alt: "Сетка на телефоне", ratio: "3/4" },
+      { src: img("picvario", "library.webp"), alt: "Медиатека в окне браузера" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Сайт",
+  },
+  {
+    // Своя страница (components/case/prokat): поля рассказа здесь заполнены только ради типа.
+    slug: "prokat",
+    showcase: true,
+    summary:
+      "Бренд и сайт для самого первого проката в истории Архыза: знак-молния, плакатный стиль и бронь снаряжения в четыре шага.",
+    task: "Сайт для проката, который открылся в Архызе первым и держит три точки на улице Ленина.",
+    before: [],
+    beforeImage: { src: img("prokat", "first.webp"), alt: "Самый первый прокат в истории Архыза" },
+    solution: [],
+    gallery: [
+      { src: img("prokat", "duo-phone.webp"), alt: "Сайт на телефоне", ratio: "3/4" },
+      { src: img("prokat", "duo-window.webp"), alt: "Сайт в окне браузера" },
+    ],
+    galleryNote: "",
+    services: ["Брендинг", "Сайты под ключ"],
+    need: "Сайт",
+  },
+  {
     slug: "studio-site",
     example: true,
     summary: "Сайт-лента для студии: одна линия ведёт через услуги, работы, этапы и цены к заявке.",
@@ -182,11 +220,167 @@ export const CASES: CaseData[] = [
     services: ["Концепция", "Дизайн", "3D и анимация", "Разработка"],
     need: "Сайт",
   },
+  {
+    // Своя страница (components/case/doctis): поля рассказа только ради типа.
+    slug: "doctis",
+    showcase: true,
+    summary:
+      "Сайт сервиса телемедицины: от поиска врача до записи на консультацию, на компьютере и на телефоне.",
+    task: "Сайт сервиса телемедицины: от поиска врача до записи на консультацию, на компьютере и на телефоне.",
+    before: [],
+    beforeImage: { src: img("doctis", "search.webp"), alt: "Поиск на главной" },
+    solution: [],
+    gallery: [
+      { src: img("doctis", "duo-phone.webp"), alt: "Главная на телефоне", ratio: "3/4" },
+      { src: img("doctis", "duo-window.webp"), alt: "Главная в окне браузера" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Сайт",
+  },
+  {
+    // Своя страница (components/case/imperia): поля рассказа только ради типа.
+    slug: "imperia",
+    showcase: true,
+    summary:
+      "Сайт центра стоматологии под ключ: услуги, цены, врачи и запись с формой в одно поле.",
+    task: "Сайт центра стоматологии под ключ: услуги, цены, врачи и запись с формой в одно поле.",
+    before: [],
+    beforeImage: { src: img("imperia", "form.webp"), alt: "Форма записи на главной" },
+    solution: [],
+    gallery: [
+      { src: img("imperia", "phone-prices.webp"), alt: "Цены на телефоне", ratio: "3/4" },
+      { src: img("imperia", "prices.webp"), alt: "Страница цен" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Сайт",
+  },
+  {
+    // Своя страница (components/case/doctis-analysis): поля рассказа только ради типа. Стоит перед
+    // Globaldrive, чтобы «ещё проект →» с него по-прежнему вёл на Memoridian.
+    slug: "doctis-analysis",
+    showcase: true,
+    summary:
+      "Раздел сайта Doctis: найти анализы, сравнить лаборатории на карте и увидеть итог заказа.",
+    task: "Раздел сайта Doctis: найти анализы, сравнить лаборатории на карте и увидеть итог заказа.",
+    before: [],
+    beforeImage: { src: img("doctis-analysis", "tiles.webp"), alt: "Витрина анализов" },
+    solution: [],
+    gallery: [
+      { src: img("doctis-analysis", "duo-phone.webp"), alt: "Карта на телефоне", ratio: "3/4" },
+      { src: img("doctis-analysis", "duo-window.webp"), alt: "Витрина в окне браузера" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Сайт",
+  },
+  {
+    // Своя страница (components/case/globaldrive), карточки на главной нет: поля рассказа только ради типа.
+    slug: "globaldrive",
+    showcase: true,
+    title: "Магазин техники Globaldrive",
+    unlisted: true,
+    summary:
+      "Интерфейс интернет-магазина техники: каталог, поиск, фильтры, страница товара, запчасти по схемам и версия для телефона.",
+    task: "Интернет-магазин лодочных моторов, снегоходов, квадроциклов и запчастей к ним.",
+    before: [],
+    beforeImage: { src: img("globaldrive", "menu.webp"), alt: "Меню каталога магазина" },
+    solution: [],
+    gallery: [
+      { src: img("globaldrive", "duo-phone.webp"), alt: "Магазин на телефоне", ratio: "3/4" },
+      { src: img("globaldrive", "duo-window.webp"), alt: "Магазин в окне браузера" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Магазин",
+  },
+  {
+    // Своя страница (components/case/animals-travel), карточки на главной нет: поля рассказа только ради типа.
+    slug: "animals-travel",
+    showcase: true,
+    title: "Сайт перевозок Animals Travel",
+    unlisted: true,
+    summary:
+      "Сайт компании, которая перевозит домашних животных: услуги, каталог переносок, цены, форма заявки и версия для телефона.",
+    task: "Сайт компании, которая перевозит домашних животных в другой город и другую страну.",
+    before: [],
+    beforeImage: { src: img("animals-travel", "slide-train.webp"), alt: "Первый экран сайта" },
+    solution: [],
+    gallery: [
+      { src: img("animals-travel", "duo-phone.webp"), alt: "Сайт на телефоне", ratio: "3/4" },
+      { src: img("animals-travel", "duo-window.webp"), alt: "Сайт в окне браузера" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Сайт",
+  },
+  {
+    // Своя страница (components/case/edgeconf), карточки на главной нет: поля рассказа только ради типа.
+    slug: "edgeconf",
+    showcase: true,
+    title: "Видеоплатформа EdgeConf",
+    unlisted: true,
+    summary:
+      "Видеоплатформа, которую мы построили: конференции и вебинары без регистрации, кабинет стриминга и настройка плеера.",
+    task: "Видеозвонки, вебинары и стриминг для бизнеса.",
+    before: [],
+    beforeImage: { src: img("edgeconf", "cards.webp"), alt: "Плитки конференции и вебинара" },
+    solution: [],
+    gallery: [
+      { src: img("edgeconf", "player.webp"), alt: "Настройки плеера", ratio: "3/4" },
+      { src: img("edgeconf", "duo-start.webp"), alt: "Стартовый экран" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Приложение",
+  },
+  {
+    // Своя страница (components/case/edgecenter), карточки на главной нет: поля рассказа только ради типа.
+    slug: "edgecenter",
+    showcase: true,
+    title: "Личный кабинет EdgeЦентр",
+    unlisted: true,
+    summary:
+      "Личный кабинет облачного провайдера: дашборд, разделы CDN, облака и защиты, роли, уведомления и вход в аккаунт.",
+    task: "Личный кабинет сервисов облачного провайдера.",
+    before: [],
+    beforeImage: { src: img("edgecenter", "signin.webp"), alt: "Страница входа в кабинет" },
+    solution: [],
+    gallery: [
+      { src: img("edgecenter", "signin-phone.webp"), alt: "Вход на телефоне", ratio: "3/4" },
+      { src: img("edgecenter", "dashboard.webp"), alt: "Дашборд кабинета" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Приложение",
+  },
+  {
+    // Своя страница (components/case/goroddorog), карточки на главной нет: поля рассказа только ради типа.
+    slug: "goroddorog",
+    showcase: true,
+    title: "Сайт автошколы «Город Дорог»",
+    unlisted: true,
+    summary:
+      "Сайт автошколы в Москве: тарифы, таблица скрытых платежей, десять шагов до прав, классы у метро и версия для телефона.",
+    task: "Сайт автошколы в Москве.",
+    before: [],
+    beforeImage: { src: img("goroddorog", "steps.webp"), alt: "Десять шагов до удостоверения" },
+    solution: [],
+    gallery: [
+      { src: img("goroddorog", "phone-tariff.webp"), alt: "Тарифы на телефоне", ratio: "3/4" },
+      { src: img("goroddorog", "table.webp"), alt: "Таблица скрытых платежей" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Сайт",
+  },
 ];
 
 export const caseBySlug = (slug: string) => CASES.find((c) => c.slug === slug) ?? null;
 
 export function nextCase(slug: string): CaseData {
-  const i = CASES.findIndex((c) => c.slug === slug);
-  return CASES[(i + 1) % CASES.length];
+  const round = CASES.filter((c) => !c.unlisted || c.slug === slug);
+  const i = round.findIndex((c) => c.slug === slug);
+  return round[(i + 1) % round.length];
 }

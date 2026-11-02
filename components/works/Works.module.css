@@ -1,0 +1,663 @@
+/* Страница «Наши работы». Числа оси, шапки и рамки — как у страницы кейса (components/case/Case.module.css):
+   переменные те же, ими пользуется и конец страницы (End). */
+.page {
+  --h: var(--ih, 100vh);
+  --dy: calc(var(--h) / 2 + 20px);
+  --x: 25vw;
+  --pad: calc(var(--h) * 0.11);
+  --text2: rgb(10 10 10 / 0.72);
+  --muted: rgb(10 10 10 / 0.62);
+  --fs-s: 15px;
+  --lh-s: 1.45;
+  --fs-m: 17px;
+  --lh-m: 1.55;
+  --fs-l: clamp(22px, 2vw, 30px);
+  --lh-l: 1.2;
+  --fs-xl: clamp(56px, 5.6vw, 104px);
+  /* Заголовок и названия кейсов; правый край колонки — левее «Обсудить проект» и крестика. */
+  --fs-title: clamp(30px, 2.9vw, 52px);
+  --fs-name: clamp(26px, 2.5vw, 44px);
+  --col: calc(var(--x) - 88px);
+  --start: calc(var(--x) + 56px);
+  --right: 248px;
+  --gap: clamp(88px, calc(var(--h) * 0.15), 150px);
+}
+
+/* ---------- путь и точка ---------- */
+.content {
+  position: relative;
+}
+
+.ghost {
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  width: 2px;
+  height: calc(100% - var(--h) + var(--dy));
+  margin-left: -1px;
+  background: linear-gradient(to bottom, rgb(10 10 10 / 0.32) 0 3px, transparent 3px 8px) 0 0 / 2px
+    8px repeat-y;
+  pointer-events: none;
+}
+
+.ink {
+  position: fixed;
+  top: 0;
+  left: var(--x);
+  z-index: 3;
+  width: 4px;
+  height: var(--dy);
+  margin-left: -2px;
+  background: var(--color-fg);
+  pointer-events: none;
+}
+
+.dot {
+  position: fixed;
+  top: var(--dy);
+  left: var(--x);
+  z-index: 3;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--color-fg);
+  pointer-events: none;
+}
+
+/* ---------- шапка ---------- */
+/* Названия едут под логотипом: слева от оси верх экрана закрыт цветом страницы. Полосы не видно —
+   там всегда пусто, просто текст уходит за край ровно и не наезжает на знак. */
+.plate {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: calc(var(--x) - 16px);
+  height: 72px;
+  background: var(--color-bg);
+  pointer-events: none;
+}
+
+.logo {
+  position: fixed;
+  top: 32px;
+  left: 32px;
+  z-index: 4;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: inherit;
+  text-decoration: none;
+  view-transition-name: head-logo;
+}
+
+.cta {
+  position: fixed;
+  top: 26px;
+  right: 76px;
+  z-index: 4;
+  view-transition-name: head-cta;
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.close {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 4;
+  width: 44px;
+  height: 44px;
+  color: inherit;
+  view-transition-name: head-close;
+}
+
+.close::before,
+.close::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 0.75px);
+  left: 10px;
+  width: 24px;
+  height: 1.5px;
+  background: currentColor;
+  rotate: 45deg;
+}
+
+.close::after {
+  rotate: -45deg;
+}
+
+.logo:focus-visible,
+.cta:focus-visible,
+.close:focus-visible,
+.back:focus-visible,
+.name a:focus-visible,
+.more:focus-visible {
+  outline: 1.5px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+/* ---------- верх страницы ---------- */
+.top {
+  width: var(--col);
+  margin-left: 32px;
+  padding-top: 100px;
+  text-align: right;
+}
+
+.back {
+  display: inline-block;
+  font-size: var(--fs-s);
+  font-weight: 500;
+  color: inherit;
+  text-decoration: none;
+}
+
+.title {
+  margin-top: 14px;
+  font-size: var(--fs-title);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+}
+
+/* ---------- кейс: слева от оси название, справа карточка и описание ---------- */
+.item {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--col) minmax(0, 1fr);
+  column-gap: 112px;
+  padding: var(--gap) var(--right) 0 32px;
+}
+
+/* Первый кейс сразу под заголовком: на первом экране карточка видна целиком. */
+.top + .item {
+  padding-top: 40px;
+}
+
+/* Засечка — по середине первой строки названия. */
+.item::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--gap) + var(--fs-name) * 0.53);
+  left: calc(var(--x) - 13px);
+  width: 26px;
+  height: 1.5px;
+  background: var(--color-fg);
+}
+
+.top + .item::before {
+  top: calc(40px + var(--fs-name) * 0.53);
+}
+
+.l {
+  position: relative;
+  text-align: right;
+}
+
+.n {
+  position: absolute;
+  top: calc(var(--fs-name) * 0.53 - 6px);
+  right: -34px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.name {
+  font-size: var(--fs-name);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+.name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.kind {
+  margin-top: 12px;
+  font-size: var(--fs-s);
+  line-height: var(--lh-s);
+  color: var(--muted);
+}
+
+.l .kind {
+  margin-left: auto;
+  max-width: 300px;
+}
+
+.r {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: end;
+  min-width: 0;
+  max-width: 1040px;
+}
+
+/* Двойная рамка, как у карточек Сцены 3. */
+.card {
+  display: block;
+  margin: 0;
+  padding: 12px;
+  border: 1.5px solid var(--color-fg);
+  background: var(--color-bg);
+  color: inherit;
+}
+
+.pv {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 1.5px solid var(--color-fg);
+}
+
+.field {
+  position: absolute;
+  inset: 0;
+}
+
+.shot {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.duo {
+  position: absolute;
+  top: 11.3%;
+  left: 8%;
+  width: 84%;
+}
+
+.tx {
+  padding: 0 16px;
+}
+
+.text {
+  font-size: var(--fs-m);
+  line-height: var(--lh-m);
+}
+
+.more {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: var(--fs-s);
+  font-weight: 500;
+  line-height: var(--lh-s);
+  color: inherit;
+  text-decoration: none;
+}
+
+.more span {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@media (hover: hover) {
+  .more:hover span {
+    transform: translateX(4px);
+  }
+
+  .name a:hover {
+    opacity: 0.62;
+  }
+}
+
+/* Сетка своя у каждого кейса: ширина карточки и сторона описания. */
+.r > * {
+  grid-row: 1;
+}
+
+.r > .card {
+  grid-column: 1 / 8;
+}
+
+.r > .tx {
+  grid-column: 8 / 13;
+}
+
+.r[data-i="1"] > .card {
+  grid-column: 1 / 9;
+}
+
+.r[data-i="1"] > .tx {
+  grid-column: 9 / 13;
+}
+
+.r[data-i="2"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="2"] > .tx {
+  grid-column: 1 / 6;
+}
+
+.r[data-i="3"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="3"] > .tx {
+  grid-column: 8 / 13;
+}
+
+.r[data-i="4"] > .card {
+  grid-column: 6 / 12;
+}
+
+.r[data-i="4"] > .tx {
+  grid-column: 2 / 6;
+}
+
+.r[data-i="5"] > .card {
+  grid-column: 1 / 7;
+}
+
+.r[data-i="5"] > .tx {
+  grid-column: 7 / 12;
+}
+
+.r[data-i="6"] > .card {
+  grid-column: 7 / 13;
+}
+
+.r[data-i="6"] > .tx {
+  grid-column: 3 / 7;
+}
+
+.r[data-i="7"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="7"] > .tx {
+  grid-column: 8 / 13;
+}
+
+.r[data-i="8"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="8"] > .tx {
+  grid-column: 1 / 6;
+}
+
+.r[data-i="9"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="9"] > .tx {
+  grid-column: 8 / 13;
+}
+
+.r[data-i="10"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="10"] > .tx {
+  grid-column: 1 / 6;
+}
+
+.r[data-i="11"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="11"] > .tx {
+  grid-column: 8 / 13;
+}
+
+.r[data-i="12"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="12"] > .tx {
+  grid-column: 1 / 6;
+}
+
+/* Уже — описание под карточкой, карточка всё так же своей ширины и со своим сдвигом. */
+@media (min-width: 768px) and (max-width: 1239px) {
+  .r > * {
+    grid-row: auto;
+  }
+
+  .r[data-i] > .tx {
+    grid-column: 1 / -1;
+    margin-top: 16px;
+  }
+
+  .r[data-i="1"] > .card {
+    grid-column: 1 / 13;
+  }
+
+  .r[data-i="2"] > .card {
+    grid-column: 3 / 13;
+  }
+
+  .r[data-i="2"] > .tx {
+    grid-column: 3 / 13;
+  }
+
+  .r[data-i="3"] > .card {
+    grid-column: 1 / 12;
+  }
+
+  .r[data-i="4"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="4"] > .tx {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="5"] > .card {
+    grid-column: 1 / 11;
+  }
+
+  .r[data-i="6"] > .card {
+    grid-column: 3 / 13;
+  }
+
+  .r[data-i="6"] > .tx {
+    grid-column: 3 / 13;
+  }
+
+  .r[data-i="7"] > .card {
+    grid-column: 1 / 12;
+  }
+
+  .r[data-i="8"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="8"] > .tx {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="9"] > .card {
+    grid-column: 1 / 12;
+  }
+
+  .r[data-i="10"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="10"] > .tx {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="11"] > .card {
+    grid-column: 1 / 12;
+  }
+
+  .r[data-i="12"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="12"] > .tx {
+    grid-column: 2 / 13;
+  }
+}
+
+/* ---------- конец: глава «дальше» и конверт (components/case/End) ---------- */
+.finish {
+  padding-top: var(--gap);
+}
+
+.finish > section {
+  padding-right: var(--right);
+}
+
+/* Уже конверт в колонку под шапкой не помещается (кнопка обрезалась): ему правый край как у кейса. */
+@media (min-width: 768px) and (max-width: 1239px) {
+  .finish > section {
+    padding-right: 56px;
+  }
+}
+
+/* ---------- телефон: ось у края, шапка уезжает с первым экраном, закреплена только точка ---------- */
+@media (max-width: 767px) {
+  .page {
+    --x: 20px;
+    --pad: calc(var(--h) * 0.1);
+    --fs-s: 14px;
+    --fs-m: 16px;
+    --fs-l: 22px;
+    --fs-xl: 40px;
+    --fs-title: clamp(32px, 9vw, 38px);
+    --fs-name: clamp(26px, 7.4vw, 30px);
+    --gap: 64px;
+    --right: 20px;
+  }
+
+  .plate {
+    display: none;
+  }
+
+  .logo,
+  .cta,
+  .close {
+    position: absolute;
+  }
+
+  .logo {
+    top: 20px;
+    left: 44px;
+    font-size: 1rem;
+  }
+
+  .cta {
+    top: 14px;
+    right: 56px;
+    height: 32px;
+    padding: 0 14px;
+    font-size: 0.8125rem;
+  }
+
+  .close {
+    top: 8px;
+    right: 8px;
+  }
+
+  .close::before,
+  .close::after {
+    left: 12px;
+    width: 20px;
+  }
+
+  .top {
+    width: auto;
+    margin-left: 44px;
+    padding-top: 84px;
+    text-align: left;
+  }
+
+  .item {
+    display: block;
+    padding: var(--gap) 20px 0 44px;
+  }
+
+  .top + .item {
+    padding-top: 36px;
+  }
+
+  /* Засечка — у номера над названием. */
+  .item::before {
+    top: calc(var(--gap) + 7px);
+  }
+
+  .top + .item::before {
+    top: 43px;
+  }
+
+  .l {
+    margin-bottom: 14px;
+    text-align: left;
+  }
+
+  .n {
+    position: static;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+
+  .l .kind {
+    max-width: none;
+    margin-top: 8px;
+  }
+
+  .r {
+    display: block;
+  }
+
+  .card {
+    padding: 8px;
+  }
+
+  /* Группа на телефоне выше поля карточки: у разных раскладок нижний ряд не должен обрезаться. */
+  .duo:not([data-duo="memoridian"]) {
+    top: 7%;
+    left: 14%;
+    width: 72%;
+  }
+
+  .tx {
+    margin-top: 14px;
+    padding: 0 12px;
+  }
+
+  .finish {
+    padding-top: 0;
+  }
+
+  .finish > section {
+    padding-right: 20px;
+  }
+
+  /* Письмо на всю ширину закрывает ось: линия и точка уходят в него. */
+  .finish > section:last-child {
+    position: relative;
+    z-index: 4;
+    background: var(--color-bg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more span {
+    transition: none;
+  }
+}

@@ -113,6 +113,32 @@ h6 {
   }
 }
 
+/* ---------- Переходы между страницами ----------
+   Ведёт браузер: старая страница гаснет, новая проявляется, а группа окна и телефона (имя — в Duo)
+   и шапка (имена — в Works.module.css и Case.module.css) переезжают на своё новое место. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+::view-transition-group(*) {
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Группа без пары на другой странице (остальные карточки списка) гаснет вместе со своей страницей. */
+::view-transition-old(root),
+::view-transition-old(*):only-child {
+  animation-duration: 0.22s;
+}
+
+::view-transition-new(root),
+::view-transition-new(*):only-child {
+  animation-duration: 0.42s;
+  animation-delay: 0.12s;
+}
+
 /* ---------- Инверсия палитры ----------
    Каждый круг бесконечного пути (Footer) меняет палитру: html[data-palette="inverted"].
    Сайт строго монохромный, поэтому один invert(1) на корне точно переворачивает всё сразу:

@@ -8,16 +8,29 @@ import { openBrief } from "@/lib/brief";
 import {
   CASE_OPEN_EVENT,
   type CaseOpenDetail,
+  cameFrom,
   caseHref,
   caseSlugFrom,
   HOME_HREF,
+  WORKS_HREF,
 } from "@/lib/caseRoute";
 import { syncScroll, viewportH } from "@/lib/scroll/onScroll";
+import { RISE_FROM, rise } from "@/lib/scroll/rise";
 import { SITE_TITLE } from "@/lib/site";
+import { AnimalsTravel } from "./animals-travel/AnimalsTravel";
 import styles from "./Case.module.css";
 import { back, type CaseActions, CaseView } from "./CaseView";
+import { Doctis } from "./doctis/Doctis";
+import { DoctisAnalysis } from "./doctis-analysis/DoctisAnalysis";
+import { EdgeCenter } from "./edgecenter/EdgeCenter";
+import { EdgeConf } from "./edgeconf/EdgeConf";
+import { Globaldrive } from "./globaldrive/Globaldrive";
+import { Goroddorog } from "./goroddorog/Goroddorog";
+import { Imperia } from "./imperia/Imperia";
 import { DUO_SHOTS } from "./memoridian/Duo";
 import { Showcase } from "./memoridian/Showcase";
+import { Picvario } from "./picvario/Picvario";
+import { Prokat } from "./prokat/Prokat";
 
 // Слой кейса поверх главной (вариант D2 «Рассказ», docs/12-case-page.md). Главная под ним
 // смонтирована и стоит: прокрутку держит Lenis (stop), а html[data-case-open] ставит на паузу
@@ -36,7 +49,7 @@ const OUT3 = "cubic-bezier(0.33, 1, 0.68, 1)";
 const IO3 = "cubic-bezier(0.65, 0, 0.35, 1)";
 
 const titleOf = (slug: string) =>
-  `${CARDS_CONTENT.find((c) => c.slug === slug)?.title ?? ""} — кейс White Inks`;
+  `${CARDS_CONTENT.find((c) => c.slug === slug)?.title ?? caseBySlug(slug)?.title ?? ""} — кейс White Inks`;
 const vp = () => ({ x: window.innerWidth / 2, y: viewportH() / 2 + DOT_Y });
 type Point = ReturnType<typeof vp>;
 
@@ -269,7 +282,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
     const ink = inkRef.current;
     if (ink) put(ink, "", `scaleY(${clamp01((y + g.dy) / g.path).toFixed(4)})`);
     // Всплытие — один раз: верх блока дошёл до 90% экрана (или прокрутка в самом конце) — блок
-    // проявляется за 600 мс и остаётся, на обратном ходу не гаснет. До того ждёт невидимым.
+    // проявляется снизу и остаётся, на обратном ходу не гаснет. До того ждёт невидимым.
     if (!S.reduced) {
       const end = y >= g.maxS - 1;
       for (const r of g.rises) {
@@ -277,14 +290,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
         if (end || r.top - y < g.H * 0.9) {
           S.risen.add(r.el);
           put(r.el, "", "");
-          r.el.animate(
-            [
-              { opacity: 0, transform: "translateY(22px)" },
-              { opacity: 1, transform: "none" },
-            ],
-            { duration: 600, delay: r.delay, easing: OUT3, fill: "backwards" },
-          );
-        } else put(r.el, "0", "translateY(22px)");
+          rise(r.el, r.delay);
+        } else put(r.el, "0", RISE_FROM);
       }
     }
     const dot = dotRef.current;
@@ -528,7 +535,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
         { ...t, easing: OUT3 },
       );
       cover.animate(outOfDot(1), t);
-    }
+    } else if (cover) rise(cover);
     pulse(land);
     heroIn(0);
     S.rest = true;
@@ -554,7 +561,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const close = (after?: () => void) => {
     if (S.phase === "closed" || S.phase === "closing") return;
     S.after = after ?? null;
-    if (S.fromHome) {
+    // Пришли со списка работ — на него же, на то же место (переход ведёт браузер, globals.css).
+    if (S.fromHome || cameFrom(WORKS_HREF)) {
       // На запись главной, сколько бы кейсов ни прошли через «ещё проект →»: popstate → leave().
       window.history.go(-(window.history.state?.depth ?? 1));
       return;
@@ -572,7 +580,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
     }
     window.dispatchEvent(new CustomEvent(SKIP_EVENT, { detail: { in: 0 } }));
     const i = CARDS_CONTENT.findIndex((c) => c.slug === s);
-    window.scrollTo(0, cardScrollY(i));
+    // Кейс без карточки — собранная сетка, как у кейсов только сетки.
+    window.scrollTo(0, cardScrollY(i < 0 ? CARDS_CONTENT.length : i));
     syncScroll();
     return sourceOf(s);
   };
@@ -969,7 +978,27 @@ export function CaseLayer({ initial }: { initial?: string }) {
         <div className={styles.bg} />
         <div ref={scrollRef} className={styles.scroll} tabIndex={-1}>
           <article ref={contentRef} key={c.slug} className={styles.content}>
-            {c.showcase ? (
+            {c.slug === "prokat" ? (
+              <Prokat c={c} act={act} full={full} />
+            ) : c.slug === "picvario" ? (
+              <Picvario c={c} act={act} full={full} />
+            ) : c.slug === "globaldrive" ? (
+              <Globaldrive c={c} act={act} full={full} />
+            ) : c.slug === "animals-travel" ? (
+              <AnimalsTravel c={c} act={act} full={full} />
+            ) : c.slug === "edgecenter" ? (
+              <EdgeCenter c={c} act={act} full={full} />
+            ) : c.slug === "goroddorog" ? (
+              <Goroddorog c={c} act={act} full={full} />
+            ) : c.slug === "edgeconf" ? (
+              <EdgeConf c={c} act={act} full={full} />
+            ) : c.slug === "imperia" ? (
+              <Imperia c={c} act={act} full={full} />
+            ) : c.slug === "doctis-analysis" ? (
+              <DoctisAnalysis c={c} act={act} full={full} />
+            ) : c.slug === "doctis" ? (
+              <Doctis c={c} act={act} full={full} />
+            ) : c.showcase ? (
               <Showcase c={c} act={act} full={full} />
             ) : (
               <>

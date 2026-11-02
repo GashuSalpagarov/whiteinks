@@ -1,0 +1,100 @@
+/* Страница портала Doctis (Doctis.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.search,
+.catalog,
+.promo,
+.urgent {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.slots {
+  --p: clamp(280px, 23vw, 340px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.duty {
+  --p: clamp(300px, 26vw, 400px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.phones {
+  --p: clamp(400px, 35vw, 500px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.colors {
+  --p: clamp(240px, 19.5vw, 320px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.kit {
+  --p: clamp(340px, 30.5vw, 480px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+/* Сдвиг от левого поля — пока рядом хватает места. */
+@media (min-width: 1280px) {
+  .phones {
+    margin-left: 16vw;
+  }
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .catalog,
+  .promo {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .search,
+  .catalog,
+  .promo,
+  .urgent {
+    --p: 58vw;
+  }
+
+  .phones {
+    --p: 46vw;
+  }
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13% / 6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5% / 5.3%;
+}
+
+/* Телефон: снимки мобильной раскладки; высокий — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .search,
+  .catalog,
+  .slots,
+  .duty,
+  .urgent,
+  .phones,
+  .kit,
+  .colors {
+    --p: 100%;
+  }
+
+  .promo {
+    --p: 240px;
+  }
+}

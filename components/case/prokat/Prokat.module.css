@@ -1,0 +1,121 @@
+/* Страница проката (Prokat.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
+   Положения те же три: левое поле, сдвиг 16vw, правое поле. Снимки подобраны так, чтобы подписи
+   читались: ширины не меньше, чем нужно для плотности 2 и мелкого текста. */
+.task {
+  --p: clamp(340px, 30.5vw, 480px);
+  --t: clamp(300px, 28vw, 420px);
+}
+
+.mark,
+.parts {
+  --p: clamp(280px, 25vw, 420px);
+  --t: clamp(240px, 19vw, 320px);
+}
+
+.colors {
+  --p: clamp(240px, 20.8vw, 340px);
+  --t: clamp(240px, 19vw, 320px);
+}
+
+.type {
+  --p: clamp(280px, 25vw, 420px);
+  --t: clamp(240px, 19vw, 320px);
+}
+
+.screen,
+.kits,
+.bonus,
+.steps {
+  --p: clamp(420px, 44vw, 720px);
+  --t: clamp(280px, 24vw, 400px);
+}
+
+.faq,
+.footer {
+  --p: clamp(400px, 38vw, 620px);
+  --t: clamp(280px, 24vw, 400px);
+}
+
+.dates {
+  --p: clamp(320px, 28vw, 460px);
+  --t: clamp(220px, 17.5vw, 320px);
+}
+
+.sum {
+  --p: clamp(200px, 18vw, 300px);
+  --t: clamp(220px, 19vw, 340px);
+}
+
+.phones {
+  --p: clamp(380px, 33vw, 540px);
+  --t: clamp(300px, 26vw, 400px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .task,
+  .faq,
+  .phones {
+    margin-left: 16vw;
+  }
+
+  .kits,
+  .footer,
+  .steps {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13%/6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5%/5.3%;
+}
+
+/* Телефон: снимки во всю ширину, высокие — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .task,
+  .mark,
+  .parts,
+  .screen,
+  .kits,
+  .faq,
+  .footer,
+  .phones {
+    --p: 100%;
+  }
+
+  .colors {
+    --p: 240px;
+  }
+
+  .type {
+    --p: 300px;
+  }
+
+  .bonus,
+  .steps {
+    --p: 300px;
+  }
+
+  .dates {
+    --p: 260px;
+  }
+
+  .sum {
+    --p: 250px;
+  }
+}

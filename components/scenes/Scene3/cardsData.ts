@@ -43,8 +43,9 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "крупных компаний хранят в ней фото и видео",
     about:
       "Весь интерфейс\u00a0— с нуля: медиатека, поиск, права и порталы. В нём работают больше 100\u00a0крупных компаний: кадр среди тысяч находят по лицу или похожему снимку и отдают ссылкой с паролем и сроком.",
-    image: img("card-picvario.webp"),
+    duo: true,
     color: "#d3ebdd",
+    slug: "picvario",
   },
   {
     title: "Горный прокат",
@@ -54,8 +55,9 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "и бронь на всю компанию — без предоплаты",
     about:
       "Бренд со знаком-молнией, сайт и бронь\u00a0— всё с нуля. Бронь на всю компанию собирается за 4\u00a0шага и без предоплаты: на каждого вписываешь рост и вес, а забрать можно и в отеле.",
-    image: img("card-adrenalin.webp"),
+    duo: true,
     color: "#f4ebc3",
+    slug: "prokat",
   },
   {
     title: "Клиника онлайн",
@@ -65,8 +67,9 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "дежурный врач ответит в течение 10 минут",
     about:
       "Портал телемедицины: сайт, кабинеты пациента и врача. У пациента\u00a0— медкарта с профилями близких и календарь лекарств, а на срочный вопрос дежурный врач ответит в течение 10\u00a0минут.",
-    image: img("card-doctis.webp"),
+    duo: true,
     color: "#dddaf5",
+    slug: "doctis",
   },
   {
     title: "Стоматология",
@@ -76,8 +79,9 @@ export const CARDS_CONTENT: CardContent[] = [
     resultNote: "для записи хватает номера телефона",
     about:
       "Собрали клинике сайт под ключ: услуги, цены, врачи и запись. Форма записи\u00a0— короче некуда: одно поле, без анкет и выбора времени, хватает номера телефона.",
-    image: img("card-imperia.webp"),
+    duo: true,
     color: "#d3ebdd",
+    slug: "imperia",
   },
   {
     title: "Анализы рядом",
@@ -85,8 +89,9 @@ export const CARDS_CONTENT: CardContent[] = [
     type: "Каталог с картой",
     result: "Сам или с врачом",
     resultNote: "анализы выбираешь сам — или их соберёт врач онлайн",
-    image: img("card-doctis-analysis.webp"),
+    duo: true,
     color: "#f4ebc3",
+    slug: "doctis-analysis",
   },
   {
     title: "Промо-сайт студии",
@@ -103,6 +108,5 @@ export const CARDS_CONTENT: CardContent[] = [
 // без показанных в сетке. Заглушка — впишите настоящее число.
 export const PROJECTS_TOTAL = 24;
 
-// Ссылка плитки «Все проекты». Страницы со всеми работами пока нет — заглушка (якорь без цели,
-// страница не прокручивается); появится страница или внешний адрес — впишите его сюда.
-export const WORKS_HREF = "#works";
+// Ссылка плитки «Все проекты» — страница «Наши работы» (app/works, docs/13-works-page.md).
+export { WORKS_HREF } from "@/lib/caseRoute";
