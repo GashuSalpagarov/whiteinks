@@ -90,15 +90,29 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
     unlisted: true,
   },
   "arm-listener": {
-    parts: [{ file: "duo-seats" }, { file: "table-tall" }, { file: "timer" }, { file: "menu" }],
+    parts: [{ file: "main" }, { file: "table-tall" }, { file: "timer" }],
     unlisted: true,
   },
   "check-please": {
     parts: [{ file: "photo" }, { file: "menu", phone: true }, { file: "status-strip" }],
     unlisted: true,
   },
+  gbz: {
+    parts: [{ file: "page", fileM: "page-m" }, { file: "publish" }, { file: "filter" }],
+    unlisted: true,
+  },
   kanban: {
     parts: [{ file: "timeline", fileM: "m-timeline" }, { file: "dots" }, { file: "drag" }],
+    unlisted: true,
+  },
+  "sc-system": {
+    parts: [
+      { file: "site", fileM: "site-m" },
+      { file: "modal" },
+      { file: "calendar" },
+      { file: "booking" },
+      { file: "steps-strip" },
+    ],
     unlisted: true,
   },
   "globaldrive-portal": {

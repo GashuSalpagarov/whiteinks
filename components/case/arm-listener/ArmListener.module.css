@@ -1,11 +1,43 @@
 /* Страница рабочего места слушателя (ArmListener.tsx). Стили текста, поля, первый экран и общая раскладка —
    из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и сторона --side.
    Верхняя граница --p — половина ширины файла: на плотных экранах кадр не становится мягким. */
+.main,
 .seats {
   --side: 0;
   --shift: 2vw;
   --p: clamp(420px, 50vw, 720px);
   --t: clamp(240px, 22vw, 340px);
+}
+
+.slide {
+  --p: clamp(280px, 27vw, 395px);
+  --t: clamp(170px, 14vw, 220px);
+}
+
+.timer {
+  --p: clamp(220px, 19.8vw, 286px);
+  --t: clamp(170px, 15vw, 230px);
+}
+
+.agenda {
+  --side: 1;
+  --p: clamp(360px, 36vw, 530px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.materials {
+  --p: clamp(420px, 49vw, 718px);
+  --t: clamp(220px, 21vw, 320px);
+}
+
+.doc {
+  --p: clamp(280px, 26vw, 380px);
+  --t: clamp(170px, 15vw, 230px);
+}
+
+.menu {
+  --p: clamp(200px, 18vw, 262px);
+  --t: clamp(190px, 16vw, 240px);
 }
 
 .tall {
@@ -26,16 +58,6 @@
 .u {
   --p: clamp(240px, 26vw, 375px);
   --t: clamp(170px, 13vw, 210px);
-}
-
-.menu {
-  --p: clamp(200px, 18vw, 262px);
-  --t: clamp(190px, 16vw, 240px);
-}
-
-.timer {
-  --p: clamp(220px, 19.8vw, 286px);
-  --t: clamp(190px, 16vw, 240px);
 }
 
 .chart {
@@ -63,6 +85,7 @@
 }
 
 @media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .agenda,
   .chart {
     flex-direction: row-reverse;
   }
@@ -70,7 +93,12 @@
 
 /* Телефон: снимки во всю ширину, узкие своей шириной. */
 @media (max-width: 767px) {
+  .main,
   .seats,
+  .slide,
+  .agenda,
+  .materials,
+  .doc,
   .wide,
   .u,
   .chart,

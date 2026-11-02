@@ -26,6 +26,7 @@ import { DoctisAnalysis } from "./doctis-analysis/DoctisAnalysis";
 import { DoctisCrm } from "./doctis-crm/DoctisCrm";
 import { EdgeCenter } from "./edgecenter/EdgeCenter";
 import { EdgeConf } from "./edgeconf/EdgeConf";
+import { Gbz } from "./gbz/Gbz";
 import { Globaldrive } from "./globaldrive/Globaldrive";
 import { GlobaldrivePortal } from "./globaldrive-portal/GlobaldrivePortal";
 import { Goroddorog } from "./goroddorog/Goroddorog";
@@ -36,6 +37,7 @@ import { DUO_SHOTS } from "./memoridian/Duo";
 import { Showcase } from "./memoridian/Showcase";
 import { Picvario } from "./picvario/Picvario";
 import { Prokat } from "./prokat/Prokat";
+import { ScSystem } from "./sc-system/ScSystem";
 import { StroyM } from "./stroy-m/StroyM";
 
 // Слой кейса поверх главной (вариант D2 «Рассказ», docs/12-case-page.md). Главная под ним
@@ -1037,6 +1039,10 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <Arm c={c} act={act} full={full} />
             ) : c.slug === "arm-listener" ? (
               <ArmListener c={c} act={act} full={full} />
+            ) : c.slug === "gbz" ? (
+              <Gbz c={c} act={act} full={full} />
+            ) : c.slug === "sc-system" ? (
+              <ScSystem c={c} act={act} full={full} />
             ) : c.slug === "kanban" ? (
               <Kanban c={c} act={act} full={full} />
             ) : c.slug === "check-please" ? (

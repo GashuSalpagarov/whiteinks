@@ -1,0 +1,98 @@
+/* Страница системы Ситуационного центра (ScSystem.tsx). Стили текста, поля, первый экран и общая раскладка —
+   из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и сторона --side.
+   Верхняя граница --p — половина ширины файла: на плотных экранах кадр не становится мягким. */
+.site,
+.table {
+  --side: 0;
+  --shift: 2vw;
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 24px;
+}
+
+.site {
+  --p: clamp(420px, 45vw, 651px);
+  --t: clamp(300px, 34vw, 480px);
+}
+
+.table {
+  --p: clamp(420px, 50vw, 749px);
+  --t: clamp(300px, 36vw, 520px);
+}
+
+.news {
+  --p: clamp(280px, 27vw, 390px);
+  --t: clamp(170px, 14vw, 220px);
+}
+
+.phone {
+  --p: clamp(160px, 13.8vw, 200px);
+  --t: clamp(180px, 15vw, 230px);
+}
+
+.form {
+  --p: clamp(260px, 26vw, 374px);
+  --t: clamp(180px, 15vw, 230px);
+}
+
+.modal {
+  --p: clamp(190px, 17vw, 245px);
+  --t: clamp(190px, 16.5vw, 250px);
+}
+
+.booking {
+  --side: 1;
+  --p: clamp(280px, 26.9vw, 388px);
+  --t: clamp(240px, 22vw, 320px);
+}
+
+.calendar {
+  --p: clamp(400px, 44.7vw, 645px);
+  --t: clamp(220px, 20vw, 300px);
+}
+
+/* Панель низкая и широкая: текст под ней. */
+.steps {
+  --p: clamp(320px, 41vw, 594px);
+  --t: var(--p);
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 24px;
+}
+
+.colors {
+  --p: clamp(170px, 14vw, 210px);
+  --t: clamp(190px, 16.5vw, 250px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .booking {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Телефон: снимки во всю ширину, узкие своей шириной. */
+@media (max-width: 767px) {
+  .site,
+  .table,
+  .news,
+  .form,
+  .booking,
+  .calendar,
+  .steps {
+    --p: 100%;
+    --t: 100%;
+  }
+
+  .phone {
+    --p: 200px;
+  }
+
+  .modal {
+    --p: 245px;
+  }
+
+  .colors {
+    --p: 240px;
+  }
+}

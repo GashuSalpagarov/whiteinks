@@ -1,0 +1,90 @@
+/* Страница медиабанка (Gbz.tsx). Стили текста и общие правила — в memoridian/Showcase.module.css; здесь
+   только блоки: ширина картинки ограничена половиной файла, чтобы плотность не падала ниже 2. */
+.albums {
+  --side: 0;
+  --p: min(44vw, 543px);
+  --t: min(44vw, 543px);
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 24px;
+}
+
+.tiles {
+  --p: min(30vw, 427px);
+  --t: min(20vw, 260px);
+}
+
+.hover {
+  --p: 180px;
+  --t: 180px;
+}
+
+.menu {
+  --p: 145px;
+  --t: clamp(220px, 19vw, 280px);
+}
+
+.filter {
+  --p: min(22vw, 273px);
+  --t: clamp(200px, 18vw, 260px);
+}
+
+.steps {
+  --side: 1;
+  --p: min(32vw, 396px);
+  --t: clamp(280px, 25vw, 360px);
+}
+
+.video {
+  --p: min(28vw, 379px);
+  --t: clamp(180px, 15vw, 220px);
+}
+
+.publish {
+  --p: min(28vw, 399px);
+  --t: clamp(170px, 14vw, 210px);
+}
+
+.colors {
+  --side: 1;
+  --p: clamp(170px, 15vw, 230px);
+  --t: clamp(240px, 22vw, 320px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .steps {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Телефон: снимки во всю ширину, узкие блоки своего размера. */
+@media (max-width: 767px) {
+  .albums,
+  .tiles,
+  .steps,
+  .video,
+  .publish {
+    --p: 100%;
+    --t: 100%;
+  }
+
+  .hover {
+    --p: 180px;
+    --t: 100%;
+  }
+
+  .menu {
+    --p: 125px;
+    --t: 100%;
+  }
+
+  .filter {
+    --p: 273px;
+    --t: 100%;
+  }
+
+  .colors {
+    --p: 240px;
+    --t: 100%;
+  }
+}

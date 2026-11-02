@@ -470,6 +470,22 @@
   grid-column: 8 / 13;
 }
 
+.r[data-i="20"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="20"] > .tx {
+  grid-column: 1 / 6;
+}
+
+.r[data-i="21"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="21"] > .tx {
+  grid-column: 8 / 13;
+}
+
 /* Уже — описание под карточкой, карточка всё так же своей ширины и со своим сдвигом. */
 @media (min-width: 768px) and (max-width: 1239px) {
   .r > * {
@@ -590,6 +606,18 @@
   }
 
   .r[data-i="19"] > .card {
+    grid-column: 1 / 12;
+  }
+
+  .r[data-i="20"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="20"] > .tx {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="21"] > .card {
     grid-column: 1 / 12;
   }
 

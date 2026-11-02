@@ -690,34 +690,31 @@
   object-position: 0 0;
 }
 
-/* АРМ слушателя: рассадка вверху, на её правый край заходит план зала, снизу таймер и меню. Ширины —
-   от ширины файлов: на 912 px группы плотность около 2. */
+/* АРМ слушателя: главный экран, на его правый нижний край заходит план зала, на левый таймер. Ширины — от
+   ширины файлов: на 912 px группы плотность около 2. */
 .duo[data-duo="arm-listener"] > [data-p="0"] {
-  top: 5%;
+  top: 0;
   left: 0;
-  width: 70%;
-  height: 41%;
+  width: 80%;
+  height: 65%;
 }
 
 .duo[data-duo="arm-listener"] > [data-p="1"] {
-  top: 13%;
+  top: 34%;
   left: 62%;
   width: 38%;
-  height: 76.4%;
+  height: 66%;
+}
+
+.duo[data-duo="arm-listener"] > [data-p="1"] img {
+  object-position: 50% 30%;
 }
 
 .duo[data-duo="arm-listener"] > [data-p="2"] {
-  top: 49%;
-  left: 0;
+  top: 70%;
+  left: 6%;
   width: 30%;
   height: 25.5%;
-}
-
-.duo[data-duo="arm-listener"] > [data-p="3"] {
-  top: 49%;
-  left: 31%;
-  width: 29%;
-  height: 35.9%;
 }
 
 @media (max-width: 767px) {
@@ -734,24 +731,21 @@
 
   .duo[data-duo="arm-listener"] > [data-p="0"] {
     width: 100%;
-    height: 41.9%;
+    height: 58%;
   }
 
   .duo[data-duo="arm-listener"] > [data-p="1"] {
-    top: 44%;
-    left: 60%;
-    width: 40%;
-    height: 56%;
+    top: 42%;
+    left: 62%;
+    width: 38%;
+    height: 58%;
   }
 
   .duo[data-duo="arm-listener"] > [data-p="2"] {
-    top: 46%;
-    width: 57.5%;
-    height: 34.6%;
-  }
-
-  .duo[data-duo="arm-listener"] > [data-p="3"] {
-    display: none;
+    top: 64%;
+    left: 0;
+    width: 56%;
+    height: 33.5%;
   }
 }
 
@@ -778,6 +772,27 @@
 
 /* Таск-трекер: таймлайн окном, под ним ряд цветов пространства, поверх угла карточка в наклоне, как при
    перетаскивании. Цвета и карточка без рамки: они сами со скруглением и прозрачным фоном. */
+.duo[data-duo="gbz"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+  width: 74%;
+  height: 43.5%;
+}
+
+.duo[data-duo="gbz"] > [data-p="1"] {
+  top: 47%;
+  left: 7%;
+  width: 43.75%;
+  height: 50%;
+}
+
+.duo[data-duo="gbz"] > [data-p="2"] {
+  top: 27%;
+  left: 70%;
+  width: 30%;
+  height: 34.2%;
+}
+
 .duo[data-duo="kanban"] > [data-p="0"] {
   top: 0;
   left: 0;
@@ -812,6 +827,24 @@
 }
 
 @media (max-width: 767px) {
+  .duo[data-duo="gbz"] > [data-p="0"] {
+    width: 100%;
+    height: 64%;
+  }
+
+  .duo[data-duo="gbz"] > [data-p="1"] {
+    display: none;
+  }
+
+  .duo[data-duo="gbz"] > [data-p="2"] {
+    top: 44%;
+    left: 34%;
+    width: 66%;
+    height: 54%;
+  }
+}
+
+@media (max-width: 767px) {
   .duo[data-duo="check-please"] > [data-p="0"] {
     width: 58%;
     height: 62%;
@@ -842,5 +875,74 @@
     top: 44%;
     left: 52%;
     width: 48%;
+  }
+}
+
+/* Система Ситуационного центра: все части одной раскладкой — сверху сайт и окно «согласована» со шкалой шагов
+   под ним, снизу календарь и бронирование. Ширины — от ширины файлов: на 912 px группы плотность около 2. */
+.duo[data-duo="sc-system"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+  width: 71%;
+  height: 42.2%;
+}
+
+.duo[data-duo="sc-system"] > [data-p="1"] {
+  top: 0;
+  left: 73%;
+  width: 27%;
+  height: 33.2%;
+}
+
+.duo[data-duo="sc-system"] > [data-p="4"] {
+  top: 35.2%;
+  left: 73%;
+  width: 27%;
+  height: 7%;
+}
+
+.duo[data-duo="sc-system"] > [data-p="4"] img {
+  object-position: 100% 0;
+}
+
+.duo[data-duo="sc-system"] > [data-p="2"] {
+  top: 45.7%;
+  left: 0;
+  width: 57%;
+  height: 54.3%;
+}
+
+.duo[data-duo="sc-system"] > [data-p="3"] {
+  top: 45.7%;
+  left: 59%;
+  width: 41%;
+  height: 54.3%;
+}
+
+@media (max-width: 767px) {
+  .duo[data-duo="sc-system"] > [data-p="0"] {
+    width: 57%;
+    height: 64%;
+  }
+
+  .duo[data-duo="sc-system"] > [data-p="1"] {
+    left: 59%;
+    width: 41%;
+    height: 36%;
+  }
+
+  .duo[data-duo="sc-system"] > [data-p="4"] {
+    display: none;
+  }
+
+  .duo[data-duo="sc-system"] > [data-p="2"] {
+    top: 66%;
+    width: 57%;
+    height: 34%;
+  }
+
+  .duo[data-duo="sc-system"] > [data-p="3"] {
+    top: 38%;
+    height: 62%;
   }
 }
