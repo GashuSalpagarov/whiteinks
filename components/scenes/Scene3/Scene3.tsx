@@ -6,7 +6,7 @@ import { useLenis } from "@/app/providers";
 import { Duo } from "@/components/case/memoridian/Duo";
 import heroStyles from "@/components/scenes/Hero/Hero.module.css";
 import skipStyles from "@/components/ui/Skip.module.css";
-import { caseHref, openCase } from "@/lib/caseRoute";
+import { caseHref, goPage, openCase } from "@/lib/caseRoute";
 import { phoneLayout } from "@/lib/phoneLayout";
 import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
 import { r3fTunnel } from "@/r3f/tunnel";
@@ -510,6 +510,7 @@ export function Scene3() {
           <a
             ref={allRef}
             href={WORKS_HREF}
+            onClick={(e) => goPage(e, "works")}
             className={`${styles.card} ${styles.all}`}
             aria-label={`Все проекты: ${projects(PROJECTS_TOTAL)}`}
           >

@@ -1,0 +1,100 @@
+/* Страница рабочего места слушателя (ArmListener.tsx). Стили текста, поля, первый экран и общая раскладка —
+   из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и сторона --side.
+   Верхняя граница --p — половина ширины файла: на плотных экранах кадр не становится мягким. */
+.seats {
+  --side: 0;
+  --shift: 2vw;
+  --p: clamp(420px, 50vw, 720px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.tall {
+  --p: clamp(240px, 24vw, 375px);
+  --t: clamp(200px, 17vw, 260px);
+}
+
+.legend {
+  --p: clamp(150px, 12.8vw, 185px);
+  --t: clamp(180px, 15vw, 230px);
+}
+
+.wide {
+  --p: clamp(280px, 30vw, 480px);
+  --t: clamp(170px, 14vw, 220px);
+}
+
+.u {
+  --p: clamp(240px, 26vw, 375px);
+  --t: clamp(170px, 13vw, 210px);
+}
+
+.menu {
+  --p: clamp(200px, 18vw, 262px);
+  --t: clamp(190px, 16vw, 240px);
+}
+
+.timer {
+  --p: clamp(220px, 19.8vw, 286px);
+  --t: clamp(190px, 16vw, 240px);
+}
+
+.chart {
+  --side: 1;
+  --p: clamp(400px, 46vw, 720px);
+  --t: clamp(220px, 20vw, 300px);
+}
+
+.donut {
+  --p: clamp(240px, 24vw, 355px);
+  --t: clamp(170px, 14vw, 220px);
+}
+
+.colors {
+  --p: clamp(200px, 17vw, 270px);
+  --t: clamp(200px, 17vw, 270px);
+}
+
+/* Легенда снята без рамки: её синий — фон самого экрана. */
+.legend img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .chart {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Телефон: снимки во всю ширину, узкие своей шириной. */
+@media (max-width: 767px) {
+  .seats,
+  .wide,
+  .u,
+  .chart,
+  .donut {
+    --p: 100%;
+  }
+
+  .tall {
+    --p: 200px;
+  }
+
+  .timer {
+    --p: 286px;
+  }
+
+  .legend {
+    --p: 180px;
+  }
+
+  .menu {
+    --p: 260px;
+  }
+
+  .colors {
+    --p: 240px;
+  }
+}

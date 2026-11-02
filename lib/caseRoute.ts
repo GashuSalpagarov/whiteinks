@@ -11,11 +11,6 @@ export const HOME_HREF = `${BASE}/`;
 export const WORKS_HREF = `${BASE}/works/`;
 export const caseHref = (slug: string) => `${BASE}/works/${slug}/`;
 
-// Эту страницу открыли со страницы href: «назад» вернёт на неё и на то же место.
-export function cameFrom(href: string) {
-  return !!document.referrer && new URL(document.referrer).pathname === href;
-}
-
 // Кейс из адреса: «/whiteinks/works/prokat/» → «prokat»; не кейс — null.
 export function caseSlugFrom(pathname: string): string | null {
   const path = BASE && pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname;
@@ -37,4 +32,27 @@ export function openCase(e: MouseEvent, detail: CaseOpenDetail) {
   if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   e.preventDefault();
   window.dispatchEvent(new CustomEvent(CASE_OPEN_EVENT, { detail }));
+}
+
+// Слои-страницы над главной (components/page/PageLayer): список работ, документы, ненайденный адрес.
+export type Page = "works" | "privacy" | "consent" | "notfound";
+
+export const pageHref = (page: Page | null) => (page ? `${BASE}/${page}/` : HOME_HREF);
+
+// Страница из адреса: главная и кейс — null, неизвестный адрес — «notfound».
+export function pageFrom(pathname: string): Page | null {
+  const path = BASE && pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname;
+  const name = /^\/(works|privacy|consent)\/?$/.exec(path)?.[1];
+  if (name) return name as Page;
+  return path === "" || path === "/" || caseSlugFrom(pathname) ? null : "notfound";
+}
+
+export const PAGE_EVENT = "whiteinks:page";
+
+// Переход по ссылке на страницу (page) или на главную (null): обычное нажатие — внутри приложения, с
+// Ctrl/Cmd/Shift или средней кнопкой — как у ссылки.
+export function goPage(e: MouseEvent, page: Page | null) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  window.dispatchEvent(new CustomEvent<Page | null>(PAGE_EVENT, { detail: page }));
 }

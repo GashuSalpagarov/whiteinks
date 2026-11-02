@@ -14,7 +14,7 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
   picvario: { parts: [{ file: "grid" }, { file: "pill" }, { file: "modes" }] },
   prokat: { parts: [{ file: "duo-window" }] },
   doctis: {
-    parts: [{ file: "slots" }, { file: "duty-m" }, { file: "duo-phone", phone: true }],
+    parts: [{ file: "duo-hero", fileM: "duo-hero-m" }, { file: "duo-quick" }, { file: "duo-labs" }],
   },
   "doctis-analysis": {
     parts: [
@@ -23,7 +23,13 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
       { file: "duo-phone", phone: true },
     ],
   },
-  imperia: { parts: [{ file: "duo-prices" }, { file: "wheel" }, { file: "duo-form" }] },
+  imperia: {
+    parts: [
+      { file: "duo-head", fileM: "duo-head-m" },
+      { file: "duo-photo" },
+      { file: "duo-form", fileM: "duo-form-m" },
+    ],
+  },
   // Карточки на главной нет, поэтому главная эти снимки заранее не грузит.
   globaldrive: {
     parts: [{ file: "filter" }, { file: "drawings-m" }, { file: "icons-m" }],
@@ -67,8 +73,40 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
     ],
     unlisted: true,
   },
+  "doctis-crm": {
+    parts: [
+      { file: "stats", fileM: "stats-m" },
+      { file: "schedule" },
+      { file: "tasks", fileM: "labels-m" },
+    ],
+    unlisted: true,
+  },
   "stroy-m": {
     parts: [{ file: "slide3" }, { file: "slide1" }, { file: "slide2" }, { file: "filter" }],
+    unlisted: true,
+  },
+  arm: {
+    parts: [{ file: "duo-main", fileM: "duo-main-m" }, { file: "duo-modal" }],
+    unlisted: true,
+  },
+  "arm-listener": {
+    parts: [{ file: "duo-seats" }, { file: "table-tall" }, { file: "timer" }, { file: "menu" }],
+    unlisted: true,
+  },
+  "check-please": {
+    parts: [{ file: "photo" }, { file: "menu", phone: true }, { file: "status-strip" }],
+    unlisted: true,
+  },
+  kanban: {
+    parts: [{ file: "timeline", fileM: "m-timeline" }, { file: "dots" }, { file: "drag" }],
+    unlisted: true,
+  },
+  "globaldrive-portal": {
+    parts: [
+      { file: "duo-main", fileM: "duo-main-m" },
+      { file: "duo-schedule", fileM: "duo-schedule-m" },
+      { file: "menu" },
+    ],
     unlisted: true,
   },
 };
@@ -80,29 +118,26 @@ export function Duo({
   slug = "memoridian",
   className = "",
   alts,
+  lazy,
   ...rest
-}: HTMLAttributes<HTMLDivElement> & { slug?: string; alts?: string[] }) {
-  // Группа в списке работ и на первом экране кейса: браузер переносит её между страницами сам
-  // (docs/13-works-page.md). На карточке Сцены 3 имени нет: она на той же странице, что и кейс.
-  const name = "data-cover" in rest ? `duo-${slug}` : undefined;
+}: HTMLAttributes<HTMLDivElement> & { slug?: string; alts?: string[]; lazy?: boolean }) {
+  // Длинный список работ: снимки ниже экрана не грузятся и не декодируются при его открытии.
+  const load = lazy
+    ? ({ loading: "lazy", decoding: "async" } as const)
+    : { decoding: "sync" as const };
   return (
-    <div
-      className={`${styles.duo} ${className}`}
-      data-duo={slug}
-      style={{ viewTransitionName: name }}
-      {...rest}
-    >
+    <div className={`${styles.duo} ${className}`} data-duo={slug} {...rest}>
       {GROUPS[slug].parts.map((p, i) =>
         p.phone ? (
           <figure key={p.file} className={styles.phone} data-p={i}>
             {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-            <img src={shot(slug, p.file)} alt={alts?.[i] ?? ""} decoding="sync" />
+            <img src={shot(slug, p.file)} alt={alts?.[i] ?? ""} {...load} />
           </figure>
         ) : (
           <div key={p.file} className={styles.browser} data-p={i}>
             <picture>
               {p.fileM && <source media="(max-width: 767px)" srcSet={shot(slug, p.fileM)} />}
-              <img src={shot(slug, p.file)} alt={alts?.[i] ?? ""} decoding="sync" />
+              <img src={shot(slug, p.file)} alt={alts?.[i] ?? ""} {...load} />
             </picture>
           </div>
         ),

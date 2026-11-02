@@ -28,8 +28,8 @@
 }
 
 .select {
-  --p: clamp(300px, 28vw, 440px);
-  --t: clamp(220px, 17vw, 280px);
+  --p: clamp(320px, 34vw, 500px);
+  --t: clamp(240px, 22vw, 340px);
 }
 
 .phones {
@@ -47,11 +47,10 @@
   --t: clamp(220px, 18vw, 290px);
 }
 
-/* Сдвиг от левого поля — пока рядом хватает места. */
+/* Блоки посередине оси — пока рядом хватает места. */
 @media (min-width: 1280px) {
-  .filter,
   .phones {
-    margin-left: 16vw;
+    --side: 0;
   }
 }
 
@@ -59,7 +58,7 @@
   .open,
   .phones {
     flex-direction: row-reverse;
-    margin-left: auto;
+    --side: 1;
   }
 }
 

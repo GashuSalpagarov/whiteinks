@@ -1,0 +1,92 @@
+/* Страница приложения «Чек плиз» (CheckPlease.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и сторона --side. */
+.start {
+  --p: clamp(320px, 32vw, 500px);
+  --t: clamp(240px, 24vw, 360px);
+}
+
+.table {
+  --side: 1;
+  --p: clamp(320px, 32vw, 500px);
+  --t: clamp(240px, 24vw, 360px);
+}
+
+.options,
+.status {
+  --p: clamp(280px, 26vw, 420px);
+  --t: clamp(220px, 20vw, 320px);
+}
+
+.menu,
+.order {
+  --p: clamp(200px, 17vw, 260px);
+  --t: clamp(240px, 21vw, 320px);
+}
+
+.bar,
+.add {
+  --p: clamp(220px, 21vw, 340px);
+  --t: clamp(190px, 17vw, 270px);
+}
+
+.thanks {
+  --side: 0;
+  --p: clamp(280px, 26vw, 420px);
+  --t: clamp(220px, 20vw, 320px);
+}
+
+.modal {
+  --p: clamp(220px, 21vw, 340px);
+  --t: clamp(170px, 14vw, 230px);
+}
+
+.side,
+.colors {
+  --p: clamp(210px, 19vw, 300px);
+  --t: clamp(180px, 16vw, 260px);
+}
+
+/* Экран приложения целиком: белое на белом, поэтому своя рамка со скруглением макета. */
+.frame {
+  overflow: hidden;
+  border: 1.5px solid var(--color-fg);
+  border-radius: clamp(20px, 2vw, 30px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .table {
+    flex-direction: row-reverse;
+  }
+
+  /* В ряду шаги слева от заказа; на телефоне сначала заказ, потом шаги. */
+  .status {
+    order: -1;
+  }
+}
+
+/* Телефон: снимки во всю ширину, экраны и окна своей шириной. */
+@media (max-width: 767px) {
+  .start,
+  .table,
+  .options,
+  .status,
+  .bar,
+  .add,
+  .thanks {
+    --p: 100%;
+  }
+
+  .menu,
+  .order {
+    --p: 210px;
+  }
+
+  .modal {
+    --p: 280px;
+  }
+
+  .side,
+  .colors {
+    --p: 240px;
+  }
+}

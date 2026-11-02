@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CaseLayer } from "@/components/case";
+import { PageLayer } from "@/components/page/PageLayer";
 import { Footer } from "@/components/scenes/Footer";
 import { Hero } from "@/components/scenes/Hero";
 import { Scene2 } from "@/components/scenes/Scene2";
@@ -9,10 +10,20 @@ import { Scene5 } from "@/components/scenes/Scene5";
 import { Scene6 } from "@/components/scenes/Scene6";
 import { PathMap } from "@/components/ui/PathMap";
 import { SceneLabel } from "@/components/ui/SceneLabel";
+import type { Page } from "@/lib/caseRoute";
 
-// Главная: сцены и слой кейса поверх них. Её же рисует страница кейса (app/works/[slug]) — с уже
-// открытым кейсом: выход из него ведёт в туннель главной без перезагрузки.
-export function HomeMain({ caseSlug, children }: { caseSlug?: string; children?: ReactNode }) {
+// Главная: сцены и слои поверх них. Весь сайт — одно приложение: главная смонтирована всегда, остальные
+// адреса — слои над ней (PageLayer — список работ, документы, 404; CaseLayer — кейс) со сменой адреса
+// через history.pushState. Статические страницы этих адресов рисуют её же с уже открытым слоем.
+export function HomeMain({
+  caseSlug,
+  page,
+  children,
+}: {
+  caseSlug?: string;
+  page?: Page;
+  children?: ReactNode;
+}) {
   return (
     <>
       <main>
@@ -30,6 +41,7 @@ export function HomeMain({ caseSlug, children }: { caseSlug?: string; children?:
         <Scene6 />
         <Footer />
       </main>
+      <PageLayer initial={page} />
       <CaseLayer initial={caseSlug} />
     </>
   );

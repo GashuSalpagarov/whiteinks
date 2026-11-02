@@ -13,6 +13,17 @@ const HOLD_MAX_MS = 4000;
 // «Пропустить» на заставке (Hero.tsx): она доиграет за detail.in мс — тогда и открываем прокрутку.
 export const SKIP_EVENT = "whiteinks:intro-skip";
 
+// Заставка сыграла мгновенно и прокрутка открыта: главная показывается из слоя над ней при прямом
+// заходе (кейс, список работ, документ), она всё это время шла под слоем.
+export function finishIntro() {
+  for (const a of document.getAnimations()) {
+    if (a instanceof CSSAnimation && a.playState === "running") {
+      if (a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY) a.finish();
+    }
+  }
+  window.dispatchEvent(new CustomEvent(SKIP_EVENT, { detail: { in: 0 } }));
+}
+
 const SCROLL_KEYS = new Set([
   "ArrowUp",
   "ArrowDown",

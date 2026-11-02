@@ -52,24 +52,32 @@
 }
 
 /* ---------- свободная раскладка: блок — картинка --p и текст --t рядом, по центру друг друга. Глава —
-   столбик блоков; блок сам выбирает сторону и сдвиг; .line — два блока в одном ряду. ---------- */
+   столбик блоков по оси экрана, шахматка — сдвиг от оси на --shift: --side -1 влево (по умолчанию),
+   1 вправо, 0 на оси. .line — два блока в одном ряду, вплотную к оси с зазором, без сдвига. ---------- */
 .chapter {
+  --shift: clamp(48px, 5vw, 110px);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
   row-gap: var(--line);
 }
 
 .line {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  column-gap: clamp(32px, 3vw, 64px);
+  width: 100%;
 }
 
 .line .block {
   --j: clamp(20px, 2.2vw, 40px);
+  left: 0;
 }
 
 .block {
+  position: relative;
+  left: calc(var(--side, -1) * var(--shift));
   display: flex;
   align-items: center;
   column-gap: var(--j, clamp(28px, 3.4vw, 56px));
@@ -102,8 +110,8 @@
 .memory,
 .site,
 .fin {
+  --side: 1;
   flex-direction: row-reverse;
-  margin-left: auto;
 }
 
 .small,
@@ -118,8 +126,8 @@
 }
 
 .memo {
+  --side: 0;
   --p: clamp(280px, 23vw, 380px);
-  margin-left: 16vw;
 }
 
 .site,
@@ -128,9 +136,9 @@
 }
 
 .type {
+  --side: 0;
   --p: clamp(420px, 38vw, 640px);
   --t: clamp(280px, 24vw, 400px);
-  margin-left: 16vw;
 }
 
 .icons {
@@ -146,7 +154,6 @@
 .fin {
   --p: clamp(320px, 24vw, 400px);
   --t: clamp(280px, 21vw, 360px);
-  margin-right: 16vw;
 }
 
 /* Снимки с запасом под тень: край карточки стоит точно по ширине блока. */
@@ -284,6 +291,13 @@
   }
 }
 
+/* Два блока в ряду: текст уже, чтобы ряд не упирался в края экрана, картинки своего размера. */
+@media (min-width: 1280px) {
+  .line .copy {
+    width: calc(var(--t, clamp(300px, 26vw, 380px)) * 0.85);
+  }
+}
+
 /* Текст над картинкой: рядом теснятся. */
 @media (max-width: 1279px) {
   .intro {
@@ -311,9 +325,8 @@
     margin-bottom: 0;
   }
 
-  .memo,
-  .type {
-    margin-left: 6vw;
+  .chapter {
+    --shift: 2vw;
   }
 
   /* Два блока в ряду: текст под картинкой, рядом не помещается. */
@@ -350,6 +363,7 @@
 
   .block,
   .line .block {
+    left: 0;
     display: block;
     width: 100%;
     margin: 0;

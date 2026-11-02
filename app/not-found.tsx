@@ -1,20 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import styles from "./legal.module.css";
+import { HomeMain } from "./home";
 
 // Ненайденный адрес: GitHub Pages отдаёт эту страницу (out/404.html) с кодом 404.
 export const metadata: Metadata = { title: "Страница не найдена — White Inks" };
 
 export default function NotFound() {
-  return (
-    <main className={styles.page}>
-      <Link href="/" className={styles.back}>
-        ← White Inks.
-      </Link>
-      <h1 className={styles.title}>Такой страницы нет</h1>
-      <p className={styles.text}>
-        Возможно, адрес изменился. Всё о студии — услуги, работы, цены и заявка — на главной.
-      </p>
-    </main>
-  );
+  return <HomeMain page="notfound" />;
 }

@@ -50,12 +50,17 @@
   .showcase,
   .product {
     flex-direction: row-reverse;
-    margin-left: auto;
+    --side: 1;
   }
 
   .tiles,
   .phones {
-    margin-left: 16vw;
+    --side: 0;
+  }
+
+  /* Самый широкий блок: шахматка едва заметна, иначе упирается в край. */
+  .head {
+    --shift: 2vw;
   }
 }
 

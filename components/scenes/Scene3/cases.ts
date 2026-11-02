@@ -325,6 +325,26 @@ export const CASES: CaseData[] = [
     need: "Сайт",
   },
   {
+    // Своя страница (components/case/doctis-crm), карточки на главной нет: поля рассказа только ради типа.
+    slug: "doctis-crm",
+    showcase: true,
+    title: "CRM Doctis",
+    unlisted: true,
+    summary:
+      "Рабочее место сотрудников телемедицины: задачи, страховые программы, клиники, врачи и статистика.",
+    task: "Рабочее место сотрудников телемедицины.",
+    before: [],
+    beforeImage: { src: img("doctis-crm", "stats.webp"), alt: "Страница статистики" },
+    solution: [],
+    gallery: [
+      { src: img("doctis-crm", "schedule.webp"), alt: "Расписание врача", ratio: "3/4" },
+      { src: img("doctis-crm", "program.webp"), alt: "Форма страховой программы" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Другое",
+  },
+  {
     // Своя страница (components/case/stroy-m), карточки на главной нет: поля рассказа только ради типа.
     slug: "stroy-m",
     showcase: true,
@@ -363,6 +383,109 @@ export const CASES: CaseData[] = [
     galleryNote: "",
     services: [],
     need: "Магазин",
+  },
+  {
+    // Своя страница (components/case/globaldrive-portal), карточки на главной нет: поля рассказа только ради типа.
+    slug: "globaldrive-portal",
+    showcase: true,
+    title: "Корпоративный портал Globaldrive",
+    unlisted: true,
+    summary:
+      "Личный кабинет сотрудника: меню портала, карточка, тесты, график работы, посещаемость и продажи.",
+    task: "Корпоративный портал сотрудников Globaldrive.",
+    before: [],
+    beforeImage: {
+      src: img("globaldrive-portal", "tests.webp"),
+      alt: "Вкладка результатов тестов",
+    },
+    solution: [],
+    gallery: [
+      { src: img("globaldrive-portal", "phone.webp"), alt: "Портал на телефоне", ratio: "3/4" },
+      { src: img("globaldrive-portal", "schedule.webp"), alt: "График работы" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Другое",
+  },
+  {
+    // Своя страница (components/case/arm), карточки на главной нет: поля рассказа только ради типа.
+    slug: "arm",
+    showcase: true,
+    title: "АРМ сценариста",
+    unlisted: true,
+    summary:
+      "Рабочее место сценариста: схема экранов зала, раскладки из шаблонов и весь сценарий на ленте времени.",
+    task: "Рабочее место для подготовки сценария мероприятия.",
+    before: [],
+    beforeImage: { src: img("arm", "stage.webp"), alt: "Схема зала" },
+    solution: [],
+    gallery: [
+      { src: img("arm", "modal.webp"), alt: "Окно содержимого экрана", ratio: "3/4" },
+      { src: img("arm", "timeline.webp"), alt: "Лента времени" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Другое",
+  },
+  {
+    // Своя страница (components/case/arm-listener), карточки на главной нет: поля рассказа только ради типа.
+    slug: "arm-listener",
+    showcase: true,
+    title: "АРМ слушателя",
+    unlisted: true,
+    summary:
+      "Рабочее место участника: рассадка и планы залов, меню разделов, таймер до следующего тезиса и графики.",
+    task: "Рабочее место участника заседания.",
+    before: [],
+    beforeImage: { src: img("arm-listener", "seats.webp"), alt: "Рассадка" },
+    solution: [],
+    gallery: [
+      { src: img("arm-listener", "menu.webp"), alt: "Меню", ratio: "3/4" },
+      { src: img("arm-listener", "table-tall.webp"), alt: "План зала" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Другое",
+  },
+  {
+    // Своя страница (components/case/check-please), карточки на главной нет: поля рассказа только ради типа.
+    slug: "check-please",
+    showcase: true,
+    title: "Приложение «Чек плиз»",
+    unlisted: true,
+    summary:
+      "Приложение для заказа в кафе: на стол или самому забрать, меню, опции блюда, заказ и его статусы.",
+    task: "Приложение для заказа в кафе.",
+    before: [],
+    beforeImage: { src: img("check-please", "new.webp"), alt: "Экран «Новый заказ»" },
+    solution: [],
+    gallery: [
+      { src: img("check-please", "menu.webp"), alt: "Меню", ratio: "3/4" },
+      { src: img("check-please", "status.webp"), alt: "Статус заказа" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Приложение",
+  },
+  {
+    // Своя страница (components/case/kanban), карточки на главной нет: поля рассказа только ради типа.
+    slug: "kanban",
+    showcase: true,
+    title: "Таск-трекер Shortcut",
+    unlisted: true,
+    summary:
+      "Сервис для работы над задачами в команде: доска, таймлайн, список и страница задачи, на компьютере и на телефоне.",
+    task: "Сервис для работы над задачами в команде.",
+    before: [],
+    beforeImage: { src: img("kanban", "board.webp"), alt: "Доска задач" },
+    solution: [],
+    gallery: [
+      { src: img("kanban", "phone-board.webp"), alt: "Доска на телефоне", ratio: "3/4" },
+      { src: img("kanban", "timeline.webp"), alt: "Таймлайн" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Приложение",
   },
 ];
 

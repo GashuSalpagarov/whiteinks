@@ -1,0 +1,17 @@
+/* Слой страницы над главной (PageLayer.tsx): на весь экран, со своей прокруткой, под слоем кейса (50). */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  outline: none;
+  scrollbar-width: none;
+}
+
+.layer::-webkit-scrollbar {
+  display: none;
+}

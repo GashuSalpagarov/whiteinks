@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useLenis } from "@/app/providers";
 import { pathHandoff } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
+import { Fine } from "./Fine";
 import styles from "./Footer.module.css";
 
 // Новый круг пути. detail.from — с какого момента интро (мс) Hero продолжает: футер отдаёт
@@ -302,17 +302,7 @@ export function Footer() {
           <span />
         </span>
         <span className={styles.dot} aria-hidden="true" />
-        <p className={styles.fine}>
-          <span className={styles.docs}>
-            <Link href="/privacy" prefetch={false}>
-              политика обработки персональных данных
-            </Link>
-            <Link href="/consent" prefetch={false}>
-              согласие на обработку персональных данных
-            </Link>
-          </span>
-          <span className={styles.copy}>© 2026 White Inks</span>
-        </p>
+        <Fine />
       </div>
       {/* Доигрывание: чёрное на весь экран и круг Hero следующего круга (fixed, Footer.tsx). Между
           воздухом и чёрным: первый блок футера читает Сцена 6, последний — карта пути. */}

@@ -1,10 +1,14 @@
 /* Страница витрины анализов (DoctisAnalysis.tsx). Стили текста, поля, первый экран и общая раскладка —
    из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
    Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
-.tiles,
-.cards {
+.tiles {
   --p: clamp(420px, 44vw, 680px);
   --t: clamp(280px, 24vw, 360px);
+}
+
+.cards {
+  --p: clamp(320px, 28vw, 440px);
+  --t: clamp(220px, 20vw, 300px);
 }
 
 .search {
@@ -13,8 +17,8 @@
 }
 
 .cart {
-  --p: clamp(280px, 24vw, 360px);
-  --t: clamp(280px, 24vw, 360px);
+  --p: clamp(240px, 21vw, 320px);
+  --t: clamp(220px, 20vw, 300px);
 }
 
 .map {
@@ -28,8 +32,13 @@
 }
 
 .item {
-  --p: clamp(360px, 37.5vw, 560px);
-  --t: clamp(280px, 24vw, 360px);
+  --p: clamp(340px, 30vw, 470px);
+  --t: clamp(220px, 19vw, 290px);
+}
+
+.names {
+  --p: clamp(240px, 22vw, 340px);
+  --t: clamp(200px, 17vw, 260px);
 }
 
 .phones {
@@ -47,21 +56,12 @@
   --t: clamp(220px, 17vw, 280px);
 }
 
-/* Сдвиг от левого поля — пока рядом хватает места. */
-@media (min-width: 1280px) {
-  .cards,
-  .item {
-    margin-left: 8vw;
-  }
-}
-
 @media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
   .search,
-  .cart,
   .order,
   .phones {
     flex-direction: row-reverse;
-    margin-left: auto;
+    --side: 1;
   }
 }
 
@@ -124,6 +124,7 @@
   .tiles,
   .search,
   .cards,
+  .names,
   .details,
   .phones {
     --p: 100%;

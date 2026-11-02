@@ -65,18 +65,16 @@
 @media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
   .after,
   .wide,
-  .cards,
   .logo {
     flex-direction: row-reverse;
-    margin-left: auto;
+    --side: 1;
   }
 }
 
-/* Сдвиг от левого поля — пока рядом хватает места. */
+/* Блоки посередине оси — пока рядом хватает места. */
 @media (min-width: 1280px) {
-  .filter,
   .popular {
-    margin-left: 16vw;
+    --side: 0;
   }
 }
 

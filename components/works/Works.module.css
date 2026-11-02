@@ -66,19 +66,6 @@
 }
 
 /* ---------- шапка ---------- */
-/* Названия едут под логотипом: слева от оси верх экрана закрыт цветом страницы. Полосы не видно —
-   там всегда пусто, просто текст уходит за край ровно и не наезжает на знак. */
-.plate {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 3;
-  width: calc(var(--x) - 16px);
-  height: 72px;
-  background: var(--color-bg);
-  pointer-events: none;
-}
-
 .logo {
   position: fixed;
   top: 32px;
@@ -90,7 +77,6 @@
   line-height: 1;
   color: inherit;
   text-decoration: none;
-  view-transition-name: head-logo;
 }
 
 .cta {
@@ -98,7 +84,6 @@
   top: 26px;
   right: 76px;
   z-index: 4;
-  view-transition-name: head-cta;
   height: 36px;
   padding: 0 18px;
   border: 0;
@@ -120,7 +105,6 @@
   width: 44px;
   height: 44px;
   color: inherit;
-  view-transition-name: head-close;
 }
 
 .close::before,
@@ -251,6 +235,7 @@
 
 /* Двойная рамка, как у карточек Сцены 3. */
 .card {
+  position: relative;
   display: block;
   margin: 0;
   padding: 12px;
@@ -437,6 +422,54 @@
   grid-column: 8 / 13;
 }
 
+.r[data-i="14"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="14"] > .tx {
+  grid-column: 1 / 6;
+}
+
+.r[data-i="15"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="15"] > .tx {
+  grid-column: 8 / 13;
+}
+
+.r[data-i="16"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="16"] > .tx {
+  grid-column: 1 / 6;
+}
+
+.r[data-i="17"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="17"] > .tx {
+  grid-column: 8 / 13;
+}
+
+.r[data-i="18"] > .card {
+  grid-column: 6 / 13;
+}
+
+.r[data-i="18"] > .tx {
+  grid-column: 1 / 6;
+}
+
+.r[data-i="19"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="19"] > .tx {
+  grid-column: 8 / 13;
+}
+
 /* Уже — описание под карточкой, карточка всё так же своей ширины и со своим сдвигом. */
 @media (min-width: 768px) and (max-width: 1239px) {
   .r > * {
@@ -524,6 +557,42 @@
     grid-column: 1 / 12;
   }
 
+  .r[data-i="14"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="14"] > .tx {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="15"] > .card {
+    grid-column: 1 / 12;
+  }
+
+  .r[data-i="16"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="16"] > .tx {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="17"] > .card {
+    grid-column: 1 / 12;
+  }
+
+  .r[data-i="18"] > .card {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="18"] > .tx {
+    grid-column: 2 / 13;
+  }
+
+  .r[data-i="19"] > .card {
+    grid-column: 1 / 12;
+  }
+
 }
 
 /* ---------- конец: глава «дальше» и конверт (components/case/End) ---------- */
@@ -555,10 +624,6 @@
     --fs-name: clamp(26px, 7.4vw, 30px);
     --gap: 64px;
     --right: 20px;
-  }
-
-  .plate {
-    display: none;
   }
 
   .logo,
@@ -662,7 +727,7 @@
   }
 
   /* Письмо на всю ширину закрывает ось: линия и точка уходят в него. */
-  .finish > section:last-child {
+  .finish > section:last-of-type {
     position: relative;
     z-index: 4;
     background: var(--color-bg);

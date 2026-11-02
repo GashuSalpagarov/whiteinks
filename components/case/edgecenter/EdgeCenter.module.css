@@ -39,7 +39,7 @@
   .signin,
   .codes {
     flex-direction: row-reverse;
-    margin-left: auto;
+    --side: 1;
   }
 }
 

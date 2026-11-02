@@ -51,11 +51,11 @@
   --t: clamp(220px, 18vw, 290px);
 }
 
-/* Сдвиг от левого поля — пока рядом хватает места. */
+/* Блоки посередине оси — пока рядом хватает места. */
 @media (min-width: 1280px) {
   .form,
   .phones {
-    margin-left: 16vw;
+    --side: 0;
   }
 }
 
@@ -63,7 +63,7 @@
   .services,
   .table {
     flex-direction: row-reverse;
-    margin-left: auto;
+    --side: 1;
   }
 }
 

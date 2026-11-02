@@ -1,0 +1,86 @@
+/* Страница таск-трекера (Kanban.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и сторона --side. */
+.board,
+.list {
+  --p: clamp(400px, 44vw, 660px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.drag {
+  --side: 1;
+  --p: clamp(220px, 20vw, 300px);
+  --t: clamp(240px, 24vw, 360px);
+}
+
+.timeline {
+  --side: 1;
+  --p: clamp(400px, 44vw, 660px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.task {
+  --side: 0;
+  --p: clamp(400px, 40vw, 660px);
+  --t: clamp(240px, 24vw, 360px);
+}
+
+.space {
+  --p: clamp(260px, 29vw, 440px);
+  --t: clamp(200px, 18vw, 270px);
+}
+
+.colors {
+  --p: clamp(170px, 15vw, 230px);
+  --t: clamp(150px, 13vw, 200px);
+}
+
+.phones {
+  --p: clamp(330px, 30vw, 470px);
+  --t: clamp(180px, 15vw, 220px);
+}
+
+/* Панель низкая и широкая: текст под ней, а не сбоку. */
+.tabs {
+  --p: clamp(180px, 17vw, 260px);
+  --t: var(--p);
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 20px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .drag,
+  .timeline {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Телефон: снимки во всю ширину, карточка и цвета своей. */
+@media (max-width: 767px) {
+  .board,
+  .list,
+  .timeline,
+  .task,
+  .space,
+  .phones {
+    --p: 100%;
+  }
+
+  .tabs {
+    --p: 260px;
+  }
+
+  .drag {
+    --p: 280px;
+  }
+
+  .colors {
+    --p: 240px;
+  }
+}

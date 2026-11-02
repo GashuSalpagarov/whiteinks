@@ -2,31 +2,35 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLenis } from "@/app/providers";
-import { SKIP_EVENT } from "@/components/scenes/Hero/HeroScrollLock";
+import { finishIntro } from "@/components/scenes/Hero/HeroScrollLock";
 import { CARDS_CONTENT, cardScrollY, caseBySlug, nextCase } from "@/components/scenes/Scene3";
 import { openBrief } from "@/lib/brief";
 import {
   CASE_OPEN_EVENT,
   type CaseOpenDetail,
-  cameFrom,
   caseHref,
   caseSlugFrom,
   HOME_HREF,
-  WORKS_HREF,
 } from "@/lib/caseRoute";
 import { syncScroll, viewportH } from "@/lib/scroll/onScroll";
 import { RISE_FROM, rise } from "@/lib/scroll/rise";
 import { SITE_TITLE } from "@/lib/site";
 import { AnimalsTravel } from "./animals-travel/AnimalsTravel";
+import { Arm } from "./arm/Arm";
+import { ArmListener } from "./arm-listener/ArmListener";
 import styles from "./Case.module.css";
 import { back, type CaseActions, CaseView } from "./CaseView";
+import { CheckPlease } from "./check-please/CheckPlease";
 import { Doctis } from "./doctis/Doctis";
 import { DoctisAnalysis } from "./doctis-analysis/DoctisAnalysis";
+import { DoctisCrm } from "./doctis-crm/DoctisCrm";
 import { EdgeCenter } from "./edgecenter/EdgeCenter";
 import { EdgeConf } from "./edgeconf/EdgeConf";
 import { Globaldrive } from "./globaldrive/Globaldrive";
+import { GlobaldrivePortal } from "./globaldrive-portal/GlobaldrivePortal";
 import { Goroddorog } from "./goroddorog/Goroddorog";
 import { Imperia } from "./imperia/Imperia";
+import { Kanban } from "./kanban/Kanban";
 import { Kavkazstore } from "./kavkazstore/Kavkazstore";
 import { DUO_SHOTS } from "./memoridian/Duo";
 import { Showcase } from "./memoridian/Showcase";
@@ -58,13 +62,19 @@ type Point = ReturnType<typeof vp>;
 // Карточка Сцены 3, через которую входим и выходим, и её подпись.
 type Source = { card: HTMLElement; caption: HTMLElement | null };
 
+// Слой страницы под кейсом (components/page/PageLayer).
+const pageLayer = () => document.querySelector<HTMLElement>("[data-page-layer]");
+
 // Карточка кейса на главной и подпись с её ссылкой «Смотреть кейс →» — если карточка сейчас
 // видна (стоит в окне чтения или в сетке).
 function sourceOf(slug: string): Source | null {
-  const card = document.querySelector<HTMLElement>(`[data-case="${slug}"]`);
+  const page = pageLayer();
+  const card = (page ?? document).querySelector<HTMLElement>(`[data-case="${slug}"]`);
   const r = card?.getBoundingClientRect();
   if (!card || !r || Number.parseFloat(card.style.opacity) < 0.5) return null;
-  if (r.bottom < 0 || r.top > window.innerHeight) return null;
+  // offsetParent нет — карточка не показана (другой слой): лететь неоткуда.
+  if (!card.offsetParent || r.bottom < 0 || r.top > window.innerHeight) return null;
+  if (page) return { card, caption: null };
   const link = [...document.querySelectorAll<HTMLElement>(`a[href="${caseHref(slug)}"]`)].find(
     (a) => a !== card && !a.closest("[role=dialog]"),
   );
@@ -76,16 +86,21 @@ function sourceOf(slug: string): Source | null {
 function makeFlyer(card: HTMLElement, holder: HTMLElement) {
   const sticky = card.offsetParent as HTMLElement;
   const r = sticky.getBoundingClientRect();
+  // Карточка списка работ стоит в потоке: её место — сама её рамка.
+  const c = card.style.left ? null : card.getBoundingClientRect();
   const el = card.cloneNode(true) as HTMLElement;
   el.removeAttribute("href");
   el.removeAttribute("data-case");
+  el.removeAttribute("data-rise"); // иначе ход прокрутки кейса сбросит копии масштаб, как блоку статьи
   el.setAttribute("aria-hidden", "true");
   const box = {
-    x: r.left + Number.parseFloat(card.style.left),
-    y: r.top + Number.parseFloat(card.style.top),
+    x: c ? c.left : r.left + Number.parseFloat(card.style.left),
+    y: c ? c.top : r.top + Number.parseFloat(card.style.top),
     w: card.offsetWidth,
     h: card.offsetHeight,
   };
+  el.style.position = "absolute";
+  el.style.width = `${box.w}px`;
   el.style.left = `${box.x}px`;
   el.style.top = `${box.y}px`;
   el.style.visibility = "";
@@ -340,8 +355,16 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const inertHome = (on: boolean) => {
     const main = document.querySelector("main");
     if (main && main.inert !== on) main.inert = on;
+    const page = pageLayer();
+    if (page) page.inert = on;
   };
   const unlockHome = () => {
+    // Под кейсом список работ: главная остаётся под ним, открыт снова он.
+    const page = pageLayer();
+    if (page) {
+      page.inert = false;
+      return;
+    }
     inertHome(false);
     lenisRef.current?.start();
     delete document.documentElement.dataset.caseOpen;
@@ -563,9 +586,9 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const close = (after?: () => void) => {
     if (S.phase === "closed" || S.phase === "closing") return;
     S.after = after ?? null;
-    // Пришли со списка работ — на него же, на то же место (переход ведёт браузер, globals.css).
-    if (S.fromHome || cameFrom(WORKS_HREF)) {
-      // На запись главной, сколько бы кейсов ни прошли через «ещё проект →»: popstate → leave().
+    if (S.fromHome) {
+      // На запись главной или списка работ, сколько бы кейсов ни прошли через «ещё проект →»:
+      // popstate → leave().
       window.history.go(-(window.history.state?.depth ?? 1));
       return;
     }
@@ -575,12 +598,9 @@ export function CaseLayer({ initial }: { initial?: string }) {
 
   // Прямой заход: главную — к карточке кейса в туннеле (или к сетке), без заставки.
   const placeHome = (s: string): Source | null => {
-    for (const a of document.getAnimations()) {
-      if (a instanceof CSSAnimation && a.playState === "running") {
-        if (a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY) a.finish();
-      }
-    }
-    window.dispatchEvent(new CustomEvent(SKIP_EVENT, { detail: { in: 0 } }));
+    // Под кейсом открыт список работ: выход — в него, главная остаётся на своём месте.
+    if (pageLayer()) return sourceOf(s);
+    finishIntro();
     const i = CARDS_CONTENT.findIndex((c) => c.slug === s);
     // Кейс без карточки — собранная сетка, как у кейсов только сетки.
     window.scrollTo(0, cardScrollY(i < 0 ? CARDS_CONTENT.length : i));
@@ -604,7 +624,9 @@ export function CaseLayer({ initial }: { initial?: string }) {
     flyerRef.current?.replaceChildren();
     S.phase = "closing";
     surface();
-    document.title = SITE_TITLE;
+    document.title = pageLayer()?.dataset.title ?? SITE_TITLE;
+    // Карточки, с которой влетели, могло уже не стать: слой сменился (кейс → документ → «назад»).
+    if (S.source && !S.source.card.offsetParent) S.source = null;
     const direct = !S.source;
     // Главная всё время стояла; если её всё же сдвинули (тап по строке состояния iOS) — на место.
     if (!direct && Math.abs(window.scrollY - S.homeY) > 1) {
@@ -814,6 +836,15 @@ export function CaseLayer({ initial }: { initial?: string }) {
     return () => window.clearTimeout(t);
   }, [S]);
 
+  // Прямой заход: заставка шла бы под кейсом и держала замок прокрутки. Кадра два — на запуск её анимаций.
+  useEffect(() => {
+    if (!initial) return;
+    let id = requestAnimationFrame(() => {
+      id = requestAnimationFrame(finishIntro);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [initial]);
+
   // Lenis под кейсом стоит, даже если его запустит кто-то ещё (замок заставки HeroScrollLock).
   useEffect(() => {
     lenisRef.current = lenis;
@@ -988,6 +1019,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <StroyM c={c} act={act} full={full} />
             ) : c.slug === "kavkazstore" ? (
               <Kavkazstore c={c} act={act} full={full} />
+            ) : c.slug === "globaldrive-portal" ? (
+              <GlobaldrivePortal c={c} act={act} full={full} />
             ) : c.slug === "globaldrive" ? (
               <Globaldrive c={c} act={act} full={full} />
             ) : c.slug === "animals-travel" ? (
@@ -1000,6 +1033,16 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <EdgeConf c={c} act={act} full={full} />
             ) : c.slug === "imperia" ? (
               <Imperia c={c} act={act} full={full} />
+            ) : c.slug === "arm" ? (
+              <Arm c={c} act={act} full={full} />
+            ) : c.slug === "arm-listener" ? (
+              <ArmListener c={c} act={act} full={full} />
+            ) : c.slug === "kanban" ? (
+              <Kanban c={c} act={act} full={full} />
+            ) : c.slug === "check-please" ? (
+              <CheckPlease c={c} act={act} full={full} />
+            ) : c.slug === "doctis-crm" ? (
+              <DoctisCrm c={c} act={act} full={full} />
             ) : c.slug === "doctis-analysis" ? (
               <DoctisAnalysis c={c} act={act} full={full} />
             ) : c.slug === "doctis" ? (

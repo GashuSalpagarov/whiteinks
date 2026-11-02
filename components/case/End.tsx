@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Fine } from "@/components/scenes/Footer/Fine";
 import { CASES, type CaseData } from "@/components/scenes/Scene3/cases";
 import { Envelope } from "@/components/ui/Envelope";
 import { BRIEF_CONFIG, clearBrief, getBrief, setBrief, useBrief } from "@/lib/brief";
@@ -104,6 +105,7 @@ export function End({ c, act }: { c?: Pick<CaseData, "need">; act?: { next: () =
           )}
         </div>
       </section>
+      <Fine className={styles.fine} />
     </>
   );
 }

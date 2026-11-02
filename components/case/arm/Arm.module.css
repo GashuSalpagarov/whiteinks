@@ -1,0 +1,92 @@
+/* Страница рабочего места сценариста (Arm.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и сторона --side. */
+.stage,
+.timeline {
+  --side: 0;
+  --shift: 2vw;
+  --p: clamp(420px, 50vw, 760px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+.sources {
+  --p: clamp(190px, 17vw, 260px);
+  --t: clamp(220px, 20vw, 320px);
+}
+
+.picker {
+  --p: clamp(340px, 30vw, 480px);
+  --t: clamp(220px, 22vw, 340px);
+}
+
+.rows {
+  --p: clamp(190px, 17vw, 260px);
+  --t: clamp(190px, 16vw, 250px);
+}
+
+.actions {
+  --p: clamp(220px, 20vw, 320px);
+  --t: clamp(190px, 16vw, 250px);
+}
+
+.modal {
+  --p: clamp(190px, 18vw, 280px);
+  --t: clamp(170px, 15vw, 230px);
+}
+
+.colors {
+  --side: 1;
+  --p: clamp(220px, 18vw, 300px);
+  --t: clamp(240px, 22vw, 340px);
+}
+
+/* Окно со скруглением, как в макете: снято без фона. */
+.window {
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.window img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .colors {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .stage,
+  .timeline {
+    --p: 56vw;
+  }
+}
+
+/* Телефон: широкие снимки во всю ширину, узкие своей шириной. */
+@media (max-width: 767px) {
+  .stage,
+  .timeline,
+  .picker,
+  .actions {
+    --p: 100%;
+  }
+
+  .sources {
+    --p: 190px;
+  }
+
+  .rows {
+    --p: 240px;
+  }
+
+  .modal {
+    --p: 200px;
+  }
+
+  .colors {
+    --p: 240px;
+  }
+}

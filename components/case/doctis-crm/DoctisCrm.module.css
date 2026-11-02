@@ -1,0 +1,102 @@
+/* Страница CRM Doctis (DoctisCrm.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места. */
+.roles,
+.tasks,
+.program,
+.clinic,
+.stats,
+.heads {
+  --p: clamp(420px, 46vw, 690px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.signin {
+  --p: clamp(360px, 36vw, 540px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.labels {
+  --p: clamp(120px, 11vw, 165px);
+  --t: clamp(200px, 17vw, 270px);
+}
+
+.schedule {
+  --p: clamp(240px, 22vw, 340px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.colors {
+  --p: clamp(220px, 18vw, 300px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.kit {
+  --p: clamp(240px, 24vw, 370px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .signin,
+  .clinic,
+  .heads {
+    flex-direction: row-reverse;
+    --side: 1;
+  }
+}
+
+/* Блоки посередине оси — пока рядом хватает места. */
+@media (min-width: 1280px) {
+  .program {
+    --side: 0;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .roles,
+  .tasks,
+  .program,
+  .clinic,
+  .stats,
+  .heads {
+    --p: 58vw;
+  }
+}
+
+/* Телефон: снимки во всю ширину. */
+@media (max-width: 767px) {
+  .roles,
+  .signin,
+  .tasks,
+  .program,
+  .clinic,
+  .stats,
+  .heads {
+    --p: 100%;
+  }
+
+  .labels {
+    --p: 180px;
+  }
+
+  .schedule,
+  .kit {
+    --p: 280px;
+  }
+
+  .colors {
+    --p: 240px;
+  }
+}

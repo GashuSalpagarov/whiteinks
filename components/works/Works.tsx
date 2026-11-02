@@ -3,9 +3,8 @@
 import { type MouseEvent, useEffect, useRef } from "react";
 import { End } from "@/components/case/End";
 import { Duo } from "@/components/case/memoridian/Duo";
-import { BriefModal } from "@/components/ui/BriefModal";
 import { openBrief } from "@/lib/brief";
-import { cameFrom, caseHref, HOME_HREF } from "@/lib/caseRoute";
+import { caseHref, goPage, HOME_HREF, openCase } from "@/lib/caseRoute";
 import { RISE_FROM, rise } from "@/lib/scroll/rise";
 import styles from "./Works.module.css";
 import { WORKS, type WorkItem } from "./works.data";
@@ -16,20 +15,20 @@ import { WORKS, type WorkItem } from "./works.data";
 // верха до точки, поэтому линия растёт сама, без записи на каждый кадр. Прокрутку ведёт общий Lenis.
 // Блоки [data-rise] ниже первого экрана всплывают один раз: верх дошёл до 90% экрана.
 
-// Пришли с главной — назад на неё: то же место в сетке и без новой заставки.
-function toHome(e: MouseEvent) {
-  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-  if (!cameFrom(HOME_HREF)) return;
-  e.preventDefault();
-  window.history.back();
-}
+// Кейс открывается поверх списка: группа летит из карточки на первый экран, как с плитки главной (CaseLayer).
+const toCase = (slug: string) => (e: MouseEvent<HTMLAnchorElement>) =>
+  openCase(e, {
+    slug,
+    card: e.currentTarget.closest("section")?.querySelector<HTMLElement>("[data-case]") ?? null,
+    caption: null,
+  });
 
 function Card({ c, first }: { c: WorkItem; first: boolean }) {
   const inner = (
     <div className={styles.pv}>
       <i className={`${styles.field} no-invert`} style={{ background: c.color }} />
       {c.duo ? (
-        <Duo slug={c.slug} className={styles.duo} data-cover="" />
+        <Duo slug={c.slug} className={styles.duo} lazy={!first} />
       ) : (
         // biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть
         <img
@@ -51,6 +50,8 @@ function Card({ c, first }: { c: WorkItem; first: boolean }) {
       href={caseHref(c.slug)}
       rel="nofollow"
       aria-label={`Кейс: ${c.title}`}
+      data-case={c.slug}
+      onClick={toCase(c.slug)}
       data-rise
     >
       {inner}
@@ -91,15 +92,19 @@ export function Works() {
 
   return (
     <div ref={pageRef} className={styles.page}>
-      <div className={styles.plate} aria-hidden="true" />
-      <a className={styles.logo} href={HOME_HREF} onClick={toHome}>
+      <a className={styles.logo} href={HOME_HREF} onClick={(e) => goPage(e, null)}>
         White Inks.
       </a>
       <button type="button" className={styles.cta} onClick={(e) => openBrief(e.currentTarget)}>
         Обсудить проект
       </button>
       {/* biome-ignore lint/a11y/useAnchorContent: крестик нарисован в CSS, подпись в aria-label */}
-      <a className={styles.close} href={HOME_HREF} onClick={toHome} aria-label="На главную" />
+      <a
+        className={styles.close}
+        href={HOME_HREF}
+        onClick={(e) => goPage(e, null)}
+        aria-label="На главную"
+      />
       <div className={styles.ink} />
       <div className={styles.dot} />
 
@@ -107,7 +112,7 @@ export function Works() {
         <div className={styles.ghost} />
 
         <header className={styles.top}>
-          <a className={styles.back} href={HOME_HREF} onClick={toHome}>
+          <a className={styles.back} href={HOME_HREF} onClick={(e) => goPage(e, null)}>
             ← на главную
           </a>
           <h1 className={styles.title}>Наши работы</h1>
@@ -119,7 +124,7 @@ export function Works() {
               <p className={styles.n}>{String(i + 1).padStart(2, "0")}</p>
               <h2 className={styles.name}>
                 {c.slug ? (
-                  <a href={caseHref(c.slug)} rel="nofollow">
+                  <a href={caseHref(c.slug)} rel="nofollow" onClick={toCase(c.slug)}>
                     {c.title}
                   </a>
                 ) : (
@@ -133,7 +138,12 @@ export function Works() {
               <div className={styles.tx} data-rise data-d={90}>
                 <p className={styles.text}>{c.text}</p>
                 {c.slug && (
-                  <a className={styles.more} href={caseHref(c.slug)} rel="nofollow">
+                  <a
+                    className={styles.more}
+                    href={caseHref(c.slug)}
+                    rel="nofollow"
+                    onClick={toCase(c.slug)}
+                  >
                     Смотреть кейс <span>→</span>
                   </a>
                 )}
@@ -146,7 +156,6 @@ export function Works() {
           <End />
         </div>
       </main>
-      <BriefModal />
     </div>
   );
 }
