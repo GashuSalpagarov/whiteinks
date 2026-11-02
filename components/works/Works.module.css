@@ -50,6 +50,7 @@
   margin-left: -2px;
   background: var(--color-fg);
   pointer-events: none;
+  transform-origin: top; /* вход с плитки: линия растёт сверху (components/page/tileZoom) */
 }
 
 .dot {

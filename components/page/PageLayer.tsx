@@ -17,12 +17,14 @@ import { Consent } from "./Consent";
 import { NotFound } from "./NotFound";
 import styles from "./PageLayer.module.css";
 import { Privacy } from "./Privacy";
+import { enterList, worksTile, ZOOM, zoomTile } from "./tileZoom";
 
 // Слой страницы над главной: список работ, документы, ненайденный адрес. Сайт — одно приложение:
 // главная смонтирована и стоит (как под кейсом), адрес меняется через history.pushState, «назад» и
 // «вперёд» браузера приходят в popstate. Кейс открывается поверх этого слоя (CaseLayer) и возвращается в
 // него, на то же место: прокрутка у слоя своя. Вход и выход — затухание: только opacity, поэтому
-// закреплённые шапка и точка списка остаются на месте. Прямой заход — этот же слой с первого кадра.
+// закреплённые шапка и точка списка остаются на месте; с плитки «Все проекты» и обратно — полёт
+// (tileZoom). Прямой заход — этот же слой с первого кадра.
 
 const FADE_IN = 420;
 const FADE_OUT = 320;
@@ -44,6 +46,8 @@ export function PageLayer({ initial }: { initial?: Page }) {
     fromHome: false,
     enter: false,
     focus: null as HTMLElement | null,
+    tile: null as HTMLElement | null, // плитка, с которой влетели: на неё и вернёмся
+    flyer: null as HTMLElement | null, // копия плитки, пока список не проявился
   }).current;
 
   const show = (p: Page) => {
@@ -58,6 +62,13 @@ export function PageLayer({ initial }: { initial?: Page }) {
     if (!root) return;
     document.title = SITE_TITLE;
     if (!S.fromHome) finishIntro();
+    const tile = S.tile && worksTile();
+    S.tile = null;
+    if (tile) {
+      const f = zoomTile(tile, true);
+      const end = () => f.el.remove();
+      f.finished.then(end, end);
+    }
     root
       .animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: FADE_OUT,
@@ -71,7 +82,7 @@ export function PageLayer({ initial }: { initial?: Page }) {
   };
 
   const go = (p: Page | null) => {
-    if (p === page) return;
+    if (p === page || S.flyer) return;
     if (p) {
       if (!page) {
         S.fromHome = true;
@@ -79,7 +90,14 @@ export function PageLayer({ initial }: { initial?: Page }) {
       }
       const depth = page ? (window.history.state?.depth ?? 1) + 1 : 1;
       window.history.pushState({ whiteinksPage: p, fromHome: S.fromHome, depth }, "", pageHref(p));
-      show(p);
+      S.tile = !page && p === "works" ? worksTile() : null;
+      if (S.tile) {
+        // Сначала запускается полёт, потом тяжёлая отрисовка списка: она ему уже не мешает.
+        S.flyer = zoomTile(S.tile).el;
+        requestAnimationFrame(() => requestAnimationFrame(() => show(p)));
+      } else {
+        show(p);
+      }
     } else if (S.fromHome) {
       // На запись главной, сколько бы страниц ни прошли: popstate → hide().
       window.history.go(-(window.history.state?.depth ?? 1));
@@ -133,7 +151,23 @@ export function PageLayer({ initial }: { initial?: Page }) {
     S.enter = false;
     root.scrollTop = 0;
     root.focus({ preventScroll: true });
-    root.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE_IN, easing: "ease-out" });
+    const flyer = S.flyer;
+    const delay = flyer ? ZOOM * 0.7 : 0; // поле плитки уже закрыло экран
+    const fade = root.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: FADE_IN,
+      delay,
+      easing: "ease-out",
+      fill: "backwards",
+    });
+    if (!flyer) return;
+    enterList(root, delay);
+    root.style.pointerEvents = "none"; // второе нажатие двойного клика не должно открыть кейс
+    const end = () => {
+      flyer.remove();
+      S.flyer = null;
+      root.style.pointerEvents = "";
+    };
+    fade.finished.then(end, end);
   }, [page]);
 
   const open = !!page;
@@ -158,7 +192,7 @@ export function PageLayer({ initial }: { initial?: Page }) {
     const main = document.querySelector("main");
     const inert = window.setTimeout(() => {
       if (main) main.inert = true;
-    }, FADE_IN);
+    }, FADE_IN + ZOOM);
     const stop = (e: Event) => e.stopPropagation();
     const onKey = (e: KeyboardEvent) => e.stopPropagation();
     const onEsc = (e: KeyboardEvent) => {

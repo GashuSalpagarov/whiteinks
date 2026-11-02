@@ -100,9 +100,5 @@ export const CARDS_CONTENT: CardContent[] = [
   },
 ];
 
-// Сколько всего проектов у студии: подпись плитки «Все проекты» («24 проекта») и «+17» на ней —
-// без показанных в сетке. Заглушка — впишите настоящее число.
-export const PROJECTS_TOTAL = 24;
-
 // Ссылка плитки «Все проекты» — страница «Наши работы» (app/works, docs/13-works-page.md).
 export { WORKS_HREF } from "@/lib/caseRoute";

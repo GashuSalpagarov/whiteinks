@@ -105,13 +105,13 @@ export function Works() {
         onClick={(e) => goPage(e, null)}
         aria-label="На главную"
       />
-      <div className={styles.ink} />
-      <div className={styles.dot} />
+      <div className={styles.ink} data-line />
+      <div className={styles.dot} data-line />
 
       <main className={styles.content}>
         <div className={styles.ghost} />
 
-        <header className={styles.top}>
+        <header className={styles.top} data-rise>
           <a className={styles.back} href={HOME_HREF} onClick={(e) => goPage(e, null)}>
             ← на главную
           </a>

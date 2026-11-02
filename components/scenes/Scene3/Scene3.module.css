@@ -162,7 +162,7 @@
 }
 
 /* Плитка «Все проекты» — ссылка на последнем месте сетки: та же карточка, внутри белое поле со
-   стопкой рамок («+17» — сколько ещё) и стрелкой. Видна и ловит клики и фокус только в сетке
+   стопкой экранов кейсов и стрелкой. Видна и ловит клики и фокус только в сетке
    (visibility пишет Scene3.tsx). Размеры внутри — от ширины поля (cqw). */
 .all {
   display: block;
@@ -186,7 +186,7 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 44%;
+  width: 58%;
   aspect-ratio: 4 / 3;
   translate: -58% -42%;
 }
@@ -194,13 +194,29 @@
 .stack span {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  border: 1.5px solid var(--color-fg);
+  border-radius: 2cqw;
+  background: var(--color-bg);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.stack img {
+  display: block;
+  object-fit: cover;
+}
+
+/* Затемнение на переднем экране и число: сколько работ ещё, кроме показанных в сетке. */
+.stack i {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  border: 1.5px solid var(--color-fg);
-  background: var(--color-bg);
-  font-size: max(13px, 7cqw);
+  background: rgb(0 0 0 / 0.62);
+  color: #fff;
+  font-size: max(18px, 10cqw);
+  font-style: normal;
   letter-spacing: -0.03em;
-  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .stack span:nth-child(1) {

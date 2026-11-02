@@ -6,11 +6,12 @@ import { useLenis } from "@/app/providers";
 import { Duo } from "@/components/case/memoridian/Duo";
 import heroStyles from "@/components/scenes/Hero/Hero.module.css";
 import skipStyles from "@/components/ui/Skip.module.css";
+import { WORKS } from "@/components/works/works.data";
 import { caseHref, goPage, openCase } from "@/lib/caseRoute";
 import { phoneLayout } from "@/lib/phoneLayout";
 import { onScroll, setVar, viewportH } from "@/lib/scroll/onScroll";
 import { r3fTunnel } from "@/r3f/tunnel";
-import { CARDS_CONTENT, PROJECTS_TOTAL, WORKS_HREF } from "./cardsData";
+import { CARDS_CONTENT, WORKS_HREF } from "./cardsData";
 import styles from "./Scene3.module.css";
 import { Scene3R3F } from "./Scene3R3F";
 
@@ -22,6 +23,8 @@ const REVEAL = 0.2; // за столько поток расходится от 
 const STEP = 0.7; // отрезок одной карточки
 const FINALE = 0.5; // сборка сетки и пауза
 const N = CARDS_CONTENT.length; // кейсов всего — все в сетке
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const STACK = ["arm/duo-main", "stroy-m/slide2", "kanban/timeline"]; // плитка «Все проекты»: последний — спереди
 const TUNNEL = 5; // в туннеле — первые пять, остальные — только в сетке
 const FINALE_AT = ENTRY + STEP * TUNNEL;
 const TOTAL = FINALE_AT + FINALE;
@@ -504,21 +507,25 @@ export function Scene3() {
               </a>
             );
           })}
-          {/* Последняя плитка сетки — вход на страницу всех проектов: стопка рамок («+17» — сколько
-            ещё, без показанных в сетке) и стрелка. Видна и ловит клики только в сетке (visibility
-            пишет update). */}
+          {/* Последняя плитка сетки — вход на страницу всех проектов: стопка экранов кейсов, которых
+            нет в сетке, на передней — сколько их ещё, и стрелка. Видна и ловит клики только в сетке (visibility пишет update). */}
           <a
             ref={allRef}
             href={WORKS_HREF}
             onClick={(e) => goPage(e, "works")}
             className={`${styles.card} ${styles.all}`}
-            aria-label={`Все проекты: ${projects(PROJECTS_TOTAL)}`}
+            data-works-tile
+            aria-label={`Все проекты: ${projects(WORKS.length)}`}
           >
             <div className={`${styles.preview} ${styles.allField}`}>
               <div className={styles.stack}>
-                <span />
-                <span />
-                <span>+{PROJECTS_TOTAL - N}</span>
+                {STACK.map((file, i) => (
+                  <span key={file}>
+                    {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
+                    <img src={`${BASE}/works/${file}.webp`} alt="" decoding="async" />
+                    {i === STACK.length - 1 && <i className="no-invert">+{WORKS.length - N}</i>}
+                  </span>
+                ))}
               </div>
               <span className={styles.arrow}>→</span>
             </div>
@@ -575,7 +582,7 @@ export function Scene3() {
           ))}
           <p ref={allLabelRef} className={styles.label}>
             <span>Все проекты</span>
-            <span>{projects(PROJECTS_TOTAL)}</span>
+            <span>{projects(WORKS.length)}</span>
           </p>
         </div>
         <span ref={dropRef} className={styles.drop} aria-hidden="true" />
