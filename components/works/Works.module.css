@@ -429,6 +429,14 @@
   grid-column: 1 / 6;
 }
 
+.r[data-i="13"] > .card {
+  grid-column: 1 / 8;
+}
+
+.r[data-i="13"] > .tx {
+  grid-column: 8 / 13;
+}
+
 /* Уже — описание под карточкой, карточка всё так же своей ширины и со своим сдвигом. */
 @media (min-width: 768px) and (max-width: 1239px) {
   .r > * {
@@ -511,6 +519,11 @@
   .r[data-i="12"] > .tx {
     grid-column: 2 / 13;
   }
+
+  .r[data-i="13"] > .card {
+    grid-column: 1 / 12;
+  }
+
 }
 
 /* ---------- конец: глава «дальше» и конверт (components/case/End) ---------- */

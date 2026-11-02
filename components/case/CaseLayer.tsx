@@ -27,10 +27,12 @@ import { EdgeConf } from "./edgeconf/EdgeConf";
 import { Globaldrive } from "./globaldrive/Globaldrive";
 import { Goroddorog } from "./goroddorog/Goroddorog";
 import { Imperia } from "./imperia/Imperia";
+import { Kavkazstore } from "./kavkazstore/Kavkazstore";
 import { DUO_SHOTS } from "./memoridian/Duo";
 import { Showcase } from "./memoridian/Showcase";
 import { Picvario } from "./picvario/Picvario";
 import { Prokat } from "./prokat/Prokat";
+import { StroyM } from "./stroy-m/StroyM";
 
 // Слой кейса поверх главной (вариант D2 «Рассказ», docs/12-case-page.md). Главная под ним
 // смонтирована и стоит: прокрутку держит Lenis (stop), а html[data-case-open] ставит на паузу
@@ -982,6 +984,10 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <Prokat c={c} act={act} full={full} />
             ) : c.slug === "picvario" ? (
               <Picvario c={c} act={act} full={full} />
+            ) : c.slug === "stroy-m" ? (
+              <StroyM c={c} act={act} full={full} />
+            ) : c.slug === "kavkazstore" ? (
+              <Kavkazstore c={c} act={act} full={full} />
             ) : c.slug === "globaldrive" ? (
               <Globaldrive c={c} act={act} full={full} />
             ) : c.slug === "animals-travel" ? (

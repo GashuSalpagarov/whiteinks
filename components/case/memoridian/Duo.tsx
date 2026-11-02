@@ -39,18 +39,36 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
     unlisted: true,
   },
   goroddorog: {
-    parts: [{ file: "t-optima" }, { file: "t-ultra" }, { file: "t-brilliant" }],
+    parts: [
+      { file: "tile-mkpp", fileM: "tile-mkpp-m" },
+      { file: "tile-learn" },
+      { file: "tile-price" },
+      { file: "tile-online", fileM: "tile-online-m" },
+    ],
     unlisted: true,
   },
   edgecenter: {
     parts: [{ file: "codes" }, { file: "cdn" }, { file: "dashboard", fileM: "dashboard-m" }],
-    unlisted: true,
   },
   edgeconf: {
     parts: [
       { file: "duo-start", fileM: "duo-start-m" },
       { file: "duo-cabinet", fileM: "duo-cabinet-m" },
     ],
+    unlisted: true,
+  },
+  kavkazstore: {
+    parts: [
+      { file: "head", fileM: "m-header" },
+      { file: "card-1", fileM: "m-card-3" },
+      { file: "card-3", fileM: "m-card-2" },
+      { file: "card-knife" },
+      { file: "tile" },
+    ],
+    unlisted: true,
+  },
+  "stroy-m": {
+    parts: [{ file: "slide3" }, { file: "slide1" }, { file: "slide2" }, { file: "filter" }],
     unlisted: true,
   },
 };

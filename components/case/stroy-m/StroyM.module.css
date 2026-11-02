@@ -1,0 +1,119 @@
+/* Страница магазина «Строй-М» (StroyM.tsx). Стили текста, поля, первый экран и общая раскладка — из
+   memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места. */
+.before,
+.after,
+.catalog,
+.pages {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.tall {
+  --p: clamp(220px, 19vw, 300px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.mid {
+  --p: clamp(280px, 25vw, 400px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.wide,
+.popular {
+  --p: clamp(420px, 48vw, 720px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.icons {
+  --p: clamp(380px, 40vw, 600px);
+  --t: clamp(240px, 20vw, 320px);
+}
+
+.filter {
+  --p: clamp(150px, 12vw, 180px);
+  --t: clamp(240px, 19vw, 280px);
+}
+
+.cards {
+  --p: clamp(360px, 36vw, 540px);
+  --t: clamp(240px, 20vw, 320px);
+}
+
+.colors {
+  --p: clamp(220px, 18vw, 300px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.logo {
+  --p: clamp(240px, 22vw, 340px);
+  --t: clamp(240px, 20vw, 320px);
+}
+
+/* Знак белый: ему нужно тёмно-синее поле сайта. */
+.mark {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  background: #373366;
+}
+
+.mark.mark img {
+  width: 62%;
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .after,
+  .wide,
+  .cards,
+  .logo {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+}
+
+/* Сдвиг от левого поля — пока рядом хватает места. */
+@media (min-width: 1280px) {
+  .filter,
+  .popular {
+    margin-left: 16vw;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .before,
+  .after,
+  .catalog,
+  .pages {
+    --p: 58vw;
+  }
+}
+
+/* Телефон: снимки во всю ширину; фильтр показан верхней частью, крупнее. */
+@media (max-width: 767px) {
+  .before,
+  .after,
+  .mid,
+  .wide,
+  .icons,
+  .catalog,
+  .cards,
+  .popular,
+  .pages {
+    --p: 100%;
+  }
+
+  .tall {
+    --p: 240px;
+  }
+
+  .filter {
+    --p: 220px;
+  }
+
+  .colors,
+  .logo {
+    --p: 240px;
+  }
+}

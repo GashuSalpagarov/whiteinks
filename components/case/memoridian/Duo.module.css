@@ -405,39 +405,168 @@
   }
 }
 
-/* Город Дорог: три карточки тарифов лестницей, от меньшего к большему. */
+/* Город Дорог: фотобаннеры кладкой — широкая и узкая плитка, в следующем ряду наоборот. */
 .duo[data-duo="goroddorog"] > [data-p] {
-  width: 31.6%;
-  height: 74%;
+  width: 34%;
+  height: 49%;
 }
 
 .duo[data-duo="goroddorog"] > [data-p="0"] {
   top: 0;
   left: 0;
+  width: 64%;
 }
 
 .duo[data-duo="goroddorog"] > [data-p="1"] {
-  top: 13%;
-  left: 34.2%;
+  top: 0;
+  left: 66%;
 }
 
 .duo[data-duo="goroddorog"] > [data-p="2"] {
-  top: 26%;
-  left: 68.4%;
+  top: 51%;
+  left: 0;
+}
+
+.duo[data-duo="goroddorog"] > [data-p="3"] {
+  top: 51%;
+  left: 36%;
+  width: 64%;
 }
 
 @media (max-width: 767px) {
   .duo[data-duo="goroddorog"] > [data-p] {
-    width: 48%;
-    height: 79.9%;
+    width: 49%;
+  }
+
+  .duo[data-duo="goroddorog"] > [data-p="0"] {
+    width: 49%;
   }
 
   .duo[data-duo="goroddorog"] > [data-p="1"] {
-    top: 20.1%;
-    left: 52%;
+    left: 51%;
   }
 
-  .duo[data-duo="goroddorog"] > [data-p="2"] {
+  .duo[data-duo="goroddorog"] > [data-p="3"] {
+    left: 51%;
+    width: 49%;
+  }
+}
+
+/* «Строй-М»: мозаика баннеров разного цвета, сбоку на всю высоту умный фильтр. */
+.duo[data-duo="stroy-m"] > [data-p="0"] {
+  top: 58.5%;
+  left: 0;
+  width: 77.6%;
+  height: 41.5%;
+}
+
+.duo[data-duo="stroy-m"] > [data-p="1"] {
+  top: 0;
+  left: 0;
+  width: 29.7%;
+  height: 56.5%;
+}
+
+.duo[data-duo="stroy-m"] > [data-p="2"] {
+  top: 0;
+  left: 31.25%;
+  width: 46.35%;
+  height: 56.5%;
+}
+
+.duo[data-duo="stroy-m"] > [data-p="3"] {
+  top: 0;
+  left: 79.2%;
+  width: 20.8%;
+  height: 100%;
+}
+
+.duo[data-duo="stroy-m"] > [data-p="0"] img {
+  object-position: 50% 50%;
+}
+
+@media (max-width: 767px) {
+  .duo[data-duo="stroy-m"] > [data-p="0"] {
+    top: 6.3%;
+    width: 100%;
+    height: 37.6%;
+  }
+
+  .duo[data-duo="stroy-m"] > [data-p="1"] {
+    top: 46.3%;
+    width: 39.1%;
+    height: 47.4%;
+  }
+
+  .duo[data-duo="stroy-m"] > [data-p="2"] {
+    top: 46.3%;
+    left: 41.4%;
+    width: 58.6%;
+    height: 47.4%;
+  }
+
+  .duo[data-duo="stroy-m"] > [data-p="3"] {
+    display: none;
+  }
+}
+
+/* «Кавказские умельцы»: страница магазина мозаикой — шапка на всю ширину, под ней большая и две малые
+   карточки товара и плитка раздела. Доли подобраны под пропорции снимков: ничего не обрезается. */
+.duo[data-duo="kavkazstore"] > [data-p="0"] {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 27.6%;
+}
+
+.duo[data-duo="kavkazstore"] > [data-p="1"] {
+  top: 29.8%;
+  left: 0;
+  width: 50%;
+  height: 70.2%;
+}
+
+.duo[data-duo="kavkazstore"] > [data-p="2"],
+.duo[data-duo="kavkazstore"] > [data-p="3"] {
+  top: 29.8%;
+  width: 23.36%;
+  height: 32.8%;
+}
+
+.duo[data-duo="kavkazstore"] > [data-p="2"] {
+  left: 52%;
+}
+
+.duo[data-duo="kavkazstore"] > [data-p="3"] {
+  left: 76.64%;
+}
+
+.duo[data-duo="kavkazstore"] > [data-p="4"] {
+  top: 64.5%;
+  left: 52%;
+  width: 48%;
+  height: 35.5%;
+}
+
+/* Телефон: шапка и две настоящие карточки мобильной витрины с количеством и кнопкой. */
+@media (max-width: 767px) {
+  .duo[data-duo="kavkazstore"] > [data-p="0"] {
+    height: 17.4%;
+  }
+
+  .duo[data-duo="kavkazstore"] > [data-p="1"],
+  .duo[data-duo="kavkazstore"] > [data-p="2"] {
+    top: 19.5%;
+    width: 49%;
+    height: 80.5%;
+  }
+
+  .duo[data-duo="kavkazstore"] > [data-p="2"] {
+    left: 51%;
+  }
+
+  .duo[data-duo="kavkazstore"] > [data-p="3"],
+  .duo[data-duo="kavkazstore"] > [data-p="4"] {
     display: none;
   }
 }

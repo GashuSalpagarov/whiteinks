@@ -1,0 +1,118 @@
+/* Страница магазина «Кавказские умельцы» (Kavkazstore.tsx). Стили текста, поля, первый экран и общая
+   раскладка — из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и
+   их места. Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.head {
+  --p: clamp(460px, 56vw, 920px);
+  --t: clamp(260px, 24vw, 380px);
+}
+
+.showcase {
+  --p: clamp(400px, 42vw, 640px);
+  --t: clamp(260px, 25vw, 400px);
+}
+
+.tiles {
+  --p: clamp(440px, 52vw, 860px);
+  --t: clamp(260px, 25vw, 400px);
+}
+
+.filters {
+  --p: clamp(160px, 14vw, 210px);
+  --t: clamp(220px, 19vw, 300px);
+}
+
+.views {
+  --p: clamp(320px, 30vw, 470px);
+  --t: clamp(220px, 19vw, 300px);
+}
+
+.product {
+  --p: clamp(400px, 44vw, 660px);
+  --t: clamp(260px, 25vw, 400px);
+}
+
+.phones {
+  --p: clamp(320px, 28vw, 440px);
+  --t: clamp(300px, 26vw, 400px);
+}
+
+.colors {
+  --p: clamp(240px, 19.5vw, 320px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+.kit {
+  --p: clamp(340px, 30.5vw, 480px);
+  --t: clamp(220px, 18vw, 290px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .showcase,
+  .product {
+    flex-direction: row-reverse;
+    margin-left: auto;
+  }
+
+  .tiles,
+  .phones {
+    margin-left: 16vw;
+  }
+}
+
+/* Фильтров намного больше, чем нужно показать: видна верхняя часть колонки. */
+.crop img {
+  aspect-ratio: 236 / 560;
+  object-fit: cover;
+  object-position: 0 0;
+}
+
+/* Два вида списка столбиком, у каждого верх страницы. */
+.stack {
+  display: grid;
+  gap: clamp(12px, 1.2vw, 20px);
+}
+
+.stack img {
+  aspect-ratio: 980 / 360;
+  object-fit: cover;
+  object-position: 0 0;
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13% / 6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5% / 5.3%;
+}
+
+/* Телефон: снимки во всю ширину, высокие — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .head,
+  .showcase,
+  .tiles,
+  .views,
+  .product,
+  .kit,
+  .colors {
+    --p: 100%;
+  }
+
+  .phones {
+    --p: 300px;
+  }
+
+  .filters {
+    --p: 170px;
+  }
+}

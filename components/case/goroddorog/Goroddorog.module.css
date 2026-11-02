@@ -1,22 +1,33 @@
 /* Страница автошколы (Goroddorog.tsx). Стили текста, поля, первый экран и общая раскладка — из
    memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и их места.
-   Положения те же три: левое поле, сдвиг 16vw, правое поле. */
+   Положения те же три: левое поле, сдвиг 16vw, правое поле. Снимки с малой шириной не растянуты:
+   у каждого потолок --p не больше самого файла. */
 .steps,
 .table {
   --p: clamp(460px, 56vw, 960px);
   --t: clamp(260px, 24vw, 400px);
 }
 
-.classes,
-.args,
+.programs,
 .gift {
-  --p: clamp(440px, 52vw, 880px);
+  --p: clamp(440px, 52vw, 776px);
   --t: clamp(260px, 24vw, 400px);
 }
 
-.cert {
-  --p: clamp(380px, 33vw, 540px);
-  --t: clamp(300px, 26vw, 400px);
+.classes,
+.branch {
+  --p: clamp(420px, 44vw, 720px);
+  --t: clamp(280px, 26vw, 400px);
+}
+
+.road {
+  --p: clamp(360px, 33vw, 478px);
+  --t: clamp(280px, 26vw, 400px);
+}
+
+.fleet {
+  --p: clamp(220px, 20vw, 328px);
+  --t: clamp(280px, 26vw, 400px);
 }
 
 .phones {
@@ -24,9 +35,11 @@
   --t: clamp(300px, 26vw, 400px);
 }
 
-.tariff {
-  --p: clamp(200px, 18vw, 300px);
-  --t: clamp(220px, 19vw, 340px);
+.icons,
+.schedule,
+.metro {
+  --p: clamp(260px, 25vw, 392px);
+  --t: clamp(220px, 19vw, 320px);
 }
 
 .colors {
@@ -35,14 +48,16 @@
 }
 
 @media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
-  .table,
-  .args,
-  .cert {
+  .classes,
+  .fleet,
+  .steps,
+  .gift {
     flex-direction: row-reverse;
     margin-left: auto;
   }
 
-  .classes,
+  .branch,
+  .road,
   .phones {
     margin-left: 16vw;
   }
@@ -69,8 +84,16 @@
 /* Телефон: снимки во всю ширину, высокие — уже, чтобы блок не занимал больше экрана. */
 @media (max-width: 767px) {
   .steps,
-  .cert {
+  .branch,
+  .road,
+  .metro,
+  .icons,
+  .schedule {
     --p: 100%;
+  }
+
+  .programs {
+    --p: 310px;
   }
 
   .table,
@@ -82,15 +105,14 @@
     --p: 310px;
   }
 
-  .args {
-    --p: 270px;
+  .fleet {
+    --p: 240px;
   }
 
   .gift {
     --p: 236px;
   }
 
-  .tariff,
   .colors {
     --p: 240px;
   }
