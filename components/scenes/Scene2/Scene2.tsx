@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { LOOP_EVENT } from "@/components/scenes/Footer";
+import { goPage, type Page, pageHref } from "@/lib/caseRoute";
 import { phoneLayout } from "@/lib/phoneLayout";
 import { onScroll, setVar, syncScroll, viewportH } from "@/lib/scroll/onScroll";
 import heroStyles from "../Hero/Hero.module.css";
@@ -172,6 +173,19 @@ const BLOCKS: Block[] = [
     side: "left",
   },
 ];
+
+// Метка, у которой есть своя страница, — ссылка на неё: выглядит как остальные метки.
+const TAG_PAGES: Record<string, Page> = {
+  Лендинги: "services/landing",
+  Корпоративные: "services/corporate",
+  "1С и CRM": "services/integrations",
+  "Telegram Mini App": "services/telegram-mini-app",
+  "ИИ-боты": "services/ai",
+  Интеграции: "services/integrations",
+  "CRM и 1С": "services/integrations",
+  Поддержка: "services/support",
+  SEO: "services/seo",
+};
 
 // Сдвиг точки (vw): косинусный переход между опорными точками — производная = 0 в каждой,
 // колено к колену без излома.
@@ -542,9 +556,20 @@ export function Scene2() {
           <h2>{block.title}</h2>
           <p>{block.body}</p>
           <ul className={styles.tags}>
-            {block.tags.map((tag) => (
-              <li key={tag}>{tag}</li>
-            ))}
+            {block.tags.map((tag) => {
+              const page = TAG_PAGES[tag];
+              return (
+                <li key={tag}>
+                  {page ? (
+                    <a href={pageHref(page)} rel="nofollow" onClick={(e) => goPage(e, page)}>
+                      {tag}
+                    </a>
+                  ) : (
+                    tag
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </aside>
       ))}

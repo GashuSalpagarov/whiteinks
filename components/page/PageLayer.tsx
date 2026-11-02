@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLenis } from "@/app/providers";
 import { finishIntro } from "@/components/scenes/Hero/HeroScrollLock";
+import { Service } from "@/components/service";
 import { Works } from "@/components/works";
 import {
   caseSlugFrom,
@@ -12,6 +13,7 @@ import {
   pageFrom,
   pageHref,
 } from "@/lib/caseRoute";
+import { SERVICES, serviceTitle } from "@/lib/services";
 import { SITE_NAME, SITE_TITLE } from "@/lib/site";
 import { Consent } from "./Consent";
 import { NotFound } from "./NotFound";
@@ -19,7 +21,7 @@ import styles from "./PageLayer.module.css";
 import { Privacy } from "./Privacy";
 import { enterList, worksTile, ZOOM, zoomTile } from "./tileZoom";
 
-// Слой страницы над главной: список работ, документы, ненайденный адрес. Сайт — одно приложение:
+// Слой страницы над главной: список работ, услуги, документы, ненайденный адрес. Сайт — одно приложение:
 // главная смонтирована и стоит (как под кейсом), адрес меняется через history.pushState, «назад» и
 // «вперёд» браузера приходят в popstate. Кейс открывается поверх этого слоя (CaseLayer) и возвращается в
 // него, на то же место: прокрутка у слоя своя. Вход и выход — затухание: только opacity, поэтому
@@ -28,11 +30,12 @@ import { enterList, worksTile, ZOOM, zoomTile } from "./tileZoom";
 
 const FADE_IN = 420;
 const FADE_OUT = 320;
-const TITLES: Record<Page, string> = {
+const TITLES: Record<string, string> = {
   works: `Наши работы — ${SITE_NAME}`,
   privacy: `Политика обработки персональных данных — ${SITE_NAME}`,
   consent: `Согласие на обработку персональных данных — ${SITE_NAME}`,
   notfound: `Страница не найдена — ${SITE_NAME}`,
+  ...Object.fromEntries(SERVICES.map((s) => [`services/${s.slug}`, serviceTitle(s)])),
 };
 
 export function PageLayer({ initial }: { initial?: Page }) {
@@ -194,10 +197,14 @@ export function PageLayer({ initial }: { initial?: Page }) {
       if (main) main.inert = true;
     }, FADE_IN + ZOOM);
     const stop = (e: Event) => e.stopPropagation();
-    const onKey = (e: KeyboardEvent) => e.stopPropagation();
     const onEsc = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || "brief" in html.dataset) return;
       if (!document.querySelector('[aria-labelledby="case-title"]')) fn.current.go(null);
+    };
+    // Фокус в слое: до window клавиша не дойдёт, Esc — здесь.
+    const onKey = (e: KeyboardEvent) => {
+      e.stopPropagation();
+      onEsc(e);
     };
     root.addEventListener("wheel", stop, { passive: true });
     root.addEventListener("touchmove", stop, { passive: true });
@@ -231,6 +238,8 @@ export function PageLayer({ initial }: { initial?: Page }) {
     >
       {page === "works" ? (
         <Works />
+      ) : page.startsWith("services/") ? (
+        <Service key={page} slug={page.slice("services/".length)} />
       ) : page === "privacy" ? (
         <Privacy />
       ) : page === "consent" ? (

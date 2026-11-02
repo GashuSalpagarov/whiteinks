@@ -1,1 +1,1 @@
-export { Scene5 } from "./Scene5";
+export { BRIEF, Scene5, TILES } from "./Scene5";

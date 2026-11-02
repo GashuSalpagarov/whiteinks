@@ -5,7 +5,7 @@ import { End } from "@/components/case/End";
 import { Duo } from "@/components/case/memoridian/Duo";
 import { openBrief } from "@/lib/brief";
 import { caseHref, goPage, HOME_HREF, openCase } from "@/lib/caseRoute";
-import { RISE_FROM, rise } from "@/lib/scroll/rise";
+import { riseIn } from "@/lib/scroll/rise";
 import styles from "./Works.module.css";
 import { WORKS, type WorkItem } from "./works.data";
 
@@ -66,29 +66,7 @@ function Card({ c, first }: { c: WorkItem; first: boolean }) {
 export function Works() {
   const pageRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const { isIntersecting, target } of entries) {
-          if (!isIntersecting) continue;
-          io.unobserve(target);
-          const el = target as HTMLElement;
-          el.style.opacity = "";
-          el.style.transform = "";
-          rise(el, Number(el.dataset.d) || 0);
-        }
-      },
-      { rootMargin: "0px 0px -10% 0px" },
-    );
-    for (const el of pageRef.current?.querySelectorAll<HTMLElement>("[data-rise]") ?? []) {
-      if (el.getBoundingClientRect().top < window.innerHeight * 0.9) continue;
-      el.style.opacity = "0";
-      el.style.transform = RISE_FROM;
-      io.observe(el);
-    }
-    return () => io.disconnect();
-  }, []);
+  useEffect(() => (pageRef.current ? riseIn(pageRef.current) : undefined), []);
 
   return (
     <div ref={pageRef} className={styles.page}>

@@ -19,7 +19,7 @@ type Piece = { from: [number, number]; at: [number, number]; turn?: number };
 type Tile = { color: string; box: [number, number]; art: Piece[] };
 
 // Клетка → пилюля «что нужно» в окне заявки; уточнение уходит в заявку: «Сайт — лендинг».
-const BRIEF: Record<TypeId, BriefPreset> = {
+export const BRIEF: Record<TypeId, BriefPreset> = {
   landing: { need: "Сайт", detail: "лендинг" },
   builder: { need: "Сайт", detail: "шаблонное решение" },
   corp: { need: "Сайт", detail: "корпоративный" },
@@ -33,7 +33,7 @@ const BRIEF: Record<TypeId, BriefPreset> = {
   seo: { need: "Другое", other: "SEO и продвижение" },
 };
 
-const TILES: Record<TypeId, Tile> = {
+export const TILES: Record<TypeId, Tile> = {
   landing: {
     color: "#f4ebc3",
     box: [112, 88],
@@ -124,16 +124,10 @@ const TILES: Record<TypeId, Tile> = {
   },
 };
 
-// Тихая строка под мозаикой, двумя половинами по сторонам линии пути: слева условия работы, справа
-// оговорка о ценах — по ст. 437 ГК цены на сайте не публичная оферта. В пункте условий —
-// неразрывные пробелы: пункт не рвётся, перенос — только после «·». ЗАГЛУШКИ владельца: «3 месяца»
-// гарантии и проценты оплаты по этапам (пока не названы — допишутся к пункту).
-const TERMS = [
-  ["Договор", "оплата по этапам", "код и права — ваши", "гарантия 3 месяца", "NDA по запросу"]
-    .map((t) => t.replaceAll(" ", "\u00a0"))
-    .join("\u00a0· "),
-  "цены\u00a0— ориентир, не\u00a0публичная\u00a0оферта; стоимость\u00a0и\u00a0срок\u00a0— в\u00a0договоре",
-];
+// Тихая строка под мозаикой, справа от линии пути: оговорка о ценах — по ст. 437 ГК цены на сайте
+// не публичная оферта.
+const TERMS =
+  "цены\u00a0— ориентир, не\u00a0публичная\u00a0оферта; стоимость\u00a0и\u00a0срок\u00a0— в\u00a0договоре";
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
@@ -433,9 +427,7 @@ export function Scene5() {
           })}
         </ul>
         <p ref={termsRef} className={styles.terms}>
-          {TERMS.map((t) => (
-            <span key={t}>{t}</span>
-          ))}
+          <span>{TERMS}</span>
         </p>
       </div>
     </section>

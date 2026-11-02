@@ -59,7 +59,12 @@ export type EnvelopeParts = {
   fields: HTMLDivElement[]; // телефон, имя, «что нужно» — всплывают по одному
 };
 
-export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) {
+// showDetail — на выбранной пилюле и уточнение: «Сайт · лендинг» (страница услуги, как окно заявки).
+export function Envelope(p: {
+  ref?: Ref<EnvelopeParts>;
+  onShift?: () => void;
+  showDetail?: boolean;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const envRef = useRef<HTMLFormElement>(null);
   const outlineRef = useRef<SVGSVGElement>(null);
@@ -378,7 +383,9 @@ export function Envelope(p: { ref?: Ref<EnvelopeParts>; onShift?: () => void }) 
                         else if (v === OTHER && e.detail > 0) focusOther.current = true;
                       }}
                     />
-                    <span>{v}</span>
+                    <span>
+                      {p.showDetail && need === v && brief.detail ? `${v} · ${brief.detail}` : v}
+                    </span>
                   </label>
                 ))}
               </div>

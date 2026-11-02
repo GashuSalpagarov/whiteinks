@@ -281,11 +281,14 @@ function phone(W: number, top: number, title: number, { phone: p }: Layout): Rec
 
 export function HeroSlides({
   hero,
+  plain,
   children,
 }: {
   hero: RefObject<HTMLElement | null>;
+  plain?: boolean; // на адресе слоя главный заголовок у него: строка здесь — не h1
   children: ReactNode;
 }) {
+  const Heading = plain ? "p" : "h1";
   const h1Ref = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const leadRef = useRef<HTMLParagraphElement>(null);
@@ -464,9 +467,9 @@ export function HeroSlides({
 
       {/* Заголовок страницы — один и тот же на всех слайдах. Буквы слайдов ниже — анимация: вне
           h1, иначе робот читает их слитно («СоздаёмСоздаём…»). */}
-      <h1 ref={headingRef} className={styles.heading}>
+      <Heading ref={headingRef} className={styles.heading}>
         {SITE_H1}
-      </h1>
+      </Heading>
       <div ref={h1Ref} className={styles.title} data-nosnippet>
         <span className={styles.srOnly}>{SLIDES[slide].title.join(" ")}</span>
         {ROWS.map((row, r) => (

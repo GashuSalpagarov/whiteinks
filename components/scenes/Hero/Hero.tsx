@@ -51,7 +51,7 @@ function buildFallPath(w: number, h: number): string {
 const INTRO_MS = 4500; // заставка целиком, как в HeroScrollLock
 const SKIP_MS = 650; // «пропустить» доигрывает её за столько
 
-export function Hero() {
+export function Hero({ plain }: { plain?: boolean }) {
   const heroRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const skipRef = useRef<HTMLButtonElement>(null);
@@ -154,7 +154,7 @@ export function Hero() {
         />
 
         {/* Заголовок, подводка, картинки и индикатор слайдов — HeroSlides.tsx, тексты — slides.ts. */}
-        <HeroSlides hero={heroRef}>
+        <HeroSlides hero={heroRef} plain={plain}>
           {/* «Связаться» и «Обсудить проект» открывают окно заявки (components/ui/BriefModal). */}
           <button type="button" className={styles.cta} onClick={(e) => openBrief(e.currentTarget)}>
             Связаться
