@@ -1,8 +1,6 @@
 // Сцена 4 «Веер»: этапы работы и раскладка прокрутки по ним. Единственное место, где прогресс
 // секции превращается в «что сейчас происходит» — для веера карточек, чек-листа, подписей и капли.
 
-import { formatWeeks, TYPES } from "@/lib/pricing";
-
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const art = (name: string) => `${BASE}/assets/stages/${name}.svg`;
 
@@ -13,7 +11,7 @@ export const STEPS = [
     word: "Бриф",
     does: "Созвон, разбираем задачу, цели и ограничения",
     gets: "Бриф на 2 страницы и смета",
-    term: "3–5 дней",
+    term: "1–2 дня",
     image: art("1-brief"),
     color: "#f4ebc3",
   },
@@ -21,7 +19,7 @@ export const STEPS = [
     word: "Стратегия",
     does: "Изучаем рынок, конкурентов и аудиторию",
     gets: "Структура сайта и план работ",
-    term: "1–2 недели",
+    term: "2–3 дня",
     image: art("2-strategy"),
     color: "#d3ebdd",
   },
@@ -29,7 +27,7 @@ export const STEPS = [
     word: "Дизайн",
     does: "Макеты ключевых страниц и анимаций",
     gets: "Макеты в Figma, два круга правок",
-    term: "2–3 недели",
+    term: "1–2 недели",
     image: art("3-design"),
     color: "#dddaf5",
   },
@@ -37,7 +35,7 @@ export const STEPS = [
     word: "Разработка",
     does: "Вёрстка, анимации, CMS, проверка на устройствах",
     gets: "Рабочий сайт на тестовом адресе",
-    term: "3–5 недель",
+    term: "1–2 недели",
     image: art("4-dev"),
     color: "#f7dccb",
   },
@@ -45,15 +43,14 @@ export const STEPS = [
     word: "Запуск",
     does: "Перенос на домен, аналитика, SEO-база",
     gets: "Живой сайт, обучение и поддержка",
-    term: "1 неделя",
+    term: "1–2 дня",
     image: art("5-launch"),
     color: "#d3ebdd",
   },
 ];
 export const N = STEPS.length;
 
-const corp = TYPES.find((t) => t.id === "corp") ?? TYPES[0];
-export const TOTAL_TERM = corp.weeks ? formatWeeks(...corp.weeks) : "";
+export const TOTAL_TERM = "3–5 недель";
 
 // Раскладка прокрутки, в экранах: s = 0 — секция вошла снизу (Сцена 3 отпускает свой sticky,
 // и её сетка уезжает вверх со страницей), s = 1 — сцена встала на место. Пока она въезжает,

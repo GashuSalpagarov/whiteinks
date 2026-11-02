@@ -1,5 +1,5 @@
-// Прайс Сцены 5 — цены «от» по типам работ; срок «Корпоративного» берёт и Сцена 4.
-// Цены выставил владелец студии, сроки пока черновые. Деньги — в тыс. ₽, сроки — в неделях.
+// Прайс Сцены 5 — цены и сроки «от» по типам работ. Срок «Корпоративного» сходится с этапами
+// Сцены 4 (stages.ts). Цены выставил владелец студии. Деньги — в тыс. ₽.
 
 export type TypeId =
   | "landing"
@@ -14,8 +14,8 @@ export type TypeId =
   | "support"
   | "seo";
 
-// from — цена «от», weeks — срок среднего размера. Помесячные услуги — без срока: from у них —
-// цена в месяц.
+// from — цена «от», term — минимальный срок. Помесячные услуги — без срока: from у них — цена в
+// месяц.
 // includes — что входит: ЗАГЛУШКИ, тексты выставит владелец. short — то же одной короткой
 // строкой (каталог на телефоне), только слова из includes.
 export const TYPES: {
@@ -24,7 +24,7 @@ export const TYPES: {
   includes: string;
   short: string;
   from: number;
-  weeks?: [number, number];
+  term?: string;
 }[] = [
   {
     id: "landing",
@@ -32,7 +32,7 @@ export const TYPES: {
     includes: "Дизайн и вёрстка, адаптив, формы заявок, аналитика",
     short: "Дизайн и вёрстка",
     from: 50,
-    weeks: [4, 6],
+    term: "от 1 недели",
   },
   {
     id: "builder",
@@ -40,7 +40,7 @@ export const TYPES: {
     includes: "Шаблон на Tilda или Webflow и обучение — дальше правите сами",
     short: "Tilda или Webflow",
     from: 30,
-    weeks: [1, 2],
+    term: "от 3 дней",
   },
   {
     id: "corp",
@@ -48,7 +48,7 @@ export const TYPES: {
     includes: "Структура, дизайн и разработка: услуги, кейсы, команда",
     short: "Услуги и кейсы",
     from: 150,
-    weeks: [8, 12],
+    term: "от 3 недель",
   },
   {
     id: "shop",
@@ -56,7 +56,7 @@ export const TYPES: {
     includes: "Каталог, корзина, оплата и доставка",
     short: "Каталог и оплата",
     from: 200,
-    weeks: [10, 16],
+    term: "от 4 недель",
   },
   {
     id: "integr",
@@ -64,7 +64,7 @@ export const TYPES: {
     includes: "Обмен данными с сайтом: заказы, остатки, клиенты и заявки",
     short: "Обмен данными",
     from: 30,
-    weeks: [2, 4],
+    term: "от 1 недели",
   },
   {
     id: "unique",
@@ -72,7 +72,7 @@ export const TYPES: {
     includes: "Портал или личный кабинет: от прототипа до запуска",
     short: "Портал или кабинет",
     from: 350,
-    weeks: [16, 24],
+    term: "от 6 недель",
   },
   {
     id: "ai",
@@ -80,7 +80,7 @@ export const TYPES: {
     includes: "Чат-бот на нейросети и автоматизация рутинных задач",
     short: "Чат-бот на нейросети",
     from: 150,
-    weeks: [4, 8],
+    term: "от 2 недель",
   },
   {
     id: "app",
@@ -88,7 +88,7 @@ export const TYPES: {
     includes: "iOS и Android: от прототипа до публикации в сторах",
     short: "iOS и Android",
     from: 450,
-    weeks: [11, 16],
+    term: "от 8 недель",
   },
   {
     id: "tma",
@@ -96,7 +96,7 @@ export const TYPES: {
     includes: "Магазин, запись или сервис прямо в Telegram",
     short: "Магазин или запись",
     from: 120,
-    weeks: [5, 8],
+    term: "от 2 недель",
   },
   {
     id: "support",
@@ -121,24 +121,4 @@ const mln = (v: number) => String(Math.round(v / 10) / 100).replace(".", ",");
 // Нижняя граница одной строкой: «от 700 тыс. ₽», «от 1,3 млн ₽».
 export function formatFrom(v: number): string {
   return `от ${v < 1000 ? `${v}${NB}тыс.` : `${mln(v)}${NB}млн`}${NB}₽`;
-}
-
-function weeksWord(n: number): string {
-  const d = n % 10;
-  const dd = n % 100;
-  if (d === 1 && dd !== 11) return "неделя";
-  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return "недели";
-  return "недель";
-}
-
-export function formatWeeks(lo: number, hi: number): string {
-  return `${lo}–${hi}${NB}${weeksWord(hi)}`;
-}
-
-// Срок компактного размера (−20 % к среднему): растёт медленнее цены, как √k, — «от 4 недель».
-const SMALL = 0.8;
-
-export function fromWeeks([lo]: [number, number]): string {
-  const w = Math.round(lo * Math.sqrt(SMALL));
-  return `от ${w}${NB}${w % 10 === 1 && w % 100 !== 11 ? "недели" : "недель"}`;
 }

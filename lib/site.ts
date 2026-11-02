@@ -33,7 +33,7 @@ export const JSON_LD = {
       makesOffer: TYPES.map((t) => ({
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: t.title, description: t.includes },
-        priceSpecification: t.weeks
+        priceSpecification: t.term
           ? {
               "@type": "PriceSpecification",
               minPrice: t.from * 1000,

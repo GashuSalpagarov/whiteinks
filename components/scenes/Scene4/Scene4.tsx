@@ -223,7 +223,7 @@ export function Scene4() {
         const x0 = Math.round(TALL_LIST + (map?.offsetWidth ?? 0) * TALL_BIG + 14);
         for (const c of caps) place(c, x0, yb1 - 4, w - 20 - x0);
         const capBottom = yb1 - 4 + Math.max(...caps.map((c) => c?.offsetHeight ?? 0));
-        // Итог «Пять этапов · обычно 8–12 недель» — в конце дороги: справа от точки, где она
+        // Итог «Пять этапов · обычно 3–5 недель» — в конце дороги: справа от точки, где она
         // уходит в Сцену 5, под подписью этапа.
         const lx = Math.max(x0, Math.round(dx + 16));
         place(head, lx, 0, w - 20 - lx);

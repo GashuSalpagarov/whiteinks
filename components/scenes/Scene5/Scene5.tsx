@@ -4,7 +4,7 @@ import { type CSSProperties, useEffect, useRef } from "react";
 import { ART } from "@/components/scenes/Scene2";
 import { type BriefPreset, openBrief } from "@/lib/brief";
 import { phoneLayout } from "@/lib/phoneLayout";
-import { formatFrom, fromWeeks, TYPES, type TypeId } from "@/lib/pricing";
+import { formatFrom, TYPES, type TypeId } from "@/lib/pricing";
 import { phoneHold } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Scene5.module.css";
@@ -415,7 +415,7 @@ export function Scene5() {
                 </p>
                 {/* Помесячные (без срока) — под ценой «в месяц». */}
                 <p className={styles.price}>{formatFrom(t.from)}</p>
-                <p className={styles.term}>{t.weeks ? fromWeeks(t.weeks) : "в месяц"}</p>
+                <p className={styles.term}>{t.term ?? "в месяц"}</p>
                 {/* Вся клетка — кнопка: окно заявки с этим типом (растёт из точки нажатия). */}
                 <button
                   type="button"
