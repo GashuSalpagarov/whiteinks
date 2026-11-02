@@ -1,4 +1,4 @@
-import { fromBase, TYPES } from "@/lib/pricing";
+import { TYPES } from "@/lib/pricing";
 
 // Адрес сайта для canonical, Open Graph, sitemap и микроразметки — без слеша в конце.
 // SITE_ORIGIN — metadataBase: путь /whiteinks к файлам-картинкам Next добавляет сам (basePath).
@@ -36,12 +36,12 @@ export const JSON_LD = {
         priceSpecification: t.weeks
           ? {
               "@type": "PriceSpecification",
-              minPrice: fromBase(t.base) * 1000,
+              minPrice: t.from * 1000,
               priceCurrency: "RUB",
             }
           : {
               "@type": "UnitPriceSpecification",
-              minPrice: t.base * 1000,
+              minPrice: t.from * 1000,
               priceCurrency: "RUB",
               unitCode: "MON",
             },

@@ -4,7 +4,7 @@ import { type CSSProperties, useEffect, useRef } from "react";
 import { ART } from "@/components/scenes/Scene2";
 import { type BriefPreset, openBrief } from "@/lib/brief";
 import { phoneLayout } from "@/lib/phoneLayout";
-import { formatFrom, fromPrice, fromWeeks, TYPES, type TypeId } from "@/lib/pricing";
+import { formatFrom, fromWeeks, TYPES, type TypeId } from "@/lib/pricing";
 import { phoneHold } from "@/lib/scroll/handoff";
 import { onScroll, viewportH } from "@/lib/scroll/onScroll";
 import styles from "./Scene5.module.css";
@@ -21,9 +21,9 @@ type Tile = { color: string; box: [number, number]; art: Piece[] };
 // Клетка → пилюля «что нужно» в окне заявки; уточнение уходит в заявку: «Сайт — лендинг».
 const BRIEF: Record<TypeId, BriefPreset> = {
   landing: { need: "Сайт", detail: "лендинг" },
-  builder: { need: "Сайт", detail: "на конструкторе" },
+  builder: { need: "Сайт", detail: "шаблонное решение" },
   corp: { need: "Сайт", detail: "корпоративный" },
-  unique: { need: "Сайт", detail: "уникальный" },
+  unique: { need: "Сайт", detail: "уникальный сервис" },
   shop: { need: "Магазин" },
   app: { need: "Приложение" },
   tma: { need: "Приложение", detail: "Telegram Mini App" },
@@ -404,8 +404,8 @@ export function Scene5() {
                   <span className={styles.full}>{t.includes}</span>
                   <span className={styles.short}>{t.short}</span>
                 </p>
-                {/* Помесячные (без срока) — цена как есть, под ней «в месяц». */}
-                <p className={styles.price}>{t.weeks ? fromPrice(t.base) : formatFrom(t.base)}</p>
+                {/* Помесячные (без срока) — под ценой «в месяц». */}
+                <p className={styles.price}>{formatFrom(t.from)}</p>
                 <p className={styles.term}>{t.weeks ? fromWeeks(t.weeks) : "в месяц"}</p>
                 {/* Вся клетка — кнопка: окно заявки с этим типом (растёт из точки нажатия). */}
                 <button
