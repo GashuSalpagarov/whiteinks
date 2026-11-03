@@ -7,7 +7,7 @@
 }
 
 .title {
-  font-size: clamp(38px, 3.9vw, 72px);
+  font-size: var(--fs-1);
   font-weight: 500;
   letter-spacing: -0.022em;
   line-height: 1.05;
@@ -395,10 +395,6 @@
     --g: 12px;
     --gap: 104px;
     --line: 72px;
-  }
-
-  .title {
-    font-size: 38px;
   }
 
   .facts {

@@ -141,7 +141,7 @@
 }
 
 .term {
-  font-size: clamp(40px, 4vw, 72px);
+  font-size: var(--fs-1);
   letter-spacing: -0.05em;
   line-height: 0.95;
   white-space: nowrap;

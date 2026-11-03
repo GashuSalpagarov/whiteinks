@@ -43,7 +43,7 @@ div.page {
 
 .price {
   margin-top: 22px;
-  font-size: var(--fs-name);
+  font-size: var(--fs-2);
   font-weight: 400;
   letter-spacing: -0.04em;
   line-height: 1.1;

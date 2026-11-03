@@ -11,8 +11,7 @@
   --lh-m: 1.55;
   --lh-l: 1.2;
   --fs-xl: clamp(56px, 5.6vw, 104px);
-  /* Названия кейсов; правый край колонки — левее «Обсудить проект» и крестика. */
-  --fs-name: clamp(26px, 2.5vw, 44px);
+  /* Правый край колонки — левее «Обсудить проект» и крестика. */
   --col: calc(var(--x) - 88px);
   --start: calc(var(--x) + 56px);
   --right: 248px;
@@ -172,7 +171,7 @@
 .item::before {
   content: "";
   position: absolute;
-  top: calc(var(--gap) + var(--fs-name) * 0.53);
+  top: calc(var(--gap) + var(--fs-2) * 0.53);
   left: calc(var(--x) - 13px);
   width: 26px;
   height: 1.5px;
@@ -180,7 +179,7 @@
 }
 
 .top + .item::before {
-  top: calc(40px + var(--fs-name) * 0.53);
+  top: calc(40px + var(--fs-2) * 0.53);
 }
 
 .l {
@@ -190,7 +189,7 @@
 
 .n {
   position: absolute;
-  top: calc(var(--fs-name) * 0.53 - 6px);
+  top: calc(var(--fs-2) * 0.53 - 6px);
   right: -34px;
   font-size: var(--fs-6);
   line-height: 1;
@@ -198,7 +197,7 @@
 }
 
 .name {
-  font-size: var(--fs-name);
+  font-size: var(--fs-2);
   font-weight: 500;
   letter-spacing: -0.04em;
   line-height: 1.06;
@@ -642,7 +641,6 @@
     --x: 20px;
     --pad: calc(var(--h) * 0.1);
     --fs-xl: 40px;
-    --fs-name: clamp(26px, 7.4vw, 30px);
     --gap: 64px;
     --right: 20px;
   }

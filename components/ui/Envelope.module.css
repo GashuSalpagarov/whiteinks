@@ -242,7 +242,7 @@
   background: none;
   box-shadow: inset 0 -1.5px 0 var(--color-fg);
   color: inherit;
-  font-size: 1.375rem;
+  font-size: var(--fs-3);
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   outline: none;
@@ -272,7 +272,7 @@
 .ghostMask {
   display: flex;
   align-items: center;
-  font-size: 1.375rem;
+  font-size: var(--fs-3);
   line-height: 1.1;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
@@ -669,11 +669,6 @@
 
   .input {
     height: 44px;
-  }
-
-  .input,
-  .ghostMask {
-    font-size: 1.1875rem;
   }
 
   /* Пять пилюль — в два ряда и на 390: тогда конверт влезает в экран. */

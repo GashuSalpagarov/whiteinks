@@ -319,7 +319,7 @@
 
 .unique .price {
   padding-top: 18px;
-  font-size: clamp(32px, 2.6vw, 42px);
+  font-size: var(--fs-1);
   font-weight: 400;
   letter-spacing: -0.04em;
 }

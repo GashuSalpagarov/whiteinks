@@ -41,7 +41,7 @@
 
 .w {
   position: relative;
-  font-size: 24px;
+  font-size: var(--fs-3);
   letter-spacing: -0.02em;
 }
 

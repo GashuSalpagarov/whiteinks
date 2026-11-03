@@ -66,7 +66,7 @@
   background: none;
   box-shadow: inset 0 -1.5px 0 var(--color-fg);
   color: inherit;
-  font-size: 1.375rem;
+  font-size: var(--fs-3);
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   outline: none;
@@ -95,7 +95,7 @@
 .ghost {
   display: flex;
   align-items: center;
-  font-size: 1.375rem;
+  font-size: var(--fs-3);
   line-height: 1.1;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
@@ -346,11 +346,6 @@
 
   .input {
     height: 44px;
-  }
-
-  .input,
-  .ghost {
-    font-size: 1.1875rem;
   }
 
   .pill span {
