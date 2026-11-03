@@ -128,7 +128,7 @@
 
 .lead {
   max-width: 22em;
-  font-size: 1rem;
+  font-size: var(--fs-4);
   line-height: 1.5;
   color: var(--muted);
   text-align: right;
@@ -152,7 +152,7 @@
   border: 0;
   background: none;
   color: var(--color-fg);
-  font-size: 0.875rem;
+  font-size: var(--fs-5);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;

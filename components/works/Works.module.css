@@ -7,15 +7,11 @@
   --pad: calc(var(--h) * 0.11);
   --text2: rgb(10 10 10 / 0.72);
   --muted: rgb(10 10 10 / 0.62);
-  --fs-s: 15px;
   --lh-s: 1.45;
-  --fs-m: 17px;
   --lh-m: 1.55;
-  --fs-l: clamp(22px, 2vw, 30px);
   --lh-l: 1.2;
   --fs-xl: clamp(56px, 5.6vw, 104px);
-  /* Заголовок и названия кейсов; правый край колонки — левее «Обсудить проект» и крестика. */
-  --fs-title: clamp(30px, 2.9vw, 52px);
+  /* Названия кейсов; правый край колонки — левее «Обсудить проект» и крестика. */
   --fs-name: clamp(26px, 2.5vw, 44px);
   --col: calc(var(--x) - 88px);
   --start: calc(var(--x) + 56px);
@@ -144,7 +140,7 @@
 
 .back {
   display: inline-block;
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   font-weight: 500;
   color: inherit;
   text-decoration: none;
@@ -152,7 +148,7 @@
 
 .title {
   margin-top: 14px;
-  font-size: var(--fs-title);
+  font-size: var(--fs-1);
   font-weight: 500;
   letter-spacing: -0.04em;
   line-height: 1.06;
@@ -196,7 +192,7 @@
   position: absolute;
   top: calc(var(--fs-name) * 0.53 - 6px);
   right: -34px;
-  font-size: 13px;
+  font-size: var(--fs-6);
   line-height: 1;
   color: var(--muted);
 }
@@ -216,7 +212,7 @@
 
 .kind {
   margin-top: 12px;
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   line-height: var(--lh-s);
   color: var(--muted);
 }
@@ -277,14 +273,14 @@
 }
 
 .text {
-  font-size: var(--fs-m);
+  font-size: var(--fs-4);
   line-height: var(--lh-m);
 }
 
 .more {
   display: inline-block;
   margin-top: 14px;
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   font-weight: 500;
   line-height: var(--lh-s);
   color: inherit;
@@ -645,11 +641,7 @@
   .page {
     --x: 20px;
     --pad: calc(var(--h) * 0.1);
-    --fs-s: 14px;
-    --fs-m: 16px;
-    --fs-l: 22px;
     --fs-xl: 40px;
-    --fs-title: clamp(32px, 9vw, 38px);
     --fs-name: clamp(26px, 7.4vw, 30px);
     --gap: 64px;
     --right: 20px;
@@ -719,7 +711,6 @@
   .n {
     position: static;
     margin-bottom: 6px;
-    font-size: 14px;
   }
 
   .l .kind {

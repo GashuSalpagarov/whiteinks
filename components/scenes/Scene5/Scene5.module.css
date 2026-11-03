@@ -219,7 +219,7 @@
 
 .name {
   grid-area: name;
-  font-size: 1.0625rem;
+  font-size: var(--fs-4);
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.01em;
@@ -251,7 +251,7 @@
 
 .term {
   grid-area: term;
-  font-size: 0.875rem;
+  font-size: var(--fs-5);
   color: var(--muted);
 }
 
@@ -314,7 +314,7 @@
 }
 
 .unique .includes {
-  font-size: 0.875rem;
+  font-size: var(--fs-5);
 }
 
 .unique .price {
@@ -568,7 +568,7 @@
     font-size: 8.6px;
   }
 
-  .tile .name {
+  .unique .name {
     font-size: 1.0625rem;
   }
 
@@ -598,7 +598,7 @@
   .support .term,
   .seo .term {
     display: block;
-    font-size: 0.8125rem;
+    font-size: var(--fs-6);
   }
 
   /* Проявление — на экране (SEE в Scene5.tsx): пока карточка входит снизу, она бледная (каркас) и

@@ -1,4 +1,4 @@
-/* Страница услуги. Шапка, ось, рамка карточки и шкала текста — из components/works/Works.module.css, здесь
+/* Страница услуги. Шапка, ось и рамка карточки — из components/works/Works.module.css, здесь
    своё: ось правее (30vw), слева закреплены название и цена, справа рисунок, блоки и письмо. div.page — сильнее
    .page из списка работ: порядок файлов стилей не задан. */
 div.page {
@@ -36,7 +36,7 @@ div.page {
 .lead {
   max-width: 25em;
   margin: 16px 0 0 auto;
-  font-size: var(--fs-m);
+  font-size: var(--fs-4);
   line-height: var(--lh-m);
   text-wrap: balance;
 }
@@ -52,7 +52,7 @@ div.page {
 
 .term {
   margin-top: 2px;
-  font-size: var(--fs-m);
+  font-size: var(--fs-4);
   line-height: 1.4;
   color: var(--muted);
 }
@@ -61,7 +61,7 @@ div.page {
 .said {
   max-width: 24em;
   margin: 14px 0 0 auto;
-  font-size: 13px;
+  font-size: var(--fs-6);
   line-height: 1.45;
   color: var(--muted);
   text-wrap: pretty;
@@ -126,7 +126,7 @@ div.page {
 
 .fitsHead {
   margin-top: 20px;
-  font-size: var(--fs-m);
+  font-size: var(--fs-4);
   font-weight: 500;
   line-height: var(--lh-m);
 }
@@ -135,7 +135,7 @@ div.page {
   margin-top: 4px;
   padding: 0;
   list-style: none;
-  font-size: var(--fs-m);
+  font-size: var(--fs-4);
   line-height: var(--lh-m);
 }
 
@@ -187,7 +187,7 @@ div.page {
 
 .h2 {
   margin-bottom: var(--below);
-  font-size: var(--fs-l);
+  font-size: var(--fs-2);
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: var(--lh-l);
@@ -204,7 +204,7 @@ div.page {
 }
 
 .note {
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   line-height: var(--lh-s);
   color: var(--muted);
   text-wrap: pretty;
@@ -287,7 +287,7 @@ div.page {
 }
 
 .v {
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   color: var(--muted);
   white-space: nowrap;
 }
@@ -411,7 +411,7 @@ div.page {
 }
 
 .answer {
-  font-size: var(--fs-m);
+  font-size: var(--fs-4);
   line-height: var(--lh-m);
   color: rgb(10 10 10 / 0.72);
   text-wrap: pretty;
@@ -424,7 +424,7 @@ div.page {
   gap: 4px 18px;
   padding: 0;
   list-style: none;
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   line-height: var(--lh-s);
   color: var(--muted);
 }
@@ -503,7 +503,6 @@ div.page {
   .said {
     max-width: none;
     margin: 10px 0 0;
-    font-size: 14px;
   }
 
   .right {

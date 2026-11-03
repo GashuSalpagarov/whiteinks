@@ -14,21 +14,21 @@
 }
 
 .head {
-  font-size: var(--fs-l);
+  font-size: var(--fs-2);
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: var(--lh-l);
 }
 
 .text {
-  font-size: var(--fs-m);
+  font-size: var(--fs-4);
   font-weight: 400;
   line-height: var(--lh-m);
   text-wrap: pretty;
 }
 
 .note {
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   line-height: var(--lh-s);
   color: var(--muted);
   text-wrap: pretty;
@@ -264,7 +264,7 @@
   aspect-ratio: 1;
   border-radius: 14px;
   box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.3); /* виден и на тёмной странице */
-  font-size: var(--fs-s);
+  font-size: var(--fs-5);
   font-style: normal;
 }
 

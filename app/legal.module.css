@@ -24,7 +24,7 @@
 
 .meta {
   margin-top: 12px;
-  font-size: 0.875rem;
+  font-size: var(--fs-5);
   color: rgba(10, 10, 10, 0.55);
 }
 
@@ -32,7 +32,7 @@
 .list,
 .terms {
   margin-top: 14px;
-  font-size: 1rem;
+  font-size: var(--fs-4);
   line-height: 1.65;
   color: rgba(10, 10, 10, 0.78);
 }
@@ -81,7 +81,7 @@
   padding: 20px 0;
   border-top: 1px solid rgba(10, 10, 10, 0.12);
   border-bottom: 1px solid rgba(10, 10, 10, 0.12);
-  font-size: 0.9375rem;
+  font-size: var(--fs-5);
   line-height: 1.5;
 }
 
@@ -113,7 +113,7 @@
 }
 
 .h2 {
-  font-size: 1.125rem;
+  font-size: var(--fs-3);
   font-weight: 500;
   line-height: 1.35;
 }

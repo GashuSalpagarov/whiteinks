@@ -26,11 +26,11 @@
   <rect x="336" y="348" width="72" height="10" rx="5" fill="#0a0a0a"/>
   <rect x="342" y="366" width="60" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
   <rect x="476" y="150" width="204" height="252" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-  <text x="500" y="194" font-size="20" fill="#0a0a0a" fill-opacity="0.55">телефон</text>
+  <rect x="500" y="183" width="78" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
   <path d="M500 216H656" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-  <text x="500" y="256" font-size="20" fill="#0a0a0a" fill-opacity="0.55">имя</text>
+  <rect x="500" y="245" width="44" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
   <path d="M500 278H656" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-  <rect x="500" y="314" width="156" height="48" rx="24" fill="#0a0a0a"/><text x="578" y="345.35" font-size="21" fill="#fff" text-anchor="middle">Записаться</text>
+  <rect x="500" y="314" width="156" height="48" rx="24" fill="#0a0a0a"/><rect x="530" y="333.5" width="96" height="9" rx="4.5" fill="#fff"/>
   <path d="M428 162H436C456 162 456 216 476 216" fill="none" stroke="#0a0a0a" stroke-width="4" vector-effect="non-scaling-stroke"/>
   <path d="M476 216h.01" stroke="#0a0a0a" stroke-width="12" vector-effect="non-scaling-stroke" stroke-linecap="round"/>
 </svg>

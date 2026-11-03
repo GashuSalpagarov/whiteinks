@@ -91,7 +91,7 @@
 }
 
 .block p {
-  font-size: 1rem;
+  font-size: var(--fs-4);
   line-height: 1.55;
   color: rgba(10, 10, 10, 0.72);
 }
@@ -257,7 +257,7 @@
   /* Слово целиком: globals.css рвёт длинные слова посреди (overflow-wrap). */
   .block h2 {
     margin-bottom: 10px;
-    font-size: 1.625rem;
+    font-size: var(--fs-2);
     overflow-wrap: normal;
   }
 

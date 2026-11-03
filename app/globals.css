@@ -4,9 +4,30 @@
   --color-fg: #0a0a0a;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
+  /* Шкала текста (компьютер; телефон — ниже): 1 — заголовок страницы, 2 — заголовок раздела и
+     крупная цена, 3 — заголовок пункта, 4 — основной текст и большие кнопки, 5 — подписи, ссылки
+     и шапка, 6 — сноски. Вне шкалы — логотип, знак заставки, крупные слова первого экрана и
+     надписи в рисунках. */
+  --fs-1: clamp(30px, 2.9vw, 52px);
+  --fs-2: clamp(24px, 2vw, 30px);
+  --fs-3: 19px;
+  --fs-4: 17px;
+  --fs-5: 15px;
+  --fs-6: 13px;
+
   /* Управляемые JS — позиция точки-маркера */
   --drop-offset: 43vh;
   --drop-x: 0px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --fs-1: clamp(32px, 9vw, 38px);
+    --fs-2: 24px;
+    --fs-3: 17px;
+    --fs-4: 16px;
+    --fs-5: 14px;
+  }
 }
 
 /* Пульс точки пути в покое (Hero, место покоя Сцены 3): ход — анимацией этого числа, размах —
@@ -48,6 +69,7 @@ body {
   background: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans);
+  font-size: var(--fs-4);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
