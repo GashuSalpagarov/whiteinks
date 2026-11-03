@@ -119,6 +119,11 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
     parts: [{ file: "main", fileM: "main-m" }, { file: "models" }, { file: "props" }],
     unlisted: true,
   },
+  // Раскладка как у Memoridian: операторская в окне, экран сеанса гостя на телефоне.
+  gameclub: {
+    parts: [{ file: "duo-window", fileM: "duo-window-m" }, { file: "duo-phone", phone: true }],
+    unlisted: true,
+  },
   "globaldrive-portal": {
     parts: [
       { file: "duo-main", fileM: "duo-main-m" },

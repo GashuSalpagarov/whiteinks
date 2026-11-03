@@ -152,6 +152,15 @@ const ONLY_HERE: CardContent[] = [
     color: "#dddaf5",
     slug: "dmcloud",
   },
+  {
+    title: "Система для игровых клубов GameClub",
+    type: "Наш продукт",
+    about:
+      "Сеансы, бар, брони и отчёты для клубов с PlayStation и Xbox: панель оператора, кабинет владельца, приложение для гостей и сайт. Две версии — для России и для остального мира.",
+    duo: true,
+    color: "#d3ebdd",
+    slug: "gameclub",
+  },
 ];
 
 const TEXT: Record<string, string> = {
