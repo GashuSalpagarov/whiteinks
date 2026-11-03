@@ -825,8 +825,10 @@ export function CaseLayer({ initial }: { initial?: string }) {
   const fn = useRef({ open, leave, show, swapTo, update, relayout, restIn, act });
   fn.current = { open, leave, show, swapTo, update, relayout, restIn, act };
 
-  // Снимки первого экрана — заранее, когда главная уже показана: к нажатию они загружены и
-  // декодированы (ссылки держим, иначе браузер их выбросит).
+  // Снимки первого экрана — заранее, сразу после гидратации (файлы страницы к ней уже пришли): к
+  // нажатию они загружены и декодированы (ссылки держим, иначе браузер их выбросит). Это и снимки
+  // карточек туннеля (у них loading="lazy"): к прыжку в туннель сразу после заставки они успевают и
+  // на медленной сети.
   useEffect(() => {
     const t = window.setTimeout(() => {
       S.shots = DUO_SHOTS.map((src) => {
@@ -835,7 +837,7 @@ export function CaseLayer({ initial }: { initial?: string }) {
         img.decode().catch(() => {});
         return img;
       });
-    }, 2000);
+    }, 0);
     return () => window.clearTimeout(t);
   }, [S]);
 

@@ -463,12 +463,12 @@ export function Scene3() {
                   {c.duo ? (
                     <>
                       <i className={`${styles.field} no-invert`} style={{ background: c.color }} />
-                      <Duo slug={c.slug} className={styles.duo} />
+                      <Duo slug={c.slug} className={styles.duo} lazy />
                     </>
                   ) : (
                     <>
                       {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-                      <img src={c.image} alt="" style={{ background: c.color }} />
+                      <img src={c.image} alt="" loading="lazy" style={{ background: c.color }} />
                     </>
                   )}
                 </div>
@@ -522,7 +522,12 @@ export function Scene3() {
                 {STACK.map((file, i) => (
                   <span key={file}>
                     {/* biome-ignore lint/performance/noImgElement: статический экспорт, файлы из public как есть */}
-                    <img src={`${BASE}/works/${file}.webp`} alt="" decoding="async" />
+                    <img
+                      src={`${BASE}/works/${file}.webp`}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
                     {i === STACK.length - 1 && <i className="no-invert">+{WORKS.length - N}</i>}
                   </span>
                 ))}

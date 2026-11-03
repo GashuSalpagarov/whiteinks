@@ -26,7 +26,8 @@ export function HomeMain({
 }) {
   return (
     <>
-      <main>
+      {/* Прямой заход в слой страницы: главная под ним не рисуется (PageLayer, showHome). */}
+      <main style={page ? { visibility: "hidden" } : undefined}>
         {children}
         {/* На адресе слоя h1 — у слоя: строка Hero в статическом HTML не второй заголовок. */}
         <Hero plain={!!(page || caseSlug)} />
