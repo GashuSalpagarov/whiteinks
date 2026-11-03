@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="500">
+  <!-- Уникальный сервис, портал, кабинет: боковое меню, карточки и график без цифр; линия графика — путь с точкой. Линии — vector-effect="non-scaling-stroke": 1.5, путь 4, точка 12 px на любом размере. -->
+  <rect width="720" height="480" fill="#f7dccb"/>
+  <rect x="40" y="40" width="640" height="520" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="62" cy="61" r="5" fill="#0a0a0a"/><circle cx="78" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><circle cx="94" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><rect x="280" y="53" width="160" height="16" rx="8" fill="#f7dccb"/><path d="M40 82H680" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <path d="M204 82V480" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="64" y="106" width="26" height="26" rx="7" fill="#0a0a0a"/>
+  <rect x="102" y="114" width="64" height="10" rx="5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="54" y="158" width="136" height="40" rx="8" fill="#f7dccb"/>
+  <rect x="68" y="171" width="14" height="14" rx="4" fill="#0a0a0a"/>
+  <text x="94" y="185" font-size="20" fill="#0a0a0a">Обзор</text>
+  <rect x="68" y="217" width="14" height="14" rx="4" fill="#0a0a0a" fill-opacity=".16"/>
+  <text x="94" y="231" font-size="20" fill="#0a0a0a" fill-opacity="0.55">Заявки</text>
+  <rect x="68" y="263" width="14" height="14" rx="4" fill="#0a0a0a" fill-opacity=".16"/>
+  <text x="94" y="277" font-size="20" fill="#0a0a0a" fill-opacity="0.55">Клиенты</text>
+  <rect x="68" y="309" width="14" height="14" rx="4" fill="#0a0a0a" fill-opacity=".16"/>
+  <text x="94" y="323" font-size="20" fill="#0a0a0a" fill-opacity="0.55">Отчёты</text>
+  <rect x="228" y="106" width="150" height="18" fill="#0a0a0a"/>
+  <rect x="228" y="144" width="132" height="80" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="244" y="162" width="56" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="244" y="184" width="80" height="20" fill="#0a0a0a"/>
+  <rect x="376" y="144" width="132" height="80" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="392" y="162" width="56" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="392" y="184" width="80" height="20" fill="#0a0a0a"/>
+  <rect x="524" y="144" width="132" height="80" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="540" y="162" width="56" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="540" y="184" width="80" height="20" fill="#0a0a0a"/>
+  <rect x="228" y="244" width="428" height="260" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <path d="M244 300H640" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-opacity="0.1"/>
+  <path d="M244 350H640" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-opacity="0.1"/>
+  <path d="M244 400H640" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-opacity="0.1"/>
+  <path d="M244 450H640" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-opacity="0.1"/>
+  <path d="M248 438C280 438 280 404 312 404C343 404 343 418 374 418C405 418 405 366 436 366C467 366 467 380 498 380C529 380 529 334 560 334C592 334 592 316 624 316V480H248Z" fill="#f7dccb"/>
+  <path d="M248 438C280 438 280 404 312 404C343 404 343 418 374 418C405 418 405 366 436 366C467 366 467 380 498 380C529 380 529 334 560 334C592 334 592 316 624 316" fill="none" stroke="#0a0a0a" stroke-width="4" vector-effect="non-scaling-stroke"/>
+  <path d="M624 316h.01" stroke="#0a0a0a" stroke-width="12" vector-effect="non-scaling-stroke" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="500">
+  <!-- Поддержка: окно сайта и рядом список дел — обновления, копии, правки; шестерёнка. Линии — vector-effect="non-scaling-stroke": 1.5, путь 4, точка 12 px на любом размере. -->
+  <rect width="720" height="480" fill="#f7dccb"/>
+  <rect x="40" y="40" width="380" height="520" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="62" cy="61" r="5" fill="#0a0a0a"/><circle cx="78" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><circle cx="94" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><rect x="170" y="53" width="120" height="16" rx="8" fill="#f7dccb"/><path d="M40 82H420" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="68" y="112" width="160" height="20" fill="#0a0a0a"/>
+  <rect x="68" y="140" width="110" height="20" fill="#0a0a0a"/>
+  <rect x="68" y="178" width="150" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="68" y="196" width="100" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="254" y="106" width="140" height="108" fill="#f7dccb"/>
+  <circle cx="324" cy="160" r="30" fill="#0a0a0a"/>
+  <rect x="68" y="226" width="92" height="34" rx="17" fill="#0a0a0a"/>
+  <rect x="68" y="290" width="104" height="200" fill="#f7dccb"/>
+  <rect x="184" y="290" width="104" height="200" fill="#f7dccb"/>
+  <rect x="300" y="290" width="94" height="200" fill="#0a0a0a"/>
+  <rect x="452" y="96" width="228" height="284" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <path d="M496.95 130.89L501.78 131.18L501.78 136.82L496.95 137.11L495.36 140.96L498.56 144.58L494.58 148.56L490.96 145.36L487.11 146.95L486.82 151.78L481.18 151.78L480.89 146.95L477.04 145.36L473.42 148.56L469.44 144.58L472.64 140.96L471.05 137.11L466.22 136.82L466.22 131.18L471.05 130.89L472.64 127.04L469.44 123.42L473.42 119.44L477.04 122.64L480.89 121.05L481.18 116.22L486.82 116.22L487.11 121.05L490.96 122.64L494.58 119.44L498.56 123.42L495.36 127.04Z" fill="#0a0a0a"/><circle cx="484" cy="134" r="5.59" fill="#fff"/>
+  <rect x="514" y="128" width="92" height="12" rx="6" fill="#0a0a0a"/>
+  <path d="M452 166H680" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="476" y="202" width="24" height="24" rx="6" fill="#0a0a0a"/>
+  <path d="M483.2 214.4l3.2 3.2 6.4-7.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  <text x="514" y="221" font-size="21" fill="#0a0a0a">обновления</text>
+  <rect x="476" y="254" width="24" height="24" rx="6" fill="#0a0a0a"/>
+  <path d="M483.2 266.4l3.2 3.2 6.4-7.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  <text x="514" y="273" font-size="21" fill="#0a0a0a">копии</text>
+  <rect x="476" y="306" width="24" height="24" rx="6" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <text x="514" y="325" font-size="21" fill="#0a0a0a" fill-opacity="0.55">правки</text>
+  <path d="M452 214H440C420 214 420 160 394 160" fill="none" stroke="#0a0a0a" stroke-width="4" vector-effect="non-scaling-stroke"/>
+  <path d="M394 160h.01" stroke="#0a0a0a" stroke-width="12" vector-effect="non-scaling-stroke" stroke-linecap="round"/>
+</svg>

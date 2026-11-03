@@ -13,7 +13,7 @@ import {
   pageFrom,
   pageHref,
 } from "@/lib/caseRoute";
-import { SERVICES, serviceTitle } from "@/lib/services";
+import { SERVICE_PAGES, serviceTitle } from "@/lib/services";
 import { SITE_NAME, SITE_TITLE } from "@/lib/site";
 import { Consent } from "./Consent";
 import { NotFound } from "./NotFound";
@@ -35,13 +35,13 @@ const TITLES: Record<string, string> = {
   privacy: `Политика обработки персональных данных — ${SITE_NAME}`,
   consent: `Согласие на обработку персональных данных — ${SITE_NAME}`,
   notfound: `Страница не найдена — ${SITE_NAME}`,
-  ...Object.fromEntries(SERVICES.map((s) => [`services/${s.slug}`, serviceTitle(s)])),
+  ...Object.fromEntries(SERVICE_PAGES.map((s) => [`services/${s.slug}`, serviceTitle(s)])),
 };
 
 // Прямой заход: главная под слоем не рисуется с первой отрисовки (visibility в HomeMain) — браузер не
 // тратит на неё загрузку и не считает по ней LCP. visibility, не display: вёрстка и прокрутка главной
-// на месте (без вёрстки сработала бы петля футера). Показываем к первому переходу: слой гаснет или
-// сменяется над главной, как раньше.
+// на месте (без вёрстки сработала бы петля футера). Показываем к выходу: слой гаснет над главной.
+// Смена страницы внутри слоя главную не открывает — слой не гаснет, проявляется только содержимое.
 const showHome = () => {
   const main = document.querySelector("main");
   if (main) main.style.visibility = "";
@@ -57,6 +57,7 @@ export function PageLayer({ initial }: { initial?: Page }) {
     // Открыт с главной: выход — назад по истории; иначе (прямой заход) — новая запись главной.
     fromHome: false,
     enter: false,
+    swap: false, // страница сменилась внутри открытого слоя
     focus: null as HTMLElement | null,
     tile: null as HTMLElement | null, // плитка, с которой влетели: на неё и вернёмся
     flyer: null as HTMLElement | null, // копия плитки, пока список не проявился
@@ -64,9 +65,9 @@ export function PageLayer({ initial }: { initial?: Page }) {
 
   const show = (p: Page) => {
     for (const a of rootRef.current?.getAnimations() ?? []) a.cancel();
-    showHome();
     document.title = TITLES[p];
     S.enter = true;
+    S.swap = page !== null;
     setPage(p);
   };
 
@@ -157,7 +158,8 @@ export function PageLayer({ initial }: { initial?: Page }) {
     return () => cancelAnimationFrame(id);
   }, [initial]);
 
-  // Новая страница: с начала, проявляется. Фокус — в слой: клавиши листают его.
+  // Новая страница: с начала, проявляется. Фокус — в слой: клавиши листают его. Смена внутри слоя —
+  // проявляется только содержимое (main страницы): фон слоя, шапка и ось стоят, главную не видно.
   // biome-ignore lint/correctness/useExhaustiveDependencies: вход — по смене страницы
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -167,7 +169,9 @@ export function PageLayer({ initial }: { initial?: Page }) {
     root.focus({ preventScroll: true });
     const flyer = S.flyer;
     const delay = flyer ? ZOOM * 0.7 : 0; // поле плитки уже закрыло экран
-    const fade = root.animate([{ opacity: 0 }, { opacity: 1 }], {
+    const target = (S.swap && root.querySelector("main")) || root;
+    S.swap = false;
+    const fade = target.animate([{ opacity: 0 }, { opacity: 1 }], {
       duration: FADE_IN,
       delay,
       easing: "ease-out",

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SERVICES, serviceBySlug, serviceDescription, serviceTitle } from "@/lib/services";
+import { SERVICE_PAGES, serviceBySlug, serviceDescription, serviceTitle } from "@/lib/services";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { HomeMain } from "../../home";
 
@@ -9,7 +9,7 @@ import { HomeMain } from "../../home";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return SERVICES.map((s) => ({ slug: s.slug }));
+  return SERVICE_PAGES.map((s) => ({ slug: s.slug }));
 }
 
 type Props = { params: Promise<{ slug: string }> };

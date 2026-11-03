@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { SERVICES } from "@/lib/services";
+import { SERVICE_PAGES } from "@/lib/services";
 
 // Страница кейса: адрес /works/<slug>/ и вход в слой кейса (components/case) из Сцены 3. Кейс
 // открывается поверх главной без перезагрузки: Сцена 3 шлёт CASE_OPEN_EVENT, слой меняет адрес
@@ -40,7 +40,7 @@ export type Page = "works" | "privacy" | "consent" | "notfound" | `services/${st
 
 export const pageHref = (page: Page | null) => (page ? `${BASE}/${page}/` : HOME_HREF);
 
-const PAGES = ["works", "privacy", "consent", ...SERVICES.map((s) => `services/${s.slug}`)];
+const PAGES = ["works", "privacy", "consent", ...SERVICE_PAGES.map((s) => `services/${s.slug}`)];
 
 // Страница из адреса: главная и кейс — null, неизвестный адрес — «notfound».
 export function pageFrom(pathname: string): Page | null {

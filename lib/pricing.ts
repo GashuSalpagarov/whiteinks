@@ -37,8 +37,8 @@ export const TYPES: {
   {
     id: "builder",
     title: "Шаблонное решение",
-    includes: "Шаблон на Tilda или Webflow и обучение — дальше правите сами",
-    short: "Tilda или Webflow",
+    includes: "Готовый шаблон, например на WordPress, и обучение — дальше правите сами",
+    short: "Готовый шаблон",
     from: 30,
     term: "от 3 дней",
   },
