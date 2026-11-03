@@ -1,0 +1,109 @@
+/* Страница системы для игровых клубов GameClub (GameClub.tsx). Стили текста, поля, первый экран и общая
+   раскладка — из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и
+   их места. Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.tiles,
+.owner,
+.presets,
+.promos,
+.reports,
+.site {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.pay {
+  --p: clamp(200px, 17vw, 260px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.quick {
+  --p: clamp(300px, 26vw, 400px);
+  --t: clamp(220px, 17vw, 280px);
+}
+
+.qr {
+  --p: clamp(280px, 24vw, 380px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.phones {
+  --p: clamp(400px, 35vw, 500px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.colors {
+  --p: clamp(240px, 19.5vw, 320px);
+  --t: clamp(240px, 20vw, 320px);
+}
+
+/* Блоки посередине оси — пока рядом хватает места. */
+@media (min-width: 1280px) {
+  .phones {
+    --side: 0;
+  }
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .owner,
+  .promos,
+  .qr,
+  .phones,
+  .colors {
+    flex-direction: row-reverse;
+    --side: 1;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .tiles,
+  .owner,
+  .presets,
+  .promos,
+  .reports,
+  .site {
+    --p: 58vw;
+  }
+
+  .phones {
+    --p: 46vw;
+  }
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13% / 6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5% / 5.3%;
+}
+
+/* Телефон: снимки мобильной раскладки; высокое окно оплаты — уже, чтобы блок не занимал больше экрана. */
+@media (max-width: 767px) {
+  .tiles,
+  .owner,
+  .presets,
+  .promos,
+  .reports,
+  .quick,
+  .qr,
+  .phones,
+  .site,
+  .colors {
+    --p: 100%;
+  }
+
+  .pay {
+    --p: 240px;
+  }
+}

@@ -82,7 +82,7 @@
 /* ---------- Остальные кейсы: та же рамка и те же пропорции группы, своя раскладка ----------
    data-p — номер части в GROUPS (Duo.tsx), место каждой — доли группы. В полёте первым ребёнком группы
    становится копия карточки (carry в CaseLayer), поэтому не nth-child и не «все дети». */
-.duo:not([data-duo="memoridian"]) > [data-p] {
+.duo:not([data-duo="memoridian"]):not([data-duo="gameclub"]) > [data-p] {
   right: auto;
   bottom: auto;
   mask: none;
@@ -186,7 +186,7 @@
 }
 
 @media (max-width: 767px) {
-  .duo:not([data-duo="memoridian"]) .browser img {
+  .duo:not([data-duo="memoridian"]):not([data-duo="gameclub"]) .browser img {
     object-position: 0 0;
   }
 

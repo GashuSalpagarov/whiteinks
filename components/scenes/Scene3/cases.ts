@@ -547,6 +547,27 @@ export const CASES: CaseData[] = [
     services: [],
     need: "Другое",
   },
+  {
+    // Своя страница (components/case/gameclub), карточки на главной нет: поля рассказа только ради типа.
+    slug: "gameclub",
+    showcase: true,
+    title: "Система для игровых клубов GameClub",
+    unlisted: true,
+    summary:
+      "Сеансы, бар, брони и отчёты для клубов с PlayStation и Xbox. Наш продукт: сайт, панель оператора, кабинет владельца и приложение для гостей.",
+    url: "https://gmclb.ru",
+    task: "Наш продукт для игровых клубов: учёт сеансов, бар, брони и отчёты.",
+    before: [],
+    beforeImage: { src: img("gameclub", "tiles.webp"), alt: "Плитки кабинок в панели оператора" },
+    solution: [],
+    gallery: [
+      { src: img("gameclub", "club.webp"), alt: "Страница клуба на телефоне", ratio: "3/4" },
+      { src: img("gameclub", "reports.webp"), alt: "Отчёт за день" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Другое",
+  },
 ];
 
 export const caseBySlug = (slug: string) => CASES.find((c) => c.slug === slug) ?? null;

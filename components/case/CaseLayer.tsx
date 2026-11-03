@@ -27,6 +27,7 @@ import { DoctisAnalysis } from "./doctis-analysis/DoctisAnalysis";
 import { DoctisCrm } from "./doctis-crm/DoctisCrm";
 import { EdgeCenter } from "./edgecenter/EdgeCenter";
 import { EdgeConf } from "./edgeconf/EdgeConf";
+import { GameClub } from "./gameclub/GameClub";
 import { Gbz } from "./gbz/Gbz";
 import { Globaldrive } from "./globaldrive/Globaldrive";
 import { GlobaldrivePortal } from "./globaldrive-portal/GlobaldrivePortal";
@@ -1048,6 +1049,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <ScSystem c={c} act={act} full={full} />
             ) : c.slug === "dmcloud" ? (
               <DmCloud c={c} act={act} full={full} />
+            ) : c.slug === "gameclub" ? (
+              <GameClub c={c} act={act} full={full} />
             ) : c.slug === "kanban" ? (
               <Kanban c={c} act={act} full={full} />
             ) : c.slug === "check-please" ? (
