@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="500">
+  <!-- Интернет-магазин запчастей и техники: колонка фильтров (ползунок цены, флажки, переключатель), каталог карточек, путь от товара в корзину. Линии — vector-effect="non-scaling-stroke": 1.5, путь 4, точка 12 px на любом размере. -->
+  <rect width="720" height="480" fill="#dddaf5"/>
+  <rect x="40" y="40" width="400" height="520" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="62" cy="61" r="5" fill="#0a0a0a"/><circle cx="78" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><circle cx="94" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><rect x="180" y="53" width="120" height="16" rx="8" fill="#dddaf5"/><path d="M40 82H440" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <path d="M176 82V560" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="60" y="111" width="64" height="10" rx="5" fill="#0a0a0a"/>
+  <path d="M60 146H160" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-opacity="0.16"/>
+  <path d="M78 146H136" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="78" cy="146" r="7" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="136" cy="146" r="7" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="60" y="166" width="46" height="24" rx="6" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/><rect x="68" y="174" width="24" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="114" y="166" width="46" height="24" rx="6" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/><rect x="122" y="174" width="24" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="60" y="214" width="14" height="14" rx="4" fill="#0a0a0a"/><path d="M63.5 221L66 223.5L70.5 218" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  <rect x="84" y="217" width="64" height="8" rx="4" fill="#0a0a0a"/>
+  <rect x="60" y="242" width="14" height="14" rx="4" fill="#0a0a0a"/><path d="M63.5 249L66 251.5L70.5 246" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  <rect x="84" y="245" width="52" height="8" rx="4" fill="#0a0a0a"/>
+  <rect x="60" y="270" width="14" height="14" rx="4" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="84" y="273" width="58" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="60" y="298" width="14" height="14" rx="4" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="84" y="301" width="44" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="60" y="332" width="36" height="20" rx="10" fill="#0a0a0a"/><circle cx="86" cy="342" r="6" fill="#fff"/>
+  <rect x="104" y="338" width="48" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="60" y="380" width="52" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="60" y="406" width="14" height="14" rx="4" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="84" y="409" width="60" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="60" y="434" width="14" height="14" rx="4" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="84" y="437" width="48" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <text x="196" y="124" font-size="22" fill="#0a0a0a">Каталог</text>
+  <rect x="196" y="146" width="106" height="88" fill="#dddaf5"/>
+  <circle cx="249" cy="190" r="24" fill="#0a0a0a"/><circle cx="249" cy="190" r="9" fill="#dddaf5"/>
+  <rect x="196" y="248" width="80" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="196" y="266" width="56" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="196" y="286" width="44" height="12" rx="6" fill="#0a0a0a"/>
+  <rect x="314" y="146" width="106" height="88" fill="#dddaf5"/>
+  <rect x="349" y="172" width="36" height="36" fill="#0a0a0a"/>
+  <rect x="314" y="248" width="80" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="314" y="266" width="56" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="314" y="286" width="44" height="12" rx="6" fill="#0a0a0a"/>
+  <circle cx="402" cy="222" r="16" fill="#0a0a0a"/>
+  <path d="M396 222H408M402 216V228" stroke="#fff" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+  <rect x="196" y="322" width="106" height="88" fill="#dddaf5"/>
+  <path d="M249 344L273 388H225Z" fill="#0a0a0a"/>
+  <rect x="196" y="424" width="80" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="196" y="442" width="56" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="196" y="462" width="44" height="12" rx="6" fill="#0a0a0a"/>
+  <rect x="314" y="322" width="106" height="88" fill="#dddaf5"/>
+  <circle cx="367" cy="366" r="24" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="314" y="424" width="80" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="314" y="442" width="56" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="314" y="462" width="44" height="12" rx="6" fill="#0a0a0a"/>
+  <rect x="464" y="84" width="216" height="352" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <text x="488" y="124" font-size="22" fill="#0a0a0a">Корзина</text>
+  <path d="M464 144H680" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="476" y="158" width="192" height="64" rx="8" fill="#dddaf5"/>
+  <rect x="488" y="170" width="40" height="40" rx="6" fill="#fff"/>
+  <rect x="498" y="180" width="20" height="20" fill="#0a0a0a"/>
+  <rect x="540" y="180" width="96" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="540" y="198" width="60" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="488" y="238" width="40" height="40" rx="6" fill="#dddaf5"/>
+  <circle cx="508" cy="258" r="10" fill="#0a0a0a"/><circle cx="508" cy="258" r="4" fill="#dddaf5"/>
+  <rect x="540" y="248" width="84" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="540" y="266" width="52" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <path d="M488 298H656" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-opacity="0.12"/>
+  <rect x="488" y="318" width="64" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="600" y="314" width="56" height="16" rx="8" fill="#0a0a0a"/>
+  <rect x="488" y="360" width="168" height="48" rx="24" fill="#0a0a0a"/><rect x="532" y="379.5" width="80" height="9" rx="4.5" fill="#fff"/>
+  <path d="M418 222C442 222 440 190 464 190" fill="none" stroke="#0a0a0a" stroke-width="4" vector-effect="non-scaling-stroke"/>
+  <path d="M464 190h.01" stroke="#0a0a0a" stroke-width="12" vector-effect="non-scaling-stroke" stroke-linecap="round"/>
+</svg>

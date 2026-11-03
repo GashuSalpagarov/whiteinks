@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="500">
+  <!-- Сайт для автошколы: расписание строками (утро, вечер, выходные), карточки филиалов, путь от филиала к точке на схеме без названий. Линии — vector-effect="non-scaling-stroke": 1.5, путь 4, точка 12 px на любом размере. -->
+  <rect width="720" height="480" fill="#f4ebc3"/>
+  <rect x="40" y="40" width="424" height="520" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="62" cy="61" r="5" fill="#0a0a0a"/><circle cx="78" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><circle cx="94" cy="61" r="5" fill="#0a0a0a" fill-opacity="0.16"/><rect x="192" y="53" width="120" height="16" rx="8" fill="#f4ebc3"/><path d="M40 82H464" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <text x="66" y="124" font-size="22" fill="#0a0a0a">Расписание</text>
+  <rect x="66" y="144" width="372" height="40" rx="10" fill="#f4ebc3"/>
+  <text x="84" y="171" font-size="20" fill="#0a0a0a">утро</text>
+  <rect x="318" y="156" width="48" height="16" rx="8" fill="#fff"/><rect x="374" y="156" width="48" height="16" rx="8" fill="#fff"/>
+  <rect x="66" y="192" width="372" height="40" rx="10" fill="#0a0a0a"/>
+  <text x="84" y="219" font-size="20" fill="#fff">вечер</text>
+  <rect x="318" y="204" width="48" height="16" rx="8" fill="#fff" fill-opacity="0.3"/><rect x="374" y="204" width="48" height="16" rx="8" fill="#fff" fill-opacity="0.3"/>
+  <rect x="66" y="240" width="372" height="40" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <text x="84" y="267" font-size="20" fill="#0a0a0a">выходные</text>
+  <rect x="374" y="252" width="48" height="16" rx="8" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="66" y="304" width="116" height="200" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="90" cy="332" r="8" fill="#f4ebc3" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="106" y="327" width="60" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="82" y="358" width="84" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="82" y="374" width="60" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="82" y="404" width="84" height="32" rx="16" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/><rect x="100" y="416" width="48" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="194" y="304" width="116" height="200" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="218" cy="332" r="8" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="234" y="327" width="52" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="210" y="358" width="84" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="210" y="374" width="52" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="210" y="404" width="84" height="32" rx="16" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/><rect x="228" y="416" width="48" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="322" y="304" width="116" height="200" rx="10" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="346" cy="332" r="8" fill="#0a0a0a"/>
+  <rect x="362" y="327" width="64" height="10" rx="5" fill="#0a0a0a"/>
+  <rect x="338" y="358" width="84" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="338" y="374" width="68" height="8" rx="4" fill="#0a0a0a" fill-opacity="0.16"/>
+  <rect x="338" y="404" width="84" height="32" rx="16" fill="#0a0a0a"/><rect x="356" y="416" width="48" height="8" rx="4" fill="#fff"/>
+  <rect x="488" y="136" width="192" height="264" rx="12" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="508" y="153.5" width="64" height="9" rx="4.5" fill="#0a0a0a" fill-opacity="0.16"/>
+  <path d="M488 180H680" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <rect x="500" y="192" width="168" height="196" rx="8" fill="#f4ebc3"/>
+  <circle cx="584" cy="290" r="54" fill="none" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <path d="M512 218L656 362M584 200V380" fill="none" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="584" cy="236" r="5" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="584" cy="344" r="5" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="622.2" cy="328.2" r="5" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="545.8" cy="328.2" r="5" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="638" cy="290" r="5" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <circle cx="584" cy="290" r="7" fill="#fff" stroke="#0a0a0a" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <path d="M438 332C492 332 492 251.8 545.8 251.8" fill="none" stroke="#0a0a0a" stroke-width="4" vector-effect="non-scaling-stroke"/>
+  <path d="M545.8 251.8h.01" stroke="#0a0a0a" stroke-width="12" vector-effect="non-scaling-stroke" stroke-linecap="round"/>
+</svg>
