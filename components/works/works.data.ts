@@ -161,6 +161,15 @@ const ONLY_HERE: CardContent[] = [
     color: "#d3ebdd",
     slug: "gameclub",
   },
+  {
+    title: "Контент-завод The Viewer",
+    type: "Наш продукт",
+    about:
+      "Конвейер, который сам ведёт канал об ИИ и роботах: собирает новости, пишет посты, проверяет факты, верстает карусели и ролики и выпускает их по расписанию на русском и английском.",
+    duo: true,
+    color: "#efe3cf",
+    slug: "content-factory",
+  },
 ];
 
 const TEXT: Record<string, string> = {

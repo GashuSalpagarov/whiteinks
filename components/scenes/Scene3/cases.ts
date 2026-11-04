@@ -568,6 +568,27 @@ export const CASES: CaseData[] = [
     services: [],
     need: "Другое",
   },
+  {
+    // Своя страница (components/case/content-factory), карточки на главной нет: поля рассказа только ради типа.
+    slug: "content-factory",
+    showcase: true,
+    title: "Контент-завод The Viewer",
+    unlisted: true,
+    summary:
+      "Сам находит новости про ИИ и роботов, пишет посты, верстает карточки и ролики и выпускает их на площадках. Наш продукт.",
+    url: "https://t.me/viewer_tv_ru",
+    task: "Наш продукт: конвейер, который ведёт канал об ИИ и роботах на нескольких площадках.",
+    before: [],
+    beforeImage: { src: img("content-factory", "banner.webp"), alt: "Шапка канала The Viewer" },
+    solution: [],
+    gallery: [
+      { src: img("content-factory", "frame-1.webp"), alt: "Кадр ролика", ratio: "3/4" },
+      { src: img("content-factory", "jokes.webp"), alt: "Запасные шутки в панели" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "ИИ и автоматизация",
+  },
 ];
 
 export const caseBySlug = (slug: string) => CASES.find((c) => c.slug === slug) ?? null;

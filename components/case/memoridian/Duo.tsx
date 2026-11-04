@@ -124,6 +124,11 @@ const GROUPS: Record<string, { parts: Part[]; unlisted?: boolean }> = {
     parts: [{ file: "duo-window", fileM: "duo-window-m" }, { file: "duo-phone", phone: true }],
     unlisted: true,
   },
+  // Та же раскладка: веб-панель завода в окне, кадр ролика на телефоне.
+  "content-factory": {
+    parts: [{ file: "duo-window", fileM: "duo-window-m" }, { file: "duo-phone", phone: true }],
+    unlisted: true,
+  },
   "globaldrive-portal": {
     parts: [
       { file: "duo-main", fileM: "duo-main-m" },
