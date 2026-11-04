@@ -1,0 +1,115 @@
+/* Страница контент-завода The Viewer (ContentFactory.tsx). Стили текста, поля, первый экран и общая
+   раскладка — из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и
+   их места. Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.banner,
+.sheet,
+.jokes,
+.published {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.cards {
+  --p: clamp(480px, 48vw, 720px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.frames {
+  --p: clamp(460px, 44vw, 660px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.colors {
+  --p: clamp(240px, 19.5vw, 320px);
+  --t: clamp(240px, 20vw, 320px);
+}
+
+.lead {
+  --t: clamp(300px, 27vw, 420px);
+  align-self: flex-start;
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .sheet,
+  .frames,
+  .published {
+    flex-direction: row-reverse;
+    --side: 1;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .banner,
+  .sheet,
+  .jokes,
+  .published,
+  .cards {
+    --p: 56vw;
+  }
+
+  .frames {
+    --p: 48vw;
+  }
+}
+
+/* Иллюстрации — без рамки снимка экрана, только скругление. */
+.art {
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+/* Три карточки карусели или три кадра ролика в ряд. */
+.trio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(10px, 1.2vw, 20px);
+}
+
+.card {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgb(128 128 128 / 0.3);
+}
+
+.device {
+  margin: 0;
+  padding: 3%;
+  border-radius: 14% / 8%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11% / 6.2%;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.3em;
+}
+
+.steps li + li {
+  margin-top: 8px;
+}
+
+/* Телефон: картинки во всю ширину, из трёх карточек и кадров — две, иначе текст на них не разглядеть. */
+@media (max-width: 767px) {
+  .banner,
+  .sheet,
+  .cards,
+  .frames,
+  .jokes,
+  .published,
+  .colors {
+    --p: 100%;
+  }
+
+  .trio {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trio > :nth-child(3) {
+    display: none;
+  }
+}

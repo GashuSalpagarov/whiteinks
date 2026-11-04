@@ -21,6 +21,7 @@ import { ArmListener } from "./arm-listener/ArmListener";
 import styles from "./Case.module.css";
 import { back, type CaseActions, CaseView } from "./CaseView";
 import { CheckPlease } from "./check-please/CheckPlease";
+import { ContentFactory } from "./content-factory/ContentFactory";
 import { DmCloud } from "./dmcloud/DmCloud";
 import { Doctis } from "./doctis/Doctis";
 import { DoctisAnalysis } from "./doctis-analysis/DoctisAnalysis";
@@ -1051,6 +1052,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <DmCloud c={c} act={act} full={full} />
             ) : c.slug === "gameclub" ? (
               <GameClub c={c} act={act} full={full} />
+            ) : c.slug === "content-factory" ? (
+              <ContentFactory c={c} act={act} full={full} />
             ) : c.slug === "kanban" ? (
               <Kanban c={c} act={act} full={full} />
             ) : c.slug === "check-please" ? (
