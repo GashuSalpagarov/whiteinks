@@ -609,6 +609,26 @@ export const CASES: CaseData[] = [
     services: [],
     need: "Другое",
   },
+  {
+    // Своя страница (components/case/flats), карточки на главной нет: поля рассказа только ради типа.
+    slug: "flats",
+    showcase: true,
+    title: "Площадка курортной недвижимости flats",
+    unlisted: true,
+    summary:
+      "Площадка продажи апартаментов на курортах Кавказа: витрина с отбором объектов для покупателей и кабинет для застройщиков. Наш продукт.",
+    task: "Наш продукт: маркетплейс курортной недвижимости Кавказа и кабинет для застройщиков.",
+    before: [],
+    beforeImage: { src: img("flats", "chess.webp"), alt: "Шахматка «Выберите своё окно»" },
+    solution: [],
+    gallery: [
+      { src: img("flats", "duo-phone.webp"), alt: "Карточка отеля на телефоне", ratio: "3/4" },
+      { src: img("flats", "catalog.webp"), alt: "Каталог объектов" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Сайт",
+  },
 ];
 
 export const caseBySlug = (slug: string) => CASES.find((c) => c.slug === slug) ?? null;
