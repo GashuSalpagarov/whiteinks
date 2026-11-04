@@ -1,0 +1,73 @@
+/* Страница системы для посуточной аренды Rental (Rental.tsx). Стили текста, поля, первый экран и общая
+   раскладка — из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и
+   их места. Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.bookings,
+.tasks,
+.statements {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.owner,
+.cleaner {
+  --p: clamp(380px, 33vw, 480px);
+  --t: clamp(260px, 22vw, 340px);
+}
+
+.colors {
+  --p: clamp(240px, 19.5vw, 320px);
+  --t: clamp(240px, 20vw, 320px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .tasks,
+  .owner,
+  .colors {
+    flex-direction: row-reverse;
+    --side: 1;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .bookings,
+  .tasks,
+  .statements {
+    --p: 56vw;
+  }
+
+  .owner,
+  .cleaner {
+    --p: 44vw;
+  }
+}
+
+/* Два телефона одной группой. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 1.4vw, 24px);
+}
+
+.device {
+  margin: 0;
+  padding: 2.6%;
+  border-radius: 13% / 6%;
+  background: #0a0a0a;
+}
+
+.device img {
+  border-radius: 11.5% / 5.3%;
+}
+
+/* Телефон: картинки во всю ширину. */
+@media (max-width: 767px) {
+  .bookings,
+  .tasks,
+  .statements,
+  .owner,
+  .cleaner,
+  .colors {
+    --p: 100%;
+  }
+}

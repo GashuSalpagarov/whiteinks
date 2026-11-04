@@ -170,6 +170,15 @@ const ONLY_HERE: CardContent[] = [
     color: "#efe3cf",
     slug: "content-factory",
   },
+  {
+    title: "Система для посуточной аренды Rental",
+    type: "Наш продукт",
+    about:
+      "Сервис для управляющих компаний посуточной аренды: брони со всех площадок, уборки, расходы и отчёты собственникам. Три кабинета — для управляющей компании, собственников и горничных.",
+    duo: true,
+    color: "#e4e3f6",
+    slug: "rental",
+  },
 ];
 
 const TEXT: Record<string, string> = {
