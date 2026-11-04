@@ -589,6 +589,26 @@ export const CASES: CaseData[] = [
     services: [],
     need: "ИИ и автоматизация",
   },
+  {
+    // Своя страница (components/case/rental), карточки на главной нет: поля рассказа только ради типа.
+    slug: "rental",
+    showcase: true,
+    title: "Система для посуточной аренды Rental",
+    unlisted: true,
+    summary:
+      "Квартиры, брони со всех площадок, уборки и отчёты собственникам. Три кабинета: для управляющей компании, собственников и горничных. Наш продукт.",
+    task: "Наш продукт для управляющих компаний посуточной аренды.",
+    before: [],
+    beforeImage: { src: img("rental", "bookings.webp"), alt: "Список броней в кабинете управляющей компании" },
+    solution: [],
+    gallery: [
+      { src: img("rental", "owner-statements.webp"), alt: "Отчёт на подпись у собственника", ratio: "3/4" },
+      { src: img("rental", "tasks.webp"), alt: "Уборки по дням" },
+    ],
+    galleryNote: "",
+    services: [],
+    need: "Другое",
+  },
 ];
 
 export const caseBySlug = (slug: string) => CASES.find((c) => c.slug === slug) ?? null;

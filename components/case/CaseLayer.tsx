@@ -39,7 +39,8 @@ import { Kavkazstore } from "./kavkazstore/Kavkazstore";
 import { DUO_SHOTS } from "./memoridian/Duo";
 import { Showcase } from "./memoridian/Showcase";
 import { Picvario } from "./picvario/Picvario";
-import { Prokat } from "./prokat/Prokat";
+import { Prokat } from "./prokat/Prokat";
+import { Rental } from "./rental/Rental";
 import { ScSystem } from "./sc-system/ScSystem";
 import { StroyM } from "./stroy-m/StroyM";
 
@@ -1054,6 +1055,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <GameClub c={c} act={act} full={full} />
             ) : c.slug === "content-factory" ? (
               <ContentFactory c={c} act={act} full={full} />
+            ) : c.slug === "rental" ? (
+              <Rental c={c} act={act} full={full} />
             ) : c.slug === "kanban" ? (
               <Kanban c={c} act={act} full={full} />
             ) : c.slug === "check-please" ? (
