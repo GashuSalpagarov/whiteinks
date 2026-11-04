@@ -1,0 +1,65 @@
+/* Страница площадки курортной недвижимости flats (Flats.tsx). Стили текста, поля, первый экран и общая
+   раскладка — из memoridian/Showcase.module.css; здесь только блоки: ширина картинки --p, текста --t и
+   их места. Потолки ширин держат текст не ниже 0,4 высоты картинки и на 1920. */
+.catalog,
+.chess,
+.deduction,
+.devHero,
+.units,
+.board,
+.refunds {
+  --p: clamp(420px, 44vw, 660px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.installment {
+  --p: clamp(340px, 31vw, 480px);
+  --t: clamp(280px, 24vw, 360px);
+}
+
+.colors {
+  --p: clamp(240px, 19.5vw, 320px);
+  --t: clamp(240px, 20vw, 320px);
+}
+
+@media (min-width: 900px) and (orientation: landscape), (min-width: 1025px) {
+  .chess,
+  .deduction,
+  .units,
+  .refunds {
+    flex-direction: row-reverse;
+    --side: 1;
+  }
+}
+
+/* Узкий компьютер и планшет: снимкам больше места, иначе подписи на них не читаются. */
+@media (min-width: 900px) and (max-width: 1279px) {
+  .catalog,
+  .chess,
+  .deduction,
+  .devHero,
+  .units,
+  .board,
+  .refunds {
+    --p: 56vw;
+  }
+
+  .installment {
+    --p: 40vw;
+  }
+}
+
+/* Телефон: картинки во всю ширину. */
+@media (max-width: 767px) {
+  .catalog,
+  .chess,
+  .installment,
+  .deduction,
+  .devHero,
+  .units,
+  .board,
+  .refunds,
+  .colors {
+    --p: 100%;
+  }
+}

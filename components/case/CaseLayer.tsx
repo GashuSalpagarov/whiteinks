@@ -28,6 +28,7 @@ import { DoctisAnalysis } from "./doctis-analysis/DoctisAnalysis";
 import { DoctisCrm } from "./doctis-crm/DoctisCrm";
 import { EdgeCenter } from "./edgecenter/EdgeCenter";
 import { EdgeConf } from "./edgeconf/EdgeConf";
+import { Flats } from "./flats/Flats";
 import { GameClub } from "./gameclub/GameClub";
 import { Gbz } from "./gbz/Gbz";
 import { Globaldrive } from "./globaldrive/Globaldrive";
@@ -1057,6 +1058,8 @@ export function CaseLayer({ initial }: { initial?: string }) {
               <ContentFactory c={c} act={act} full={full} />
             ) : c.slug === "rental" ? (
               <Rental c={c} act={act} full={full} />
+            ) : c.slug === "flats" ? (
+              <Flats c={c} act={act} full={full} />
             ) : c.slug === "kanban" ? (
               <Kanban c={c} act={act} full={full} />
             ) : c.slug === "check-please" ? (
